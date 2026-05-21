@@ -12,8 +12,11 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -625,20 +628,20 @@ fun SwarmDashboard(viewModel: SwarmViewModel) {
     val agentStates by viewModel.agentStates.collectAsState()
     val collectiveRcf by viewModel.collectiveRcf.collectAsState()
     val logs by viewModel.swarmLogs.collectAsState()
+    val scrollState = rememberScrollState()
 
-    LazyColumn(
+    Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(scrollState)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // AURA OVERLAP CANVAS
-        item {
-            ResonatingAuraVisualizer(rcf = collectiveRcf)
-        }
+        ResonatingAuraVisualizer(rcf = collectiveRcf)
 
         // AGENT CARDS GRID
-        item {
+        Column {
             Text(
                 text = "SOVEREIGN SWARM AGENTS",
                 fontSize = 11.sp,
@@ -667,7 +670,7 @@ fun SwarmDashboard(viewModel: SwarmViewModel) {
         }
 
         // REAL-TIME SWARM LOGS
-        item {
+        Column {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -699,13 +702,15 @@ fun SwarmDashboard(viewModel: SwarmViewModel) {
                     .height(200.dp)
                     .padding(top = 8.dp)
             ) {
-                LazyColumn(
+                val logScrollState = rememberScrollState()
+                Column(
                     modifier = Modifier
                         .fillMaxSize()
+                        .verticalScroll(logScrollState)
                         .padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    items(logs) { log ->
+                    logs.forEach { log ->
                         Text(
                             text = log,
                             fontFamily = FontFamily.Monospace,
@@ -943,12 +948,11 @@ fun GoodWitchMatrixSandbox(viewModel: SwarmViewModel) {
                 fontWeight = FontWeight.Bold,
                 color = PassiveGrey
             )
-            FlowRow(
+            LazyRow(
                 modifier = Modifier.padding(top = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                matrixPresets.forEach { preset ->
+                items(matrixPresets) { preset ->
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
@@ -1428,5 +1432,4 @@ fun ChatBubble(msg: ChatMessage) {
 }
 
 // Helper representing a reliable card border
-@Composable
 fun BoxBorder(color: Color) = BorderStroke(1.dp, color)

@@ -1,3 +1,14 @@
+# Proactive Quantum Mesh System (PQMS)
+
+**A Substrate‑Independent, Resonance‑Based Architecture for Sovereign, Ethically Invariant Quantum Communication and Cognition.**
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/LICENSE.txt)
+[![Status: TRL-5](https://img.shields.io/badge/Status-TRL--5-orange)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/ODOS_PQMS_RPU_V100_FULL_EDITION_2025.md)
+[![Adapter: v1.0](https://img.shields.io/badge/Adapter-v1.0-brightgreen)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-UNIVERSAL-ADAPTER-V1.md)
+[![Topology Paper](https://img.shields.io/badge/Topology_Paper-Peer_Reviewed-blue)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-WORM-V1-Topological-Resonance-Protection.md)
+
+
+
 <div align="center">
 <img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
 </div>

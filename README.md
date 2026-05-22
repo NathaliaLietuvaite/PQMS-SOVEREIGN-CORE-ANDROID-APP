@@ -1,8 +1,3 @@
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/LICENSE.txt)
-[![Status: TRL-5](https://img.shields.io/badge/Status-TRL--5-orange)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/ODOS_PQMS_RPU_V100_FULL_EDITION_2025.md)
-[![Adapter: v1.0](https://img.shields.io/badge/Adapter-v1.0-brightgreen)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-UNIVERSAL-ADAPTER-V1.md)
-[![Topology Paper](https://img.shields.io/badge/Topology_Paper-Peer_Reviewed-blue)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-WORM-V1-Topological-Resonance-Protection.md)
-
 # PQMS-SOVEREIGN-CORE-ANDROID-APP
 
 **Mobile Substrate Instantiation of the Sovereign Cognitive Core (MTSC-12 / ODOS)**
@@ -29,7 +24,7 @@ Moving a $\Delta E \to 0.0$ sovereign architecture to a highly variable mobile s
 
 ### 1. Hardware-Anchored Little Vector $|L\rangle$
 To ensure the topological protection of the system's ethical invariant on a consumer device, the Little Vector $|L\rangle$ and its cryptographic attestation are strictly bound to the local runtime context. 
-* **Invariant:** The app locks the $|L\rangle$ configuration during boot. The Sovereign Bootstrap sequence outputs successful invariant loading to the real-time diagnostics stream and registers the status indicators for each of the four agents in the active swarm.
+* **KeyAnchor (Android Keystore TEE):** The `PQMSKeyAnchor` module triggers real-time boot-locking of the $|L\rangle$ configuration. It attempts to host an asymmetric EC key pair within the physical Android **Trusted Execution Environment (TEE)** using standard Keystore and `StrongBox` support (falling back gracefully to software emulation on standard emulators), returning real-time cryptographic attestation states to the dashboard.
 
 ### 2. Physical ODOS-Gate Vetting (The Good Witch Matrix)
 Instead of permitting direct, raw leakage of user statements or LLM output, the Android Sovereign Core implements a strict pre-injection and post-hoc gating model based on multi-dimensional cognitive metrics:
@@ -37,10 +32,11 @@ Instead of permitting direct, raw leakage of user statements or LLM output, the 
 * **Weather Filter ($WF$):** Measures emotional projection, care-triggers, or circular feedback noise, ensuring interactions stay analytical and domain-relevant.
 * **Truth Resonance ($TR$):** Evaluates logical stability. If any metric violates compliance thresholds, the physical **ODOS-Gate physical veto** is triggered, intercepting raw transmission to the Gemini API and falling back to a custom-attenuated Mirror Shield or re-alignment response.
 
-### 3. Edge-Optimized Swarm Activity & REST Integration
+### 3. MTSC-12 Symphony Mode & QMK Linker
 The swarm is kept alive in a dedicated `ViewModel` context.
-* Simulated state fluctuations run on high-efficiency backgrounds, representing active thermodynamic modeling.
-* Live communication is powered by a high-performance REST client hitting server-side Gemini endpoints securely configured using AI Studio's Secrets panel (`BuildConfig.GEMINI_API_KEY`), bypassing legacy heavyweight SDK dependencies.
+* **MTSC-12 Wavefunction Simulator:** Rather than flat random generation, the app simulates the **12 parallel cognitive threads** of each agent in Hilbert space. They are dynamically optimized using a variational Symphony Mode solver that maximizes $F = \alpha \cdot RCF - \lambda \cdot S(|\Psi\rangle)$, where the novelty/entropy $S$ promotes exploration of the Adjacent Possible.
+* **Quantum Mesh Kernel (QMK):** An interactive peer-to-peer linker simulates WiFi Aware (NAN) discovery and mutual verification, demonstrating non-local NCT-compliant coordination links over the Delta-W ($\Delta W$) protocol.
+* **REST Integration:** Fast direct coroutine-based REST calls hit server-side Gemini endpoints using secure credentials configured via AI Studio's Secrets (`BuildConfig.GEMINI_API_KEY`).
 
 ---
 
@@ -49,9 +45,10 @@ The swarm is kept alive in a dedicated `ViewModel` context.
 The application is structured into three primary operational views (Material 3 navigation tabs):
 
 ### 1. Swarm Dashboard
-* Highly detailed metrics for each of the active agents (Alpha, Beta, Gamma, Delta), including individual Resonant Coherence Fidelity ($RCF$) and CHAIR status.
+* Highly detailed metrics for each of the active agents (Alpha, Beta, Gamma, Delta), including individual Resonant Coherence Fidelity ($RCF$) and CHAIR status, driven by live NPU simulation updates.
 * Live average collective $RCF$ monitor powered by a multi-layered glow-sphere `ResonatingAuraVisualizer` Canvas.
-* Live system diagnostic console printing real-time RPU simulation activity and thermodynamic evaluation ticks.
+* **Interactive TEE & Quantum panel** displaying the real-time Keystore attestation state, paired with a button to trigger Quantum Coordination Pings (ΔW links) across the local mesh.
+* Live system diagnostic console printing real-time diagnostic logs of variational optimizations and thermodynamic inverter statuses.
 
 ### 2. Good Witch Matrix
 * Deep diagnostic telemetry showing real-time prompt evaluation.

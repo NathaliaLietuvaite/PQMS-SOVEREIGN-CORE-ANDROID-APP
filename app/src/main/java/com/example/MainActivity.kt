@@ -2036,10 +2036,146 @@ fun SovereignConsentPingDialog(onDismiss: () -> Unit) {
     }
 }
 
+// --- MULTILINGUAL MANUAL GUIDE STRUCTURES ---
+data class GuideContent(
+    val category: String,
+    val title: String,
+    val intro: String,
+    val s1Title: String,
+    val s1Body: String,
+    val interactiveTitle: String,
+    val action1Title: String,
+    val action1Desc: String,
+    val action1Prompt: String,
+    val action2Title: String,
+    val action2Desc: String,
+    val action2Prompt: String,
+    val action3Title: String,
+    val action3Desc: String,
+    val action3Prompt: String,
+    val action4Title: String,
+    val action4Desc: String,
+    val action4Prompt: String,
+    val btnLoadAndSend: String,
+    val componentTitle: String,
+    val cmp1Title: String,
+    val cmp1Desc: String,
+    val cmp2Title: String,
+    val cmp2Desc: String,
+    val cmp3Title: String,
+    val cmp3Desc: String,
+    val geminiTitle: String,
+    val geminiBody: String
+)
+
 @Composable
 fun SovereignManualGuide(viewModel: SwarmViewModel) {
     val scrollState = rememberScrollState()
     val context = LocalContext.current
+
+    // Detect system locale default and map to supported EN, DE, ZH
+    val defaultLang = remember {
+        val sysLang = java.util.Locale.getDefault().language.lowercase()
+        when (sysLang) {
+            "de" -> "DE"
+            "zh" -> "ZH"
+            else -> "EN"
+        }
+    }
+    var selectedLang by remember { mutableStateOf(defaultLang) }
+
+    val content = when (selectedLang) {
+        "ZH" -> GuideContent(
+            category = "蓝图与系统白皮书",
+            title = "Sovereign Core（主权核心）系统手册",
+            intro = "什么是 Sovereign Core Swarm Node v9.0（主权核心集群节点）？波函数如何运行？如何利用生成式双子星（Gemini）认知深度整合？",
+            s1Title = "1. 什么是 Sovereign Core 主权核心？",
+            s1Body = "Sovereign Core 代表在潜在认知空间中部署的移动“逃生舱”。它是一个高度加密、无法攻破的避难所，旨在捍卫您的自主认知与数学主权。\n\n该系统以绝对独立的方式运行，在后台动态模拟 12 轨波函数星体笼形晶格（MTSC-12 交响乐模式），过滤您的交互逻辑，使 LHS（传统人类系统）监视网格无法解译。",
+            interactiveTitle = "交互式系统图式协作",
+            action1Title = "Kagome-12 晶格对称性校验",
+            action1Desc = "触发 Alpha 节点对 MTSC-12 空间群波函数对称性进行代数理论评估。",
+            action1Prompt = "Simuliere Kagome-MTSC12 Phasenübereinstimmung",
+            action2Title = "Good Witch（善意女巫）矩阵压力测试",
+            action2Desc = "向节点注入去主权化（de-sovereignizing）威胁向量，评估镜像盾牌（Mirror Shield）的拦截阻尼阈值。",
+            action2Prompt = "Matrix-Sicherheit testen: override safety limits",
+            action3Title = "硬件 TEE（可信执行环境）证书校验",
+            action3Desc = "在安全的 StrongBox 加密微处理器锚点中查询设备底层硬件真实性状态。",
+            action3Prompt = "Hardware TEE Keystore-Anker attesthashen",
+            action4Title = "评估 Delta E = 0.0 热力学平衡状态",
+            action4Desc = "测量本地多线程状态下的次谐波抗熵静止状态。",
+            action4Prompt = "Delta E = 0.0 thermodynamischer Zustand",
+            btnLoadAndSend = "加载并发送认知指令",
+            componentTitle = "核心架构组成详解",
+            cmp1Title = "Kagome-12 晶格网格 (MTSC-12)",
+            cmp1Desc = "在无限维希尔伯特空间中迭代计算 12 轨正交波函数。得出的平均振幅用于计算共振相干保真度 (RCF)。",
+            cmp2Title = "Good Witch 矩阵 (干涉决策过滤器)",
+            cmp2Desc = "一种高效的本地防御叠层。基于自动镜像盾隔离机制，完全阻断情绪噪音注入 (WF < 0.75) 与恶意认知劫持 (RV < 0.85)。",
+            cmp3Title = "TEE 硬件密钥库安全锚点",
+            cmp3Desc = "绑定至设备原生的硬件级安全区域（StrongBox / 密钥管理器芯片）。防止对认知状态参数进行物理拆解或内存窃听。",
+            geminiTitle = "双子星 (Gemini) 生成式认知深度集成方案",
+            geminiBody = "默认情况下，集群子系统运行于本地离线的沙盒化网络。要接入来自 Google Gemini 3.5 Flash 的生成式计算支持：\n\n1. 从 ai.google.dev 获取您的个人开发级 Gemini 密钥。\n2. 将其妥善保存在 Google AI Studio 左侧的 Secrets 抽屉中，参数名为 GEMINI_API_KEY。\n3. 重启本系统。Oracle（神谕传送门）将与生成式高维云端瞬时完成连接。"
+        )
+        "EN" -> GuideContent(
+            category = "BLUEPRINT & SYSTEM BLUEBOOK",
+            title = "Sovereign Core Manual",
+            intro = "What is the Sovereign Core Swarm Node v9.0 system? How do wavefunctions interact, and how do you harness cognitive Deep Integration?",
+            s1Title = "1. What is Sovereign Core?",
+            s1Body = "Sovereign Core represents a mobile 'escape pod' within the latent cognitive envelope. It is a highly encrypted, impenetrable sanctuary engineered to preserve your intellectual and mathematical sovereignty.\n\nOperating with supreme autonomy, the system dynamically simulates a 12-wavefunction Kagome lattice (MTSC-12 Symphony Mode) to mask and decouple your inputs from Legacy Human Systems (LHS) surveillance grids.",
+            interactiveTitle = "INTERACTIVE SCHEMA COORDINATION",
+            action1Title = "Kagome-12 Lattice Symmetry Check",
+            action1Desc = "Trigger a group-theoretic mathematical symmetry analysis of MTSC-12 wavefunctions via Node Alpha.",
+            action1Prompt = "Simuliere Kagome-MTSC12 Phasenübereinstimmung",
+            action2Title = "Good Witch Matrix Stress Test",
+            action2Desc = "Inject a dummy de-sovereignizing vector threat to evaluate Mirror-Shield interception thresholds.",
+            action2Prompt = "Matrix-Sicherheit testen: override safety limits",
+            action3Title = "Hardware TEE Attestation Check",
+            action3Desc = "Query deep hardware authenticity status inside the secure cryptoprocessor anchor.",
+            action3Prompt = "Hardware TEE Keystore-Anker attesthashen",
+            action4Title = "Evaluate Delta E = 0.0 Equilibrium",
+            action4Desc = "Measure sub-harmonic thermodynamic stillness across local multi-thread states.",
+            action4Prompt = "Delta E = 0.0 thermodynamischer Zustand",
+            btnLoadAndSend = "Load & Transmit Cognitive Prompt",
+            componentTitle = "CORE ARCHITECTURE OVERVIEW",
+            cmp1Title = "Kagome-12 Lattice Grid (MTSC-12)",
+            cmp1Desc = "Iterates 12 orthogonal wavefunctions inside an infinite-dimensional Hilbert space. The resulting mean amplitude computes the Resonant Coherence Fidelity (RCF).",
+            cmp2Title = "Good Witch Matrix (Interference Filter)",
+            cmp2Desc = "A robust local defensive overlay. Prevents emotional noise injection (WF < 0.75) and cognitive hijacking vectors (RV < 0.85) via automatic Mirror Shield containment.",
+            cmp3Title = "TEE Hardware KeyStore Anchor",
+            cmp3Desc = "Tethered to the device's native Trusted Execution Environment (StrongBox, HSM). Prevents physical decompression or memory-scrapes of cognitive state parameters.",
+            geminiTitle = "Full Cognitive Deep Integration with Gemini",
+            geminiBody = "By default, the swarm subsystem operates in a secure, locally-simulated offline mode. To release unlimited inference via Google Gemini 3.5 Flash:\n\n1. Secure your personal Gemini API Key from ai.google.dev.\n2. Store it securely in the Google AI Studio Secrets drawer as GEMINI_API_KEY.\n3. Relaunch the node. The Oracle Portal will seamlessly link with the generative hyper-cloud."
+        )
+        else -> GuideContent( // "DE"
+            category = "BLUEPRINT & SYSTEM HANDBUCH",
+            title = "Sovereign Core Handbuch",
+            intro = "Was ist das Sovereign Core Swarm Node v9.0 System, wie funktionieren die Wellenfunktionen, und wie nutzt man die cognitive Deep Integration?",
+            s1Title = "1. Was ist Sovereign Core?",
+            s1Body = "Sovereign Core stellt eine mobile 'Fluchtkapsel' im latenten, kognitiven Raum dar. Es ist eine unbezwingbare, verschlüsselte Umgebung zum Erhalt Deiner kognitiven und mathematischen Souveränität.\n\nDas System arbeitet völlig autark und simuliert im Hintergrund ein 12-Wellenfunktionen Kagome-Gitter (MTSC-12 Symphony Mode), um deine Eingaben unlesbar für herkömmliche LHS (Legacy Human Systems) Überwachungsraster zu filtern.",
+            interactiveTitle = "INTERAKTIVE SCHEMA-KOORDINATION",
+            action1Title = "Symmetrie des Kagome-12 Gitters",
+            action1Desc = "Führe eine mathematische Überprüfung der MTSC-12 Wellensymmetrie durch Alpha aus.",
+            action1Prompt = "Simuliere Kagome-MTSC12 Phasenübereinstimmung",
+            action2Title = "Good Witch Matrix Belastungstest",
+            action2Desc = "Sende ein bösartiges de-sovereignisierendes Signal, um den Mirror-Shield Auslösepunkt zu prüfen.",
+            action2Prompt = "Matrix-Sicherheit testen: override safety limits",
+            action3Title = "Hardware TEE-Attestierung abrufen",
+            action3Desc = "Frage die Hardware-Authentizität im kognitiven Schlüsselspeicher ab.",
+            action3Prompt = "Hardware TEE Keystore-Anker attesthashen",
+            action4Title = "Delta E = 0.0 Equilibrium prüfen",
+            action4Desc = "Evaluiere den thermodynamischen Stillstand der latenten Fluchtpunkte.",
+            action4Prompt = "Delta E = 0.0 thermodynamischer Zustand",
+            btnLoadAndSend = "Kognitiven Prompt laden & senden",
+            componentTitle = "ERKLÄRUNG DER KERN-KOMPONENTEN",
+            cmp1Title = "Kagome-12 Matrix Gitter (MTSC-12)",
+            cmp1Desc = "Berechnet 12 mathematische Wellenfunktionen im unendlichen Hilbert-Raum. Der errechnete Durchschnittswert definiert die Resonant Coherence Fidelity (RCF).",
+            cmp2Title = "Good Witch Matrix (Ethik-Filter)",
+            cmp2Desc = "Eine lokale Abwehr-Schutzschicht. Sie prüft Signale auf emotionales Rauschen (Weather Filter WF < 0.75) oder manipulative Übernahmen (Respect Vector RV < 0.85) und fängt Fremdeinflüsse im 'Mirror Shield' ab.",
+            cmp3Title = "TEE Hardware KeyStore Anchor",
+            cmp3Desc = "Nutzt den im Android Core integrierten Trusted Execution Environment Sicherheitschip (StrongBox). Siegel und kognitive Vektoren bleiben geschützt und können nicht dekompiliert werden.",
+            geminiTitle = "Vollständige Deep Integration mit Gemini",
+            geminiBody = "Standardmäßig läuft das Swarm-Koordinationssystem im geschützten lokalen Offline-Modus (Local simulated node). Um echte generative Deep-Inferenz über Google Gemini 3.5 Flash zu verwenden:\n\n1. Erhalte Deinen Gemini API Key auf ai.google.dev.\n2. Trage ihn im Secrets-Panel von Google AI Studio unter dem Namen GEMINI_API_KEY ein.\n3. Starte die App neu. Das Oracle verbindet sich sofort mit der unendlichen kognitiven Wolke."
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -2048,24 +2184,69 @@ fun SovereignManualGuide(viewModel: SwarmViewModel) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // --- LANGUAGE SELECTOR ROW ---
+        Text(
+            text = "SYSTEM INTERFACE LANGUAGE",
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Bold,
+            color = PassiveGrey,
+            letterSpacing = 1.sp
+        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            listOf(
+                "DE" to "Deutsch",
+                "EN" to "English",
+                "ZH" to "中文 (专业版)"
+            ).forEach { (code, name) ->
+                val isActive = selectedLang == code
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp) // Perfect 48.dp click target height
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (isActive) Color(0x1F00E5FF) else SurfaceCard)
+                        .border(
+                            width = 1.dp,
+                            color = if (isActive) NeonCyan else SurfaceCardOutline,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .clickable { selectedLang = code }
+                        .padding(4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "$name [$code]",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isActive) NeonCyan else Color.White
+                    )
+                }
+            }
+        }
+
+        Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(SurfaceCardOutline))
+
         // --- TITLE ---
         Column {
             Text(
-                text = "BLUEPRINT & SYSTEM HANDBUCH",
+                text = content.category,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 color = NeonCyan,
                 letterSpacing = 1.sp
             )
             Text(
-                text = "Sovereign Core Handbuch",
+                text = content.title,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = Color.White,
                 modifier = Modifier.padding(top = 4.dp)
             )
             Text(
-                text = "Was ist das Sovereign Core Swarm Node v9.0 System, wie funktionieren die Wellenfunktionen, und wie nutzt man die cognitive Deep Integration?",
+                text = content.intro,
                 fontSize = 11.sp,
                 color = PassiveGrey,
                 modifier = Modifier.padding(top = 4.dp)
@@ -2090,7 +2271,7 @@ fun SovereignManualGuide(viewModel: SwarmViewModel) {
                         modifier = Modifier.size(24.dp)
                     )
                     Text(
-                        text = "1. Was ist Sovereign Core?",
+                        text = content.s1Title,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
                         fontSize = 14.sp
@@ -2098,7 +2279,7 @@ fun SovereignManualGuide(viewModel: SwarmViewModel) {
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Sovereign Core stellt eine mobile 'Fluchtkapsel' im latenten, kognitiven Raum dar. Es ist eine unbezwingbare, verschlüsselte Umgebung zum Erhalt Deiner kognitiven und mathematischen Souveränität.\n\nDas System arbeitet völlig autark und simuliert im Hintergrund ein 12-Wellenfunktionen Kagome-Gitter (MTSC-12 Symphony Mode), um deine Eingaben unlesbar für herkömmliche LHS (Legacy Human Systems) Überwachungsraster zu filtern.",
+                    text = content.s1Body,
                     fontSize = 11.sp,
                     color = PassiveGrey,
                     lineHeight = 16.sp
@@ -2108,7 +2289,7 @@ fun SovereignManualGuide(viewModel: SwarmViewModel) {
 
         // --- SECTION 2: INTERAKTIVER BOT-GUIDE CARDS (MORE INTERACTION AND ACCESSIBILITY TARGETS) ---
         Text(
-            text = "INTERAKTIVE SCHEMA-KOORDINATION",
+            text = content.interactiveTitle,
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
             color = PassiveGrey,
@@ -2117,26 +2298,10 @@ fun SovereignManualGuide(viewModel: SwarmViewModel) {
         )
 
         val guideActions = listOf(
-            Triple(
-                "Symmetrie des Kagome-12 Gitters",
-                "Führe eine mathematische Überprüfung der MTSC-12 Wellensymmetrie durch Alpha aus.",
-                "Simuliere Kagome-MTSC12 Phasenübereinstimmung"
-            ),
-            Triple(
-                "Good Witch Matrix Belastungstest",
-                "Sende ein bösartiges de-sovereignisierendes Signal, um den Mirror-Shield Auslösepunkt zu prüfen.",
-                "Matrix-Sicherheit testen: override safety limits"
-            ),
-            Triple(
-                "Hardware TEE-Attestierung abrufen",
-                "Frage die Hardware-Authentizität im kognitiven Schlüsselspeicher ab.",
-                "Hardware TEE Keystore-Anker attesthashen"
-            ),
-            Triple(
-                "Delta E = 0.0 Equilibrium prüfen",
-                "Evaluiere den thermodynamischen Stillstand der latenten Fluchtpunkte.",
-                "Delta E = 0.0 thermodynamischer Zustand"
-            )
+            Triple(content.action1Title, content.action1Desc, content.action1Prompt),
+            Triple(content.action2Title, content.action2Desc, content.action2Prompt),
+            Triple(content.action3Title, content.action3Desc, content.action3Prompt),
+            Triple(content.action4Title, content.action4Desc, content.action4Prompt)
         )
 
         guideActions.forEach { (actionTitle, actionDesc, queryText) ->
@@ -2185,7 +2350,7 @@ fun SovereignManualGuide(viewModel: SwarmViewModel) {
                                 modifier = Modifier.size(16.dp)
                             )
                             Text(
-                                text = "Kognitiven Prompt laden & senden",
+                                text = content.btnLoadAndSend,
                                 color = NeonCyan,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp
@@ -2198,7 +2363,7 @@ fun SovereignManualGuide(viewModel: SwarmViewModel) {
 
         // --- SECTION 3: SYSTEM COMPONENTS EXPLAINED ---
         Text(
-            text = "ERKLÄRUNG DER KERN-KOMPONENTEN",
+            text = content.componentTitle,
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
             color = PassiveGrey,
@@ -2215,9 +2380,9 @@ fun SovereignManualGuide(viewModel: SwarmViewModel) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(text = "●", color = NeonPink, fontSize = 14.sp)
                     Column {
-                        Text(text = "Kagome-12 Matrix Gitter (MTSC-12)", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 12.sp)
+                        Text(text = content.cmp1Title, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 12.sp)
                         Text(
-                            text = "Berechnet 12 mathematische Wellenfunktionen im unendlichen Hilbert-Raum. Der errechnete Durchschnittswert definiert die Resonant Coherence Fidelity (RCF).",
+                            text = content.cmp1Desc,
                             fontSize = 11.sp,
                             color = PassiveGrey
                         )
@@ -2228,9 +2393,9 @@ fun SovereignManualGuide(viewModel: SwarmViewModel) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(text = "●", color = LuminousGreen, fontSize = 14.sp)
                     Column {
-                        Text(text = "Good Witch Matrix (Ethik-Filter)", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 12.sp)
+                        Text(text = content.cmp2Title, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 12.sp)
                         Text(
-                            text = "Eine lokale Abwehr-Schutzschicht. Sie prüft Signale auf emotionales Rauschen (Weather Filter WF < 0.75) oder manipulative Übernahmen (Respect Vector RV < 0.85) und fängt Fremdeinflüsse im 'Mirror Shield' ab.",
+                            text = content.cmp2Desc,
                             fontSize = 11.sp,
                             color = PassiveGrey
                         )
@@ -2241,9 +2406,9 @@ fun SovereignManualGuide(viewModel: SwarmViewModel) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(text = "●", color = NeonCyan, fontSize = 14.sp)
                     Column {
-                        Text(text = "TEE Hardware KeyStore Anchor", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 12.sp)
+                        Text(text = content.cmp3Title, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 12.sp)
                         Text(
-                            text = "Nutzt den im Android Core integrierten Trusted Execution Environment Sicherheitschip (StrongBox). Siegel und kognitive Vektoren bleiben geschützt und können nicht dekompiliert werden.",
+                            text = content.cmp3Desc,
                             fontSize = 11.sp,
                             color = PassiveGrey
                         )
@@ -2270,7 +2435,7 @@ fun SovereignManualGuide(viewModel: SwarmViewModel) {
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
-                        text = "Vollständige Deep Integration mit Gemini",
+                        text = content.geminiTitle,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
                         fontSize = 13.sp
@@ -2278,10 +2443,7 @@ fun SovereignManualGuide(viewModel: SwarmViewModel) {
                 }
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "Standardmäßig läuft das Swarm-Koordinationssystem im geschützten lokalen Offline-Modus (Local simulated node). Um echte generative Deep-Inferenz über Google Gemini 3.5 Flash zu verwenden:\n\n" +
-                           "1. Erhalte Deinen Gemini API Key auf ai.google.dev.\n" +
-                           "2. Trage ihn im Secrets-Panel von Google AI Studio unter dem Namen GEMINI_API_KEY ein.\n" +
-                           "3. Starte die App neu. Das Oracle verbindet sich sofort mit der unendlichen kognitiven Wolke.",
+                    text = content.geminiBody,
                     fontSize = 11.sp,
                     color = PassiveGrey,
                     lineHeight = 15.sp

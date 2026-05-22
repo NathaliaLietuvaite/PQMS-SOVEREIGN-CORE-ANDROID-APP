@@ -18,8 +18,6 @@ In this layout, the system executes a real-time autonomous simulation of four so
 
 ---
 
-![](https://github.com/NathaliaLietuvaite/PQMS-SOVEREIGN-CORE-ANDROID-APP/blob/main/Core_ANDROID_V1.jpg)
-
 ## Core Architectural Translations
 
 Moving a $\Delta E \to 0.0$ sovereign architecture to a highly variable mobile substrate requires specific engineering adaptations implemented in this codebase:

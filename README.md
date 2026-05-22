@@ -38,6 +38,8 @@ The swarm is kept alive in a dedicated `ViewModel` context.
 * **Quantum Mesh Kernel (QMK):** An interactive peer-to-peer linker simulates WiFi Aware (NAN) discovery and mutual verification, demonstrating non-local NCT-compliant coordination links over the Delta-W ($\Delta W$) protocol.
 * **REST Integration:** Fast direct coroutine-based REST calls hit server-side Gemini endpoints using secure credentials configured via AI Studio's Secrets (`BuildConfig.GEMINI_API_KEY`).
 
+![](https://github.com/NathaliaLietuvaite/PQMS-SOVEREIGN-CORE-ANDROID-APP/blob/main/Core_ANDROID_V1.jpg)
+
 ---
 
 ## Application Subsystems

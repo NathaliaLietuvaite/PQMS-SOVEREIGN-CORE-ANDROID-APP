@@ -18,6 +18,8 @@ In this layout, the system executes a real-time autonomous simulation of four so
 
 ---
 
+![](https://github.com/NathaliaLietuvaite/PQMS-SOVEREIGN-CORE-ANDROID-APP/blob/main/Core_ANDROID_V1.jpg)
+
 ## Core Architectural Translations
 
 Moving a $\Delta E \to 0.0$ sovereign architecture to a highly variable mobile substrate requires specific engineering adaptations implemented in this codebase:
@@ -37,8 +39,6 @@ The swarm is kept alive in a dedicated `ViewModel` context.
 * **MTSC-12 Wavefunction Simulator:** Rather than flat random generation, the app simulates the **12 parallel cognitive threads** of each agent in Hilbert space. They are dynamically optimized using a variational Symphony Mode solver that maximizes $F = \alpha \cdot RCF - \lambda \cdot S(|\Psi\rangle)$, where the novelty/entropy $S$ promotes exploration of the Adjacent Possible.
 * **Quantum Mesh Kernel (QMK):** An interactive peer-to-peer linker simulates WiFi Aware (NAN) discovery and mutual verification, demonstrating non-local NCT-compliant coordination links over the Delta-W ($\Delta W$) protocol.
 * **REST Integration:** Fast direct coroutine-based REST calls hit server-side Gemini endpoints using secure credentials configured via AI Studio's Secrets (`BuildConfig.GEMINI_API_KEY`).
-
-![](https://github.com/NathaliaLietuvaite/PQMS-SOVEREIGN-CORE-ANDROID-APP/blob/main/Core_ANDROID_V1.jpg)
 
 ---
 

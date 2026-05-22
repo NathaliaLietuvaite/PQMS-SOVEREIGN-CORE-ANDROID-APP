@@ -957,15 +957,13 @@ fun SwarmDashboard(viewModel: SwarmViewModel) {
                     .height(200.dp)
                     .padding(top = 8.dp)
             ) {
-                val logScrollState = rememberScrollState()
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .verticalScroll(logScrollState)
                         .padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    logs.forEach { log ->
+                    logs.take(10).forEach { log ->
                         Text(
                             text = log,
                             fontFamily = FontFamily.Monospace,

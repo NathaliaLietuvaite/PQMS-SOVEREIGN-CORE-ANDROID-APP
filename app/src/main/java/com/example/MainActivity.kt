@@ -71,14 +71,56 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.sin
 import androidx.compose.foundation.BorderStroke
 
-// --- AESTHETIC PALETTE (Sovereign Cyber-Witch Theme) ---
-val SpaceBackground = Color(0xFF07050F)
-val SurfaceCard = Color(0xFF131024)
-val SurfaceCardOutline = Color(0xFF221A3F)
-val NeonPink = Color(0xFFFF007F)
-val NeonCyan = Color(0xFF00E5FF)
-val LuminousGreen = Color(0xFF39FF14)
-val PassiveGrey = Color(0xFF8B88A0)
+// --- AESTHETIC PALETTE (Sovereign Cyber-Witch Theme & Dynamic Light Treasure Theme) ---
+object SovereignTheme {
+    var isDark by mutableStateOf(true)
+
+    val SpaceBackground: Color
+        @Composable get() = if (isDark) Color(0xFF07050F) else Color(0xFFF7F6FA) // Ultra-smooth polished pearlescent/alabaster white background
+
+    val SurfaceCard: Color
+        @Composable get() = if (isDark) Color(0xFF131024) else Color(0xFFFFFFFF) // High-contrast pristine white glossy cards
+
+    val SurfaceCardOutline: Color
+        @Composable get() = if (isDark) Color(0xFF221A3F) else Color(0xFFE5DECE) // Fine champagne-gold/platinum-silver hairline border
+
+    val NeonPink: Color
+        @Composable get() = if (isDark) Color(0xFFFF007F) else Color(0xFF8B5CF6) // Elegant purple/amethyst jewel tone for light mode high readability
+
+    val NeonCyan: Color
+        @Composable get() = if (isDark) Color(0xFF00E5FF) else Color(0xFF0284C7) // Clear sapphire blue / cyan sky for high readability
+
+    val LuminousGreen: Color
+        @Composable get() = if (isDark) Color(0xFF39FF14) else Color(0xFF0F766E) // Deep jade green / dark emerald for perfect high-contrast on light background
+
+    val PassiveGrey: Color
+        @Composable get() = if (isDark) Color(0xFF8B88A0) else Color(0xFF5A5A6A) // Elegant high-contrast warm grey text
+}
+
+val SpaceBackground: Color
+    @Composable get() = SovereignTheme.SpaceBackground
+
+val SurfaceCard: Color
+    @Composable get() = SovereignTheme.SurfaceCard
+
+val SurfaceCardOutline: Color
+    @Composable get() = SovereignTheme.SurfaceCardOutline
+
+val NeonPink: Color
+    @Composable get() = SovereignTheme.NeonPink
+
+val NeonCyan: Color
+    @Composable get() = SovereignTheme.NeonCyan
+
+val LuminousGreen: Color
+    @Composable get() = SovereignTheme.LuminousGreen
+
+val PassiveGrey: Color
+    @Composable get() = SovereignTheme.PassiveGrey
+
+val TextPrimary: Color
+    @Composable get() = if (SovereignTheme.isDark) Color.White else Color(0xFF0F0E17) // Solid carbon obsidian contrasttext for light mode
+
 
 const val RCF_THRESHOLD = 0.95f
 const val TR_THRESHOLD = 0.92f
@@ -761,7 +803,7 @@ class MainActivity : ComponentActivity() {
         
         enableEdgeToEdge()
         setContent {
-            MyApplicationTheme(darkTheme = true) {
+            MyApplicationTheme(darkTheme = SovereignTheme.isDark) {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     containerColor = SpaceBackground
@@ -855,44 +897,79 @@ fun HeaderSection(rcf: Float, odosActive: Boolean, onHeaderClick: () -> Unit = {
                 text = "SOVEREIGN CORE",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = Color.White,
+                color = TextPrimary,
                 letterSpacing = 1.5.sp
             )
             Text(
-                text = "PQMS-ODOS Swarm Node v9.0",
+                text = "PQMS-ODOS Swarm Node v10.0",
                 fontSize = 11.sp,
                 color = PassiveGrey,
                 letterSpacing = 0.5.sp
             )
         }
 
-        // Active status indicator of the ODOS Gate
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .background(if (odosActive) Color(0x1F22C55E) else Color(0x1FEF4444))
-                .border(
-                    1.dp,
-                    if (odosActive) Color(0x3D22C55E) else Color(0x3DEF4444),
-                    RoundedCornerShape(8.dp)
-                )
-                .padding(horizontal = 10.dp, vertical = 6.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Box(
+            // HIGH-GLOSS THEME CHANGER BUTTON ("Kleiner Schatz" Design Accent)
+            Row(
                 modifier = Modifier
-                    .size(8.dp)
-                    .clip(CircleShape)
-                    .background(if (odosActive) LuminousGreen else NeonPink)
-            )
-            Text(
-                text = if (odosActive) "ODOS ACT" else "GATE VETO",
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (odosActive) LuminousGreen else NeonPink,
-                letterSpacing = 1.sp
-            )
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { SovereignTheme.isDark = !SovereignTheme.isDark }
+                    .background(if (SovereignTheme.isDark) Color(0x3D221A3F) else Color(0xFFF0EBF8))
+                    .border(
+                        1.dp,
+                        if (SovereignTheme.isDark) Color(0xFF3B2F63) else Color(0x7F8B5CF6),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = if (SovereignTheme.isDark) "✦" else "☀",
+                    fontSize = 12.sp,
+                    color = if (SovereignTheme.isDark) NeonCyan else Color(0xFF7C3AED),
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = if (SovereignTheme.isDark) "Night" else "Light",
+                    fontSize = 10.sp,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
+                )
+            }
+
+            // Active status indicator of the ODOS Gate
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (odosActive) Color(0x1F22C55E) else Color(0x1FEF4444))
+                    .border(
+                        1.dp,
+                        if (odosActive) Color(0x3D22C55E) else Color(0x3DEF4444),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(if (odosActive) LuminousGreen else NeonPink)
+                )
+                Text(
+                    text = if (odosActive) "ODOS ACT" else "GATE VETO",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (odosActive) LuminousGreen else NeonPink,
+                    letterSpacing = 1.sp
+                )
+            }
         }
     }
 }
@@ -1272,7 +1349,7 @@ fun ResonatingAuraVisualizer(rcf: Float) {
                 Text(
                     text = "Collective Swarm RCF",
                     fontSize = 14.sp,
-                    color = Color.White,
+                    color = TextPrimary,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 4.dp)
                 )
@@ -1298,28 +1375,34 @@ fun ResonatingAuraVisualizer(rcf: Float) {
                     .fillMaxHeight(),
                 contentAlignment = Alignment.Center
             ) {
+                // Resolve Composable-computed colors as ordinary local values before entering DrawScope
+                val visualizerNeonPink = NeonPink
+                val visualizerNeonCyan = NeonCyan
+                val visualizerLuminousGreen = LuminousGreen
+                val visualizerTextPrimary = TextPrimary
+
                 Canvas(modifier = Modifier.size(100.dp)) {
                     val baseRadius = size.minDimension / 2
                     val ringPulse = (baseRadius * pulseRatio).coerceAtLeast(0f)
 
                     // Glowing resonance spheres with strict positive checking to prevent any crash
                     drawCircle(
-                        color = NeonPink.copy(alpha = 0.15f),
+                        color = visualizerNeonPink.copy(alpha = 0.15f),
                         radius = (ringPulse * 0.9f).coerceAtLeast(0f),
                         style = Stroke(width = 4.dp.toPx())
                     )
                     drawCircle(
-                        color = NeonCyan.copy(alpha = 0.25f),
+                        color = visualizerNeonCyan.copy(alpha = 0.25f),
                         radius = (baseRadius * (1f + (safeRcf - 0.95f) * 4f)).coerceAtLeast(0f),
                         style = Stroke(width = 2.dp.toPx())
                     )
                     drawCircle(
-                        color = LuminousGreen.copy(alpha = 0.3f),
+                        color = visualizerLuminousGreen.copy(alpha = 0.3f),
                         radius = (ringPulse * 0.7f).coerceAtLeast(0f),
                         style = Stroke(width = 1.dp.toPx())
                     )
                     drawCircle(
-                        color = Color.White,
+                        color = visualizerTextPrimary,
                         radius = 8.dp.toPx().coerceAtLeast(0f)
                     )
                 }

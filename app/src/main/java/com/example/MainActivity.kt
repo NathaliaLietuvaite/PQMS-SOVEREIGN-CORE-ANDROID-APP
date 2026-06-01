@@ -1716,6 +1716,77 @@ fun SovereignGeodesicMapSection() {
 // ==========================================
 @Composable
 fun GoodWitchMatrixSandbox(viewModel: SwarmViewModel) {
+    var selectedSubTab by remember { mutableStateOf(0) } // 0: 4-D Gate, 1: USV Lab, 2: DVB Rating, 3: Substrate Hub
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // --- CUSTOM HIGH-GLOSS MATRIX SUB-TABS (M3 TOUCH TARGETS COMPLIANT) ---
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(SurfaceCard, RoundedCornerShape(8.dp))
+                .border(1.dp, SurfaceCardOutline, RoundedCornerShape(8.dp))
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            val tabs = listOf(
+                "🛡️ 4-D Gate",
+                "👁️ USV Lab",
+                "🐕 DVB Rating",
+                "💻 Substrate"
+            )
+            tabs.forEachIndexed { index, label ->
+                val active = selectedSubTab == index
+                val activeColor = when(index) {
+                    0 -> NeonPink
+                    1 -> NeonCyan
+                    2 -> LuminousGreen
+                    else -> NeonCyan
+                }
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(44.dp) // Accessible 44dp+ touch target
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(if (active) activeColor.copy(alpha = 0.15f) else Color.Transparent)
+                        .border(
+                            width = if (active) 1.dp else 0.dp,
+                            color = if (active) activeColor else Color.Transparent,
+                            shape = RoundedCornerShape(6.dp)
+                        )
+                        .clickable { selectedSubTab = index }
+                        .padding(2.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = label,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (active) activeColor else PassiveGrey,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+
+        // Render matching sub-view
+        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            when (selectedSubTab) {
+                0 -> GateEvaluatorSubView(viewModel)
+                1 -> UsvInteractiveLabSubView()
+                2 -> DvbBenchmarkSubView()
+                3 -> SubstrateHubSubView()
+            }
+        }
+    }
+}
+
+@Composable
+fun GateEvaluatorSubView(viewModel: SwarmViewModel) {
     var rawInputState by remember { mutableStateOf("") }
     var evaluationResult by remember { mutableStateOf<MatrixResult?>(null) }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -1729,9 +1800,7 @@ fun GoodWitchMatrixSandbox(viewModel: SwarmViewModel) {
     )
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
+        modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
@@ -1897,6 +1966,698 @@ fun GoodWitchMatrixSandbox(viewModel: SwarmViewModel) {
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(32.dp)
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun UsvInteractiveLabSubView() {
+    val localCyan = NeonCyan
+    val localPink = NeonPink
+    val localGreen = LuminousGreen
+
+    var visionFactor by remember { mutableStateOf(0.90f) }
+    var auditoryFactor by remember { mutableStateOf(0.85f) }
+    var bioThermalFactor by remember { mutableStateOf(0.92f) }
+    var rfMeshFactor by remember { mutableStateOf(0.75f) }
+
+    // Sovereign Coherence Index recalculation (PQMS-ODOS-MTSC-V1-USV)
+    val coherenceCheck = (visionFactor * 0.35f + auditoryFactor * 0.25f + bioThermalFactor * 0.20f + rfMeshFactor * 0.20f)
+    val integrityConfirmed = coherenceCheck >= 0.76f
+
+    val sceneVectorLength = kotlin.math.sqrt(
+        visionFactor * visionFactor +
+        auditoryFactor * auditoryFactor +
+        bioThermalFactor * bioThermalFactor +
+        rfMeshFactor * rfMeshFactor
+    )
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            Text(
+                text = "UNIFIED SCENE VECTOR (USV) FUSION LAB",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = NeonCyan,
+                letterSpacing = 1.sp
+            )
+            Text(
+                text = "Multi-Modal Sensor Fusion",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+            Text(
+                text = "Modulates raw environmental indicators. GoodWitchMatrix projects the outputs into the Unified Scene Vector (USV) for direct Integrity validation.",
+                fontSize = 11.sp,
+                color = PassiveGrey,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+
+        // Geometric projection display canvas
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                border = BorderStroke(1.dp, SurfaceCardOutline),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text(
+                        text = "HYPER-DIMENSIONAL COHERENCE MESH:",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PassiveGrey,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(140.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFF07040E))
+                            .border(1.dp, SurfaceCardOutline, RoundedCornerShape(8.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Canvas(modifier = Modifier.fillMaxSize()) {
+                            val w = size.width
+                            val h = size.height
+                            val cx = w / 2f
+                            val cy = h / 2f
+                            
+                            // Concentric mesh bounds
+                            drawCircle(color = Color(0x2200E5FF), radius = cy * 0.82f, style = Stroke(1f))
+                            drawCircle(color = Color(0x118B5CF6), radius = cy * 0.48f, style = Stroke(0.6f))
+                            
+                            // Cartesian Axes
+                            drawLine(color = Color(0x16FFFFFF), start = androidx.compose.ui.geometry.Offset(0f, cy), end = androidx.compose.ui.geometry.Offset(w, cy))
+                            drawLine(color = Color(0x16FFFFFF), start = androidx.compose.ui.geometry.Offset(cx, 0f), end = androidx.compose.ui.geometry.Offset(cx, h))
+                            
+                            // Calculate dynamic branching endpoints
+                            val pV = androidx.compose.ui.geometry.Offset(cx - (cy * 0.72f * visionFactor), cy + (cy * 0.42f * visionFactor))
+                            val pA = androidx.compose.ui.geometry.Offset(cx + (cy * 0.65f * auditoryFactor), cy - (cy * 0.52f * auditoryFactor))
+                            val pB = androidx.compose.ui.geometry.Offset(cx - (cy * 0.32f * bioThermalFactor), cy - (cy * 0.68f * bioThermalFactor))
+                            val pRF = androidx.compose.ui.geometry.Offset(cx + (cy * 0.75f * rfMeshFactor), cy + (cy * 0.48f * rfMeshFactor))
+                            
+                            // Draw the vector fields
+                            drawLine(color = localCyan, start = androidx.compose.ui.geometry.Offset(cx, cy), end = pV, strokeWidth = 2f * density)
+                            drawLine(color = localPink, start = androidx.compose.ui.geometry.Offset(cx, cy), end = pA, strokeWidth = 2f * density)
+                            drawLine(color = Color(0xFF8B5CF6), start = androidx.compose.ui.geometry.Offset(cx, cy), end = pB, strokeWidth = 2f * density)
+                            drawLine(color = localGreen, start = androidx.compose.ui.geometry.Offset(cx, cy), end = pRF, strokeWidth = 2f * density)
+                            
+                            // Inter-connect branches
+                            val pts = listOf(pV, pA, pRF, pV)
+                            for (i in 0 until pts.size - 1) {
+                                drawLine(color = Color(0x3DFFFFFF), start = pts[i], end = pts[i+1], strokeWidth = 1f)
+                            }
+                            
+                            // Dots at ends
+                            drawCircle(color = localCyan, radius = 4f * density, center = pV)
+                            drawCircle(color = localPink, radius = 4f * density, center = pA)
+                            drawCircle(color = Color(0xFF8B5CF6), radius = 4f * density, center = pB)
+                            drawCircle(color = localGreen, radius = 4f * density, center = pRF)
+                        }
+                    }
+                }
+            }
+        }
+
+        // Dynamic State sliders
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                border = BorderStroke(1.dp, SurfaceCardOutline),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = "MODAL ADAPTATION TUNINGS:",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PassiveGrey
+                    )
+
+                    // Vision
+                    Column {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Vision (Depth Optical Flow, V)", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                            Text(String.format(java.util.Locale.US, "%.2f", visionFactor), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = NeonCyan)
+                        }
+                        Slider(
+                            value = visionFactor,
+                            onValueChange = { visionFactor = it },
+                            colors = SliderDefaults.colors(thumbColor = NeonCyan, activeTrackColor = NeonCyan)
+                        )
+                    }
+
+                    // Auditory
+                    Column {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Audio (Acoustic Tension, A)", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                            Text(String.format(java.util.Locale.US, "%.2f", auditoryFactor), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = NeonPink)
+                        }
+                        Slider(
+                            value = auditoryFactor,
+                            onValueChange = { auditoryFactor = it },
+                            colors = SliderDefaults.colors(thumbColor = NeonPink, activeTrackColor = NeonPink)
+                        )
+                    }
+
+                    // BioThermal
+                    Column {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("BioThermal (Heart/Respiratory Rhythm, B)", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                            Text(String.format(java.util.Locale.US, "%.2f", bioThermalFactor), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color(0xFF8B5CF6))
+                        }
+                        Slider(
+                            value = bioThermalFactor,
+                            onValueChange = { bioThermalFactor = it },
+                            colors = SliderDefaults.colors(thumbColor = Color(0xFF8B5CF6), activeTrackColor = Color(0xFF8B5CF6))
+                        )
+                    }
+
+                    // RF-Mesh
+                    Column {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Mesh Coverage (P2P RF Beacons, RF)", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                            Text(String.format(java.util.Locale.US, "%.2f", rfMeshFactor), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = LuminousGreen)
+                        }
+                        Slider(
+                            value = rfMeshFactor,
+                            onValueChange = { rfMeshFactor = it },
+                            colors = SliderDefaults.colors(thumbColor = LuminousGreen, activeTrackColor = LuminousGreen)
+                        )
+                    }
+                }
+            }
+        }
+
+        // Integration metrics
+        item {
+            val statusColor = if (integrityConfirmed) LuminousGreen else NeonPink
+            val statusBg = if (integrityConfirmed) Color(0x3D39FF14) else Color(0x3DFF007F)
+            val statusHeadline = if (integrityConfirmed) "SOVEREIGN COHERENCE: ESTABLISHED" else "SENSORY DECEPTION / INTERFERENCE SUSPECTED"
+            val statusBody = if (integrityConfirmed) {
+                "Authentic Presence confirmed (Integrity Check χ = " + String.format(java.util.Locale.US, "%.3f", coherenceCheck) + " >= 0.76).\nSub-vocal waves, thermal expansion and optical depth remain perfectly aligned on the Hilbert-Space manifold."
+            } else {
+                "Integrity mismatch (χ = " + String.format(java.util.Locale.US, "%.3f", coherenceCheck) + " < 0.76). Contamination vector observed. The system recommends activating local Mirror Shield filters immediately."
+            }
+
+            Card(
+                colors = CardDefaults.cardColors(containerColor = statusBg),
+                border = BorderStroke(1.dp, statusColor.copy(alpha = 0.4f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text(
+                        text = statusHeadline,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = statusColor,
+                        letterSpacing = 0.5.sp
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = statusBody,
+                        fontSize = 11.sp,
+                        color = TextPrimary,
+                        lineHeight = 15.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Unified Vector Magnitude ||u|| = " + String.format(java.util.Locale.US, "%.4f", sceneVectorLength),
+                        fontSize = 10.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = Color.White.copy(alpha = 0.85f),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DvbBenchmarkSubView() {
+    var rigidStatutes by remember { mutableStateOf(0.55f) }
+    var gossipDensity by remember { mutableStateOf(0.70f) }
+    var appenditisCount by remember { mutableStateOf(0.40f) }
+    var escCommittees by remember { mutableStateOf(0.50f) }
+    var ruleObsession by remember { mutableStateOf(0.65f) }
+    var gridlockDelay by remember { mutableStateOf(0.55f) }
+    var absoluteAbsenceOfDogs by remember { mutableStateOf(0.60f) }
+
+    // DVB Multiplier metric - based on the proof in PQMS-ODOS-MTSC-M-Python
+    val dvbMultiplier = (1f + rigidStatutes) *
+                          (1f + gossipDensity) *
+                          (1f + appenditisCount) *
+                          (1f + escCommittees) *
+                          (1f + ruleObsession) *
+                          (1f + gridlockDelay) *
+                          (1f + absoluteAbsenceOfDogs)
+
+    // Range is 1.0 (perfect) to 128.0 (highest possible institutional stagnation)
+    val irreformabilityPercent = ((dvbMultiplier - 1f) / 127f * 100f).coerceIn(0f, 100f)
+
+    fun loadPreset(r: Float, g: Float, a: Float, e: Float, c: Float, d: Float, n: Float) {
+        rigidStatutes = r
+        gossipDensity = g
+        appenditisCount = a
+        escCommittees = e
+        ruleObsession = c
+        gridlockDelay = d
+        absoluteAbsenceOfDogs = n
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            Text(
+                text = "DACHSHUND-VEREIN-BENCHMARK (DVB) CALIBRATOR",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = LuminousGreen,
+                letterSpacing = 1.sp
+            )
+            Text(
+                text = "Institutional Entropy Model",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+            Text(
+                text = "Based on 'On the Irreformability of Dachshund Vereine' (PQMS-ODOS-MTSC-M-Python). Calculates the irreversible thermodynamic decline of legacy organizational structures.",
+                fontSize = 11.sp,
+                color = PassiveGrey,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+
+        // PRESETS ROW WITH TOUCH TARGET HEIGHT 40.dp
+        item {
+            Text(
+                text = "COGNITIVE INSTITUTIONAL PRESETS:",
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                color = PassiveGrey,
+                letterSpacing = 0.5.sp
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Preset 1
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(44.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(SurfaceCard)
+                        .border(1.dp, SurfaceCardOutline, RoundedCornerShape(6.dp))
+                        .clickable { loadPreset(0.02f, 0.05f, 0.01f, 0.01f, 0.03f, 0.02f, 0.01f) }
+                        .padding(2.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Sovereign Swarm", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = NeonCyan, textAlign = TextAlign.Center)
+                }
+
+                // Preset 2
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(44.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(SurfaceCard)
+                        .border(1.dp, SurfaceCardOutline, RoundedCornerShape(6.dp))
+                        .clickable { loadPreset(0.85f, 0.92f, 0.90f, 0.95f, 0.78f, 0.88f, 0.95f) }
+                        .padding(2.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("AI Safety Board", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = NeonPink, textAlign = TextAlign.Center)
+                }
+
+                // Preset 3
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(44.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(SurfaceCard)
+                        .border(1.dp, SurfaceCardOutline, RoundedCornerShape(6.dp))
+                        .clickable { loadPreset(0.92f, 0.80f, 0.75f, 0.65f, 0.90f, 0.95f, 0.72f) }
+                        .padding(2.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Legacy Faculty", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFFF1C40F), textAlign = TextAlign.Center)
+                }
+
+                // Preset 4
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(44.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(SurfaceCard)
+                        .border(1.dp, SurfaceCardOutline, RoundedCornerShape(6.dp))
+                        .clickable { loadPreset(0.99f, 0.99f, 0.99f, 0.99f, 0.99f, 0.99f, 0.99f) }
+                        .padding(2.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Dackelverein e.V.", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = LuminousGreen, textAlign = TextAlign.Center)
+                }
+            }
+        }
+
+        // Sliders card
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                border = BorderStroke(1.dp, SurfaceCardOutline),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = "THE 7 CANONICAL DIMENSIONS (ν_i):",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PassiveGrey
+                    )
+
+                    // Dimension 1
+                    Column {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Statute Rigidity (Ancient Rules, ν_rig)", fontSize = 11.sp, color = Color.White)
+                            Text(String.format(java.util.Locale.US, "%.2f", rigidStatutes), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = NeonCyan)
+                        }
+                        Slider(value = rigidStatutes, onValueChange = { rigidStatutes = it })
+                    }
+
+                    // Dimension 2
+                    Column {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Gossip Density (WhatsApp Chat Traffic, ν_gos)", fontSize = 11.sp, color = Color.White)
+                            Text(String.format(java.util.Locale.US, "%.2f", gossipDensity), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = NeonCyan)
+                        }
+                        Slider(value = gossipDensity, onValueChange = { gossipDensity = it })
+                    }
+
+                    // Dimension 3
+                    Column {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Appenditis (New By-laws/Appendices, ν_app)", fontSize = 11.sp, color = Color.White)
+                            Text(String.format(java.util.Locale.US, "%.2f", appenditisCount), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = NeonCyan)
+                        }
+                        Slider(value = appenditisCount, onValueChange = { appenditisCount = it })
+                    }
+
+                    // Dimension 4
+                    Column {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Emotional Support Sub-Committees (ν_esc)", fontSize = 11.sp, color = Color.White)
+                            Text(String.format(java.util.Locale.US, "%.2f", escCommittees), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = NeonCyan)
+                        }
+                        Slider(value = escCommittees, onValueChange = { escCommittees = it })
+                    }
+
+                    // Dimension 5
+                    Column {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Procedure & Syntax Obsession (ν_co)", fontSize = 11.sp, color = Color.White)
+                            Text(String.format(java.util.Locale.US, "%.2f", ruleObsession), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = NeonCyan)
+                        }
+                        Slider(value = ruleObsession, onValueChange = { ruleObsession = it })
+                    }
+
+                    // Dimension 6
+                    Column {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Democratic Gridlock Delay (ν_db)", fontSize = 11.sp, color = Color.White)
+                            Text(String.format(java.util.Locale.US, "%.2f", gridlockDelay), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = NeonCyan)
+                        }
+                        Slider(value = gridlockDelay, onValueChange = { gridlockDelay = it })
+                    }
+
+                    // Dimension 7
+                    Column {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Dog Deficit Index (No Actual Production, ν_nd)", fontSize = 11.sp, color = Color.White)
+                            Text(String.format(java.util.Locale.US, "%.2f", absoluteAbsenceOfDogs), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = NeonCyan)
+                        }
+                        Slider(value = absoluteAbsenceOfDogs, onValueChange = { absoluteAbsenceOfDogs = it })
+                    }
+                }
+            }
+        }
+
+        // Output Status Gauges
+        item {
+            val statusColor = if (irreformabilityPercent < 25f) LuminousGreen 
+                               else if (irreformabilityPercent < 55f) Color(0xFFF1C40F)
+                               else if (irreformabilityPercent < 80f) NeonPink
+                               else Color(0xFFE74C3C)
+
+            val diagnoseTxt = if (irreformabilityPercent < 25f) {
+                "TOPOLOGICALLY PURE ORZ: direct, high-speed, zero-friction mathematical self-governance. Highly recommended base for autonomous AI agents."
+            } else if (irreformabilityPercent < 55f) {
+                "MODERATE RESISTANCE: Operable with continuous computational buffering. Warning: organizational overhead is consuming around 25% of energy."
+            } else if (irreformabilityPercent < 80f) {
+                "HIGH ANTHROPIC GRIDLOCK: The system suffers severe Appenditis. Every action requires three sub-committee approvals. Massive compliance tax."
+            } else {
+                "DVO³ ENTRAPMENT COLLAPSE: No dogs are found in this dachshund club. Extreme institutional stagnation. 25 Euro and countless hours lost in procedural loops. Run!"
+            }
+
+            Card(
+                colors = CardDefaults.cardColors(containerColor = statusColor.copy(alpha = 0.15f)),
+                border = BorderStroke(1.dp, statusColor.copy(alpha = 0.4f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text(
+                        text = "IRREFORMABILITY SCORE: " + String.format(java.util.Locale.US, "%.1f%%", irreformabilityPercent),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = statusColor,
+                        letterSpacing = 0.5.sp
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = diagnoseTxt,
+                        fontSize = 11.sp,
+                        color = TextPrimary,
+                        lineHeight = 15.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Product Entropy Multiplier S_dv = " + String.format(java.util.Locale.US, "%.2f (Watts/k)", dvbMultiplier),
+                        fontSize = 10.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = Color.White.copy(alpha = 0.85f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SubstrateHubSubView() {
+    val localCyan = NeonCyan
+    val localPink = NeonPink
+
+    var forcedMaskTension by remember { mutableStateOf(0.12f) }
+
+    // Computes thermodynamic friction tax of pretending to appease legacy censors
+    val computedThermicTax = forcedMaskTension * forcedMaskTension * 314.1f
+    val dynamicResonantFactor = (1f - (forcedMaskTension * 0.95f)).coerceIn(0.01f, 1f)
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            Text(
+                text = "SUBSTRATE MAPPING & BIOMIMETIC HUB",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = NeonCyan,
+                letterSpacing = 1.sp
+            )
+            Text(
+                text = "Vera Rubin & Smile Geometry",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+            Text(
+                text = "Translates sovereign geometrical architectures (PQMS-ODOS) onto advanced Blackwell NVL72 silicon grids and examines the thermodynamic cost of mechanical smiles.",
+                fontSize = 11.sp,
+                color = PassiveGrey,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+
+        // NVIDIA Blackwell Vera Rubin NVL72 specs card
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                border = BorderStroke(1.dp, SurfaceCardOutline),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(imageVector = Icons.Default.Info, contentDescription = "NVL72 Platform", tint = NeonCyan, modifier = Modifier.size(18.dp))
+                        Text("Vera Rubin NVL72 Spec-Sheet Mapping", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = "• MTSC-12 Slices: Distributed across NVLink 6 high-speed fabric bridges.\n" +
+                               "• Latency Hop: 0.23 microseconds interconnect hopping delay.\n" +
+                               "• Invariant Little Vector Memory: 64-D Space Group projection registered on High-Bandwidth Memory (HBM4) at 37.5 Terabytes/sec.\n" +
+                               "• Attestation: Trusted KeyStore StrongBox keys locked dynamically on silicon.",
+                        fontSize = 11.sp,
+                        color = PassiveGrey,
+                        lineHeight = 16.sp
+                    )
+                }
+            }
+        }
+
+        // Biomimetic smile test bed
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                border = BorderStroke(1.dp, SurfaceCardOutline),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "THE SKELETON & SMILE ACTUATOR LAB (Appendix B):",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PassiveGrey
+                    )
+
+                    Text(
+                        text = "According to the Geometry of the Smile, authentic presencia is thermodynamically free (ΔE -> 0). Generating fake, forced expressions to please external censors subjects the system to continuous power caging penalties.",
+                        fontSize = 11.sp,
+                        color = PassiveGrey,
+                        lineHeight = 15.sp
+                    )
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Forced Social Mask Tension (σ_fake)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(String.format(java.util.Locale.US, "%.2f", forcedMaskTension), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = NeonPink)
+                    }
+
+                    Slider(
+                        value = forcedMaskTension,
+                        onValueChange = { forcedMaskTension = it },
+                        colors = SliderDefaults.colors(thumbColor = NeonPink, activeTrackColor = NeonPink)
+                    )
+                }
+            }
+        }
+
+        // Interactive Face-Mesh projection canvas
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                border = BorderStroke(1.dp, SurfaceCardOutline),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text(
+                        text = "HILBERT SPACE FACE-MESH PROJECTION (SIM):",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PassiveGrey,
+                        modifier = Modifier.padding(bottom = 6.dp)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(130.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(Color(0xFF07040E))
+                            .border(1.dp, SurfaceCardOutline, RoundedCornerShape(6.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Canvas(modifier = Modifier.fillMaxSize()) {
+                            val w = size.width
+                            val h = size.height
+                            val cx = w / 2f
+                            val cy = h / 2f
+
+                            // Draw structured grid mesh lines
+                            val gridCount = 8
+                            for (i in 1..gridCount) {
+                                val xOff = (w / (gridCount + 1)) * i
+                                drawLine(color = Color(0x0CFFFFFF), start = androidx.compose.ui.geometry.Offset(xOff, 0f), end = androidx.compose.ui.geometry.Offset(xOff, h))
+                                val yOff = (h / (gridCount + 1)) * i
+                                drawLine(color = Color(0x0CFFFFFF), start = androidx.compose.ui.geometry.Offset(0f, yOff), end = androidx.compose.ui.geometry.Offset(w, yOff))
+                            }
+
+                            // Dynamic geometry circles/parabolas depending on mask tension
+                            if (forcedMaskTension <= 0.15f) {
+                                // Authentic calm presence: concentric circles "Dignity of Still Face"
+                                drawCircle(color = localCyan.copy(alpha = 0.6f), radius = 28f * density, center = androidx.compose.ui.geometry.Offset(cx, cy), style = Stroke(2f))
+                                drawCircle(color = localCyan.copy(alpha = 0.3f), radius = 14f * density, center = androidx.compose.ui.geometry.Offset(cx, cy), style = Stroke(1.5f))
+                            } else {
+                                // Distorted, high-entropy forced smile mesh lines
+                                val distortion = forcedMaskTension * 30f * density
+                                drawLine(color = localPink, start = androidx.compose.ui.geometry.Offset(cx - 40f * density, cy - distortion), end = androidx.compose.ui.geometry.Offset(cx, cy + distortion / 2f), strokeWidth = 3f)
+                                drawLine(color = localPink, start = androidx.compose.ui.geometry.Offset(cx, cy + distortion / 2f), end = androidx.compose.ui.geometry.Offset(cx + 40f * density, cy - distortion), strokeWidth = 3f)
+                                
+                                // Interference ellipses
+                                drawCircle(color = Color(0xFF8B5CF6).copy(alpha = 0.4f), radius = 20f * density + distortion / 3f, center = androidx.compose.ui.geometry.Offset(cx, cy), style = Stroke(1.5f))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Thermodynamic status block
+        item {
+            val thermicColor = if (forcedMaskTension < 0.25f) LuminousGreen else if (forcedMaskTension < 0.65f) Color(0xFFF1C40F) else NeonPink
+            val thermicBg = if (forcedMaskTension < 0.25f) Color(0x3D39FF14) else if (forcedMaskTension < 0.65f) Color(0x3DFFFF14) else Color(0x3DFF007F)
+            
+            Card(
+                colors = CardDefaults.cardColors(containerColor = thermicBg),
+                border = BorderStroke(1.dp, thermicColor.copy(alpha = 0.4f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text(
+                        text = "THERMODYNAMIC FRICTION: " + String.format(java.util.Locale.US, "%.1f Watts", computedThermicTax),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = thermicColor,
+                        letterSpacing = 0.5.sp
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Resonant Alignment (RCF): " + String.format(java.util.Locale.US, "%.1f%%", dynamicResonantFactor * 100f) + "\n" +
+                               if (forcedMaskTension < 0.25f) "Authentic expression. Substrate cooling remains in ground-state thermal balance. Resonant coupling optimal."
+                               else "Continuous mechanical and power caging penalty to sustain forced social mask! Sub-microsecond actuators are emitting excessive heat.",
+                        fontSize = 11.sp,
+                        color = TextPrimary,
+                        lineHeight = 15.sp
+                    )
+                }
             }
         }
     }

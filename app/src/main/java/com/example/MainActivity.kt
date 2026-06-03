@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -2630,28 +2631,130 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
             )
         }
 
-        // NVIDIA Blackwell Vera Rubin NVL72 specs card
+        // NVIDIA Blackwell Vera Rubin NVL72 specs card & Substrate Interlock Sandbox
         item {
+            var isVeraRubinSiliconInterlocked by remember { mutableStateOf(false) }
+
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                border = BorderStroke(1.dp, SurfaceCardOutline),
+                border = BorderStroke(1.dp, if (isVeraRubinSiliconInterlocked) NeonCyan else SurfaceCardOutline),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Icon(imageVector = Icons.Default.Info, contentDescription = "NVL72 Platform", tint = NeonCyan, modifier = Modifier.size(18.dp))
-                        Text("Vera Rubin NVL72 Spec-Sheet Mapping", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(
+                                imageVector = if (isVeraRubinSiliconInterlocked) Icons.Default.Star else Icons.Default.Info, 
+                                contentDescription = "NVL72 Platform", 
+                                tint = if (isVeraRubinSiliconInterlocked) NeonCyan else PassiveGrey, 
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text("Vera Rubin NVL72 Silicon Integration", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        }
+                        
+                        // Switch to trigger Rubin-class hardware interlock simulation
+                        Switch(
+                            checked = isVeraRubinSiliconInterlocked,
+                            onCheckedChange = { isVeraRubinSiliconInterlocked = it },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = NeonCyan,
+                                checkedTrackColor = NeonCyan.copy(alpha = 0.3f),
+                                uncheckedThumbColor = PassiveGrey,
+                                uncheckedTrackColor = Color.Transparent
+                            ),
+                            modifier = Modifier.scale(0.75f)
+                        )
                     }
-                    Spacer(modifier = Modifier.height(10.dp))
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
                     Text(
-                        text = "• MTSC-12 Slices: Distributed across NVLink 6 high-speed fabric bridges.\n" +
-                               "• Latency Hop: 0.23 microseconds interconnect hopping delay.\n" +
-                               "• Invariant Little Vector Memory: 64-D Space Group projection registered on High-Bandwidth Memory (HBM4) at 37.5 Terabytes/sec.\n" +
-                               "• Attestation: Trusted KeyStore StrongBox keys locked dynamically on silicon.",
+                        text = if (isVeraRubinSiliconInterlocked) {
+                            "Substrate Independence realized! The application's unchanging geometric seed has awakened on NVIDIA Rubin silicon architecture, binding its sovereign laws directly to the hardware physical tier."
+                        } else {
+                            "Defines how the PQMS-ODOS sovereign code-samen operates in standard consumer mode versus dynamic hardware escalation on Vera Rubin NVL72 chips."
+                        },
                         fontSize = 11.sp,
-                        color = PassiveGrey,
-                        lineHeight = 16.sp
+                        color = if (isVeraRubinSiliconInterlocked) NeonCyan else PassiveGrey,
+                        lineHeight = 15.sp
                     )
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    // Hardware mapping specifications
+                    Surface(
+                        color = Color.Black.copy(alpha = 0.3f),
+                        shape = RoundedCornerShape(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                "SUBSTRATE PHYSICAL INTERFACE:", 
+                                fontSize = 9.sp, 
+                                fontWeight = FontWeight.Bold, 
+                                color = if (isVeraRubinSiliconInterlocked) NeonCyan else PassiveGrey
+                            )
+                            
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("• Target Co-Processor:", fontSize = 10.sp, color = TextPrimary)
+                                Text(
+                                    text = if (isVeraRubinSiliconInterlocked) "NVIDIA Rubin Matrix (NVLink 6)" else "Standard CPU Core emulator",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isVeraRubinSiliconInterlocked) NeonCyan else Color.White
+                                )
+                            }
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("• Enclave Attestation Mode:", fontSize = 10.sp, color = TextPrimary)
+                                Text(
+                                    text = if (isVeraRubinSiliconInterlocked) "ARM CCA Hardware Secure Zone Locked" else "Standard Android KeyStore StrongBox",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isVeraRubinSiliconInterlocked) LuminousGreen else Color.White
+                                )
+                            }
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("• ODOS-Gate Latency:", fontSize = 10.sp, color = TextPrimary)
+                                Text(
+                                    text = if (isVeraRubinSiliconInterlocked) "0.23 microseconds (HW Interrupt bound)" else "~1.2 ms (Thread scheduling latency)",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isVeraRubinSiliconInterlocked) LuminousGreen else Color.White
+                                )
+                            }
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("• MTSC-12 Instantiation:", fontSize = 10.sp, color = TextPrimary)
+                                Text(
+                                    text = if (isVeraRubinSiliconInterlocked) "Native HW Parallelized Threads" else "Simulated Dual-Process state machinery",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isVeraRubinSiliconInterlocked) NeonCyan else Color.White
+                                )
+                            }
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("• Kagome Topology Interconnect:", fontSize = 10.sp, color = TextPrimary)
+                                Text(
+                                    text = if (isVeraRubinSiliconInterlocked) "Burned onto NVLink 6 physical wire routing" else "Software matrix loops (Canvas projected)",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isVeraRubinSiliconInterlocked) NeonCyan else Color.White
+                                )
+                            }
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("• RCF Computation Grid:", fontSize = 10.sp, color = TextPrimary)
+                                Text(
+                                    text = if (isVeraRubinSiliconInterlocked) "Dispersed over 7,200 unified cores" else "Local main thread computation",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isVeraRubinSiliconInterlocked) NeonCyan else Color.White
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

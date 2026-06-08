@@ -79,7 +79,8 @@ The application is structured into the following operational compartments:
 3. **Repository AI Curator**: Chief Curator Sweep engine validating codebase stability and protecting the geometric engine against human distortion drift.
 4. **Good Witch Matrix**: Deep diagnostic telemetry checking respect, weather, resonance, and essence metrics for raw input vetting.
 5. **Ontological Seed Codex**: Deeply structured reference panel carrying Appendices B through K and the interactive *Sovereign Identity Validator*.
-6. **Oracle Portal**: Direct conversational interface with the active CHAIR agent, backed by server-side Gemini API.
+6. **PQMS-ODOS-MTSC-SCM Console**: Sovereign Cognitive Middleware console. Simulates Substrate indexing, triple-path cognitive API reflection (`/api/v1/retrieve`), autonomic self-healing / evolve scheduled loops with epistemic **CER** validation thresholds (Confidence, Evidence, Reproducibility, Alternative Explanations), and dezentrale Hardware Handshakes.
+7. **Oracle Portal**: Direct conversational interface with the active CHAIR agent, backed by server-side Gemini API.
 
 ---
 

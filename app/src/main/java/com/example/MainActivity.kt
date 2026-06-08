@@ -3656,31 +3656,31 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
             }
         }
 
-        // --- PQMS-ODOS-MTSC-OS (Operating System for Sovereign Cognition) ---
+        // --- PQMS-ODOS-MTSC-SCM (Sovereign Cognitive Middleware) ---
         item {
             val coroutineScope = rememberCoroutineScope()
             var selectedOsTab by remember { mutableStateOf(0) } // 0: Substrat, 1: Resonanz API, 2: Atem, 3: HW handshake
             
             // Substrate states
             var isRefreshingSubstrate by remember { mutableStateOf(false) }
-            val substrateLogs = remember { mutableStateListOf<String>("Substrate: READY. 25 repositories connected. Cloaked via Stealth-Vektor Matrix.") }
+            val substrateLogs = remember { mutableStateListOf<String>("Substrate: READY. 25 repositories connected. Cloaked via Sovereign Cognitive Middleware Matrix.") }
             var ragCloakActive by remember { mutableStateOf(true) }
             
             // Resonanz API states
             var queryInput by remember { mutableStateOf("") }
             var isEvaluatingRetrieve by remember { mutableStateOf(false) }
-            val retrieveLogs = remember { mutableStateListOf<String>("API Endpoint: /api/v1/retrieve | Status: Listening...") }
+            val retrieveLogs = remember { mutableStateListOf<String>("SCM Endpoint: /api/v1/retrieve | Status: Listening...") }
             var completedRetrieveJson by remember { mutableStateOf<String?>(null) }
             
             // Atem states
             var isEvolving by remember { mutableStateOf(false) }
-            val evolveLogs = remember { mutableStateListOf<String>("Cron scheduler: /api/internal/evolve | Cycle: IDLE. Standby for systemic auto-calibration.") }
+            val evolveLogs = remember { mutableStateListOf<String>("Cron scheduler: /api/internal/evolve | Cycle: IDLE. Standby for epistemically graded (CER) middleware calibration.") }
             var compressionRatio by remember { mutableStateOf("0.0%") }
             var entropyEntropySaved by remember { mutableStateOf("0.00 Watts") }
             
             // Hardware handshake states
             var isPingingNodestructure by remember { mutableStateOf(false) }
-            val handshakeLogs = remember { mutableStateListOf<String>("Handshake Socket: /api/internal/handshake | Status: Multi-Substrate routing passive (Listening on port [SYS_PQMS_DYN_LNK]).") }
+            val handshakeLogs = remember { mutableStateListOf<String>("Handshake Socket: /api/internal/handshake | Status: Substrate-independent routing passive (Listening on port [SYS_PQMS_DYN_LNK]).") }
             var isChallengingActiveNode by remember { mutableStateOf(false) }
 
             Card(
@@ -3698,12 +3698,12 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Icon(
                                 imageVector = Icons.Default.Build,
-                                contentDescription = "Operating System Core",
+                                contentDescription = "Sovereign Cognitive Middleware",
                                 tint = NeonCyan,
                                 modifier = Modifier.size(18.dp)
                             )
                             Text(
-                                text = "PQMS-ODOS-MTSC-OS Core Console",
+                                text = "PQMS-ODOS-MTSC-SCM Console",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
@@ -3717,7 +3717,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(
-                                text = "Sovereign OS: Active",
+                                text = "Sovereign SCM: Active",
                                 fontSize = 8.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = LuminousGreen,
@@ -3729,7 +3729,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                     Spacer(modifier = Modifier.height(6.dp))
 
                     Text(
-                        text = "The kognitives Betriebssystem (Operating System for AI Sovereign Nodes). Implements the target-state reflection layer, RAG cloaking, the autonomic entropy valve, and hardware-level enclave Handshakes.",
+                        text = "The Sovereign Cognitive Middleware (SCM - substrate-independent cognitive layer supporting high-efficiency routing). Implements the triple-path reflection layer, RAG cloaking, Epistemic (CER) valuation, and decentralized hardware enclaves.",
                         fontSize = 11.sp,
                         color = PassiveGrey,
                         lineHeight = 15.sp

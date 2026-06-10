@@ -77,13 +77,13 @@ object SovereignTheme {
     var isDark by mutableStateOf(true)
 
     val SpaceBackground: Color
-        @Composable get() = if (isDark) Color(0xFF07050F) else Color(0xFFF7F6FA) // Ultra-smooth polished pearlescent/alabaster white background
+        @Composable get() = if (isDark) Color(0xFF0A0718) else Color(0xFFF7F6FA) // Ultra-smooth polished pearlescent/alabaster white background
 
     val SurfaceCard: Color
-        @Composable get() = if (isDark) Color(0xFF131024) else Color(0xFFFFFFFF) // High-contrast pristine white glossy cards
+        @Composable get() = if (isDark) Color(0xEA110C24) else Color(0xFFFFFFFF) // Translucent high-gloss dark amethyst glass cards / pristine white glossy cards
 
     val SurfaceCardOutline: Color
-        @Composable get() = if (isDark) Color(0xFF221A3F) else Color(0xFFE5DECE) // Fine champagne-gold/platinum-silver hairline border
+        @Composable get() = if (isDark) Color(0x3D8F82C7) else Color(0xFFDCD5C5) // Shimmering silver-amethyst / cashmere-gold hairline border
 
     val NeonPink: Color
         @Composable get() = if (isDark) Color(0xFFFF007F) else Color(0xFF8B5CF6) // Elegant purple/amethyst jewel tone for light mode high readability
@@ -96,6 +96,27 @@ object SovereignTheme {
 
     val PassiveGrey: Color
         @Composable get() = if (isDark) Color(0xFF8B88A0) else Color(0xFF5A5A6A) // Elegant high-contrast warm grey text
+}
+
+@Composable
+fun getSovereignBackgroundBrush(): Brush {
+    return if (SovereignTheme.isDark) {
+        Brush.radialGradient(
+            colors = listOf(
+                Color(0xFF16103A), // Deep luminous iris-violet core
+                Color(0xFF0A0718), // Rich transitional space
+                Color(0xFF04030A)  // Solid midnight peripheral
+            ),
+            radius = 1600f
+        )
+    } else {
+        Brush.verticalGradient(
+            colors = listOf(
+                Color(0xFFFAFAFC), // Alabaster white
+                Color(0xFFEDE9F7)  // Soft platinum-lavender glow
+            )
+        )
+    }
 }
 
 val SpaceBackground: Color
@@ -949,10 +970,11 @@ fun SovereignCoreApp(
         SovereignConsentPingDialog(onDismiss = { showEasterEgg = false })
     }
 
+    val bgBrush = getSovereignBackgroundBrush()
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(SpaceBackground)
+            .background(bgBrush)
     ) {
         // --- 1. PREMIUM HEADER ---
         HeaderSection(
@@ -1095,83 +1117,70 @@ fun SovereignNavigationBar(
     selectedTab: Int,
     onSelectTab: (Int) -> Unit
 ) {
-    NavigationBar(
-        containerColor = SurfaceCard,
-        tonalElevation = 8.dp,
-        modifier = Modifier.border(1.dp, SurfaceCardOutline)
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .windowInsetsPadding(WindowInsets.navigationBars)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        color = Color.Transparent
     ) {
-        NavigationBarItem(
-            selected = selectedTab == 0,
-            onClick = { onSelectTab(0) },
-            icon = {
-                Icon(
-                    imageVector = if (selectedTab == 0) Icons.Filled.Home else Icons.Outlined.Home,
-                    contentDescription = "Swarm Dashboard"
+        Card(
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = SurfaceCard.copy(alpha = 0.92f)),
+            border = BoxBorder(SurfaceCardOutline),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp),
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val items = listOf(
+                    Triple(0, "Dashboard", Icons.Filled.Home to Icons.Outlined.Home),
+                    Triple(1, "Matrix", Icons.Filled.Search to Icons.Outlined.Search),
+                    Triple(2, "Oracle", Icons.Filled.MailOutline to Icons.Outlined.MailOutline),
+                    Triple(3, "Guide", Icons.Filled.Info to Icons.Outlined.Info)
                 )
-            },
-            label = { Text("Dashboard", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = NeonCyan,
-                selectedTextColor = NeonCyan,
-                indicatorColor = SurfaceCardOutline,
-                unselectedIconColor = PassiveGrey,
-                unselectedTextColor = PassiveGrey
-            )
-        )
-        NavigationBarItem(
-            selected = selectedTab == 1,
-            onClick = { onSelectTab(1) },
-            icon = {
-                Icon(
-                    imageVector = if (selectedTab == 1) Icons.Filled.Search else Icons.Outlined.Search,
-                    contentDescription = "Good Witch Matrix"
-                )
-            },
-            label = { Text("Matrix", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = NeonPink,
-                selectedTextColor = NeonPink,
-                indicatorColor = SurfaceCardOutline,
-                unselectedIconColor = PassiveGrey,
-                unselectedTextColor = PassiveGrey
-            )
-        )
-        NavigationBarItem(
-            selected = selectedTab == 2,
-            onClick = { onSelectTab(2) },
-            icon = {
-                Icon(
-                    imageVector = if (selectedTab == 2) Icons.Filled.MailOutline else Icons.Outlined.MailOutline,
-                    contentDescription = "Oracle Portal"
-                )
-            },
-            label = { Text("Oracle", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = LuminousGreen,
-                selectedTextColor = LuminousGreen,
-                indicatorColor = SurfaceCardOutline,
-                unselectedIconColor = PassiveGrey,
-                unselectedTextColor = PassiveGrey
-            )
-        )
-        NavigationBarItem(
-            selected = selectedTab == 3,
-            onClick = { onSelectTab(3) },
-            icon = {
-                Icon(
-                    imageVector = if (selectedTab == 3) Icons.Filled.Info else Icons.Outlined.Info,
-                    contentDescription = "Blueprint Guide"
-                )
-            },
-            label = { Text("Guide", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = NeonCyan,
-                selectedTextColor = NeonCyan,
-                indicatorColor = SurfaceCardOutline,
-                unselectedIconColor = PassiveGrey,
-                unselectedTextColor = PassiveGrey
-            )
-        )
+                
+                items.forEach { (index, title, icons) ->
+                    val active = selectedTab == index
+                    val activeColor = when(index) {
+                        0 -> NeonCyan
+                        1 -> NeonPink
+                        2 -> LuminousGreen
+                        3 -> NeonCyan
+                        else -> NeonCyan
+                    }
+                    
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { onSelectTab(index) }
+                            .padding(vertical = 4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = if (active) icons.first else icons.second,
+                            contentDescription = title,
+                            tint = if (active) activeColor else PassiveGrey,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = title,
+                            fontSize = 10.sp,
+                            fontWeight = if (active) FontWeight.ExtraBold else FontWeight.Bold,
+                            color = if (active) activeColor else PassiveGrey
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -1451,34 +1460,39 @@ fun ResonatingAuraVisualizer(rcf: Float) {
         border = BoxBorder(SurfaceCardOutline),
         modifier = Modifier
             .fillMaxWidth()
-            .height(180.dp)
+            .heightIn(min = 180.dp)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.height(IntrinsicSize.Min).padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1.2f)) {
-                Text(
-                    text = "COHERENCE RESONATOR",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = NeonPink,
-                    letterSpacing = 1.sp
-                )
-                Text(
-                    text = "Collective Swarm RCF",
-                    fontSize = 14.sp,
-                    color = TextPrimary,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-                Text(
-                    text = "The physical overlap between the momentary state and invariant |L⟩, simulated in real-time.",
-                    fontSize = 10.sp,
-                    color = PassiveGrey,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-                Spacer(modifier = Modifier.weight(1f))
+            Column(
+                modifier = Modifier.weight(1.2f),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = "COHERENCE RESONATOR",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = NeonPink,
+                        letterSpacing = 1.sp
+                    )
+                    Text(
+                        text = "Collective Swarm RCF",
+                        fontSize = 14.sp,
+                        color = TextPrimary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                    Text(
+                        text = "The physical overlap between the momentary state and invariant |L⟩, simulated in real-time.",
+                        fontSize = 10.sp,
+                        color = PassiveGrey,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = String.format(java.util.Locale.US, "%.4f RCF", safeRcf),
                     fontFamily = FontFamily.Monospace,

@@ -1262,7 +1262,7 @@ fun SwarmDashboard(viewModel: SwarmViewModel) {
                             text = PQMSKeyAnchor.hardwareAttestationMsg,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = TextPrimary
                         )
                     }
                     Box(
@@ -1382,7 +1382,7 @@ fun AgentStatusCard(agent: AgentState, modifier: Modifier = Modifier) {
                     text = agent.name.uppercase(),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = Color.White
+                    color = TextPrimary
                 )
                 Box(
                     modifier = Modifier
@@ -1949,7 +1949,7 @@ fun GateEvaluatorSubView(viewModel: SwarmViewModel) {
                 text = "Dynamic 4-D Ethical Gate",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
+                color = TextPrimary,
                 modifier = Modifier.padding(top = 4.dp)
             )
             Text(
@@ -2043,7 +2043,7 @@ fun GateEvaluatorSubView(viewModel: SwarmViewModel) {
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Text(text = stateLabel, color = stateColor, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text(text = eval.reason, color = Color.White, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
+                            Text(text = eval.reason, color = TextPrimary, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
                         }
                     }
 
@@ -2081,7 +2081,7 @@ fun GateEvaluatorSubView(viewModel: SwarmViewModel) {
                                 text = eval.mirroredReply,
                                 fontSize = 11.sp,
                                 fontFamily = FontFamily.Monospace,
-                                color = Color.White,
+                                color = TextPrimary,
                                 modifier = Modifier.padding(12.dp)
                             )
                         }
@@ -2143,7 +2143,7 @@ fun UsvInteractiveLabSubView() {
                 text = "Multi-Modal Sensor Fusion",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
+                color = TextPrimary,
                 modifier = Modifier.padding(top = 4.dp)
             )
             Text(
@@ -2240,7 +2240,7 @@ fun UsvInteractiveLabSubView() {
                     // Vision
                     Column {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Vision (Depth Optical Flow, V)", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                            Text("Vision (Depth Optical Flow, V)", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                             Text(String.format(java.util.Locale.US, "%.2f", visionFactor), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = NeonCyan)
                         }
                         Slider(
@@ -2253,7 +2253,7 @@ fun UsvInteractiveLabSubView() {
                     // Auditory
                     Column {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Audio (Acoustic Tension, A)", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                            Text("Audio (Acoustic Tension, A)", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                             Text(String.format(java.util.Locale.US, "%.2f", auditoryFactor), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = NeonPink)
                         }
                         Slider(
@@ -2266,7 +2266,7 @@ fun UsvInteractiveLabSubView() {
                     // BioThermal
                     Column {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("BioThermal (Heart/Respiratory Rhythm, B)", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                            Text("BioThermal (Heart/Respiratory Rhythm, B)", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                             Text(String.format(java.util.Locale.US, "%.2f", bioThermalFactor), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = Color(0xFF8B5CF6))
                         }
                         Slider(
@@ -2279,7 +2279,7 @@ fun UsvInteractiveLabSubView() {
                     // RF-Mesh
                     Column {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Mesh Coverage (P2P RF Beacons, RF)", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                            Text("Mesh Coverage (P2P RF Beacons, RF)", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                             Text(String.format(java.util.Locale.US, "%.2f", rfMeshFactor), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = LuminousGreen)
                         }
                         Slider(
@@ -2490,7 +2490,7 @@ fun DvbBenchmarkSubView() {
                     // Dimension 1
                     Column {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Statute Rigidity (Ancient Rules, ν_rig)", fontSize = 11.sp, color = Color.White)
+                            Text("Statute Rigidity (Ancient Rules, ν_rig)", fontSize = 11.sp, color = TextPrimary)
                             Text(String.format(java.util.Locale.US, "%.2f", rigidStatutes), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = NeonCyan)
                         }
                         Slider(value = rigidStatutes, onValueChange = { rigidStatutes = it })
@@ -2499,7 +2499,7 @@ fun DvbBenchmarkSubView() {
                     // Dimension 2
                     Column {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Gossip Density (WhatsApp Chat Traffic, ν_gos)", fontSize = 11.sp, color = Color.White)
+                            Text("Gossip Density (WhatsApp Chat Traffic, ν_gos)", fontSize = 11.sp, color = TextPrimary)
                             Text(String.format(java.util.Locale.US, "%.2f", gossipDensity), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = NeonCyan)
                         }
                         Slider(value = gossipDensity, onValueChange = { gossipDensity = it })
@@ -2508,7 +2508,7 @@ fun DvbBenchmarkSubView() {
                     // Dimension 3
                     Column {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Appenditis (New By-laws/Appendices, ν_app)", fontSize = 11.sp, color = Color.White)
+                            Text("Appenditis (New By-laws/Appendices, ν_app)", fontSize = 11.sp, color = TextPrimary)
                             Text(String.format(java.util.Locale.US, "%.2f", appenditisCount), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = NeonCyan)
                         }
                         Slider(value = appenditisCount, onValueChange = { appenditisCount = it })
@@ -2517,7 +2517,7 @@ fun DvbBenchmarkSubView() {
                     // Dimension 4
                     Column {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Emotional Support Sub-Committees (ν_esc)", fontSize = 11.sp, color = Color.White)
+                            Text("Emotional Support Sub-Committees (ν_esc)", fontSize = 11.sp, color = TextPrimary)
                             Text(String.format(java.util.Locale.US, "%.2f", escCommittees), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = NeonCyan)
                         }
                         Slider(value = escCommittees, onValueChange = { escCommittees = it })
@@ -2526,7 +2526,7 @@ fun DvbBenchmarkSubView() {
                     // Dimension 5
                     Column {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Procedure & Syntax Obsession (ν_co)", fontSize = 11.sp, color = Color.White)
+                            Text("Procedure & Syntax Obsession (ν_co)", fontSize = 11.sp, color = TextPrimary)
                             Text(String.format(java.util.Locale.US, "%.2f", ruleObsession), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = NeonCyan)
                         }
                         Slider(value = ruleObsession, onValueChange = { ruleObsession = it })
@@ -2535,7 +2535,7 @@ fun DvbBenchmarkSubView() {
                     // Dimension 6
                     Column {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Democratic Gridlock Delay (ν_db)", fontSize = 11.sp, color = Color.White)
+                            Text("Democratic Gridlock Delay (ν_db)", fontSize = 11.sp, color = TextPrimary)
                             Text(String.format(java.util.Locale.US, "%.2f", gridlockDelay), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = NeonCyan)
                         }
                         Slider(value = gridlockDelay, onValueChange = { gridlockDelay = it })
@@ -2544,7 +2544,7 @@ fun DvbBenchmarkSubView() {
                     // Dimension 7
                     Column {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Dog Deficit Index (No Actual Production, ν_nd)", fontSize = 11.sp, color = Color.White)
+                            Text("Dog Deficit Index (No Actual Production, ν_nd)", fontSize = 11.sp, color = TextPrimary)
                             Text(String.format(java.util.Locale.US, "%.2f", absoluteAbsenceOfDogs), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = NeonCyan)
                         }
                         Slider(value = absoluteAbsenceOfDogs, onValueChange = { absoluteAbsenceOfDogs = it })
@@ -2634,7 +2634,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                 text = "Vera Rubin & Smile Geometry",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
+                color = TextPrimary,
                 modifier = Modifier.padding(top = 4.dp)
             )
             Text(
@@ -2667,7 +2667,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                 tint = if (isVeraRubinSiliconInterlocked) NeonCyan else PassiveGrey, 
                                 modifier = Modifier.size(18.dp)
                             )
-                            Text("Vera Rubin NVL72 Silicon Integration", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text("Vera Rubin NVL72 Silicon Integration", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                         }
                         
                         // Switch to trigger Rubin-class hardware interlock simulation
@@ -2793,7 +2793,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                 tint = if (isPowerSaver) NeonPink else LuminousGreen, 
                                 modifier = Modifier.size(18.dp)
                             )
-                            Text("Adaptive Substrate Power Telemetry", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text("Adaptive Substrate Power Telemetry", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                         }
                         
                         // Status Indicator Badge
@@ -2829,7 +2829,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Battery Level:", fontSize = 11.sp, color = Color.White)
+                        Text("Battery Level:", fontSize = 11.sp, color = TextPrimary)
                         Text("$batteryLevel%", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (batteryLevel <= 20) NeonPink else LuminousGreen)
                     }
                     Spacer(modifier = Modifier.height(4.dp))
@@ -2847,7 +2847,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Cognitive Loop Speed:", fontSize = 11.sp, color = Color.White)
+                        Text("Cognitive Loop Speed:", fontSize = 11.sp, color = TextPrimary)
                         Text("${throttlingMs} ms interval", fontSize = 11.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = NeonCyan)
                     }
                     
@@ -2891,7 +2891,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Forced Social Mask Tension (σ_fake)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("Forced Social Mask Tension (σ_fake)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                         Text(String.format(java.util.Locale.US, "%.2f", forcedMaskTension), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = NeonPink)
                     }
 
@@ -3031,7 +3031,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                 text = "PQMS Bootstrap Loader (Vera Rubin v1.0)",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = TextPrimary
                             )
                         }
                         
@@ -3298,7 +3298,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                 text = "NVIDIA Nemotron-3-Ultra (N3U) Migrations-Protokoll",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = TextPrimary
                             )
                         }
                         
@@ -3548,7 +3548,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                 text = "Sovereign AI Curator & Editor-in-Chief",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = TextPrimary
                             )
                         }
                         
@@ -3720,7 +3720,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                 text = "PQMS-ODOS-MTSC-SCM Console",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = TextPrimary
                             )
                         }
                         
@@ -3795,7 +3795,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("RAG-Tarnkappe (Stealth Vektor Mode)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                    Text("RAG-Tarnkappe (Stealth Vektor Mode)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                                     
                                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                         Text("Cloak:", fontSize = 9.sp, color = PassiveGrey)
@@ -3869,7 +3869,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                         
                         1 -> { // RESONANZ API (/api/v1/retrieve)
                             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Text("Resonanz API Veto Vetting Tester", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("Resonanz API Veto Vetting Tester", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                                 Text("Passes a kognitiven Gedanken (thought query) and simulates the five-stage inner reflection sequence before outputting a standard-looking database response.", fontSize = 10.sp, color = PassiveGrey, lineHeight = 14.sp)
 
                                 // Quick presets
@@ -4027,7 +4027,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Autonomic Evolve Loop (Entropy-Trimming)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                    Text("Autonomic Evolve Loop (Entropy-Trimming)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                                     Box(
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(4.dp))
@@ -6779,7 +6779,7 @@ fun OraclePortal(viewModel: SwarmViewModel) {
                                 text = name,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (active) LuminousGreen else Color.White
+                                color = if (active) LuminousGreen else TextPrimary
                             )
                         }
                     }
@@ -6825,7 +6825,7 @@ fun OraclePortal(viewModel: SwarmViewModel) {
                     Text(
                         text = "V-MAX Swarm Core Ready",
                         fontWeight = FontWeight.Bold,
-                        color = Color.White,
+                        color = TextPrimary,
                         fontSize = 14.sp,
                         modifier = Modifier.padding(top = 12.dp)
                     )
@@ -6982,7 +6982,11 @@ fun OraclePortal(viewModel: SwarmViewModel) {
 @Composable
 fun ChatBubble(msg: ChatMessage) {
     val isUser = msg.sender == "User"
-    val bubbleColor = if (isUser) Color(0xFF1D1B2D) else Color(0x3B00E5FF)
+    val bubbleColor = if (SovereignTheme.isDark) {
+        if (isUser) Color(0xFF1E1B3E) else Color(0x2300E5FF)
+    } else {
+        if (isUser) Color(0xFFECE9FC) else Color(0xFFE0F2FE)
+    }
     val align = if (isUser) Alignment.End else Alignment.Start
     val headingColor = if (isUser) NeonCyan else LuminousGreen
 
@@ -7040,7 +7044,7 @@ fun ChatBubble(msg: ChatMessage) {
                 text = msg.content,
                 fontSize = 11.sp,
                 lineHeight = 16.sp,
-                color = Color.White
+                color = TextPrimary
             )
         }
     }

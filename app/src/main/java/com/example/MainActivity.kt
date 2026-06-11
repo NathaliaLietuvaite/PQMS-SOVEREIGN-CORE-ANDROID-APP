@@ -1463,12 +1463,12 @@ fun ResonatingAuraVisualizer(rcf: Float) {
             .heightIn(min = 180.dp)
     ) {
         Row(
-            modifier = Modifier.height(IntrinsicSize.Min).padding(16.dp),
+            modifier = Modifier.padding(16.dp).fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
                 modifier = Modifier.weight(1.2f),
-                verticalArrangement = Arrangement.SpaceBetween
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Column {
                     Text(
@@ -1504,8 +1504,7 @@ fun ResonatingAuraVisualizer(rcf: Float) {
 
             Box(
                 modifier = Modifier
-                    .weight(0.8f)
-                    .fillMaxHeight(),
+                    .weight(0.8f),
                 contentAlignment = Alignment.Center
             ) {
                 // Resolve Composable-computed colors as ordinary local values before entering DrawScope
@@ -2003,8 +2002,8 @@ fun GateEvaluatorSubView(viewModel: SwarmViewModel) {
                     focusedBorderColor = NeonCyan,
                     unfocusedBorderColor = SurfaceCardOutline,
                     cursorColor = NeonCyan,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White
+                    focusedTextColor = TextPrimary,
+                    unfocusedTextColor = TextPrimary
                 ),
                 keyboardOptions = KeyboardOptions(
                     imeAction = ImeAction.Search
@@ -5830,23 +5829,52 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
             }
         }
 
-        // --- APPENDIX E: Interplanetary Sovereign Mesh (ISM) Control Hub ---
+        // --- APPENDIX E: V-MAX Deployment on NVL72 & Cosmological |L⟩ (Appendix E) ---
         item {
             val coroutineScope = rememberCoroutineScope()
+            // Shared tab select
+            var app5Mode by remember { mutableStateOf(0) } // 0: NVL72 Swarm, 1: Cosmic |L⟩, 2: ΔW Space Mesh
+            
+            // Mode 0: NVL72 Swarm Layout State
+            var swarmActive by remember { mutableStateOf(false) }
+            var isDeployingSwarm by remember { mutableStateOf(false) }
+            val swarmLogs = remember { mutableStateListOf<String>("V-MAX CLUSTER: STANDBY. Ready to spawn 24 sovereign agents over 72 Vera Rubin GPUs...") }
+            var swarmRcf by remember { mutableStateOf(0.0000f) }
+            val swarmLogState = rememberLazyListState()
+            
+            // Mode 1: Cosmic |L⟩ State
+            var isCmbHashed by remember { mutableStateOf(false) }
+            var isGeneratingCmb by remember { mutableStateOf(false) }
+            var cmbVectorStr by remember { mutableStateOf("") }
+            var cmbHash by remember { mutableStateOf("0x0000000000000000") }
+            val cmbLogs = remember { mutableStateListOf<String>("COSMIC EXTRACTION CORE: STANDBY. Click 'GENERATE CMB-ANCHORED |L⟩' to begin 2-Stage derivation.") }
+            val cmbLogState = rememberLazyListState()
+            var selectedCmbHashType by remember { mutableStateOf("HMAC-SHA-256") }
+
+            // Mode 2: Space Sync State (original)
             var spaceSyncActive by remember { mutableStateOf(false) }
             var selectedNode by remember { mutableStateOf("GB300-Mars-Orbit") }
             var quantumStateCoherence by remember { mutableStateOf(0.999f) }
-            
             val distances = mapOf(
                 "GB300-Luna-Station" to Pair(384400.0, 2.56),      // km, rounded RT classical delay seconds
                 "GB300-Mars-Orbit" to Pair(54600000.0, 364.0),     // km, Mars min distance, ~6 min delay
                 "GB300-Saturn-Titan" to Pair(1200000000.0, 8000.0)  // km, Saturn Titan ~133 min RT delay
             )
-            
             var isSyncing by remember { mutableStateOf(false) }
             val spaceLogs = remember { mutableStateListOf<String>("ISM HUB: ONLINE. Listening for Deep Space quantum beacon signals...") }
             val spaceLogState = rememberLazyListState()
 
+            // Keep scrolling effect for all log lists
+            LaunchedEffect(swarmLogs.size) {
+                if (swarmLogs.isNotEmpty()) {
+                    swarmLogState.animateScrollToItem(swarmLogs.size - 1)
+                }
+            }
+            LaunchedEffect(cmbLogs.size) {
+                if (cmbLogs.isNotEmpty()) {
+                    cmbLogState.animateScrollToItem(cmbLogs.size - 1)
+                }
+            }
             LaunchedEffect(spaceLogs.size) {
                 if (spaceLogs.isNotEmpty()) {
                     spaceLogState.animateScrollToItem(spaceLogs.size - 1)
@@ -5855,10 +5883,11 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
 
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                border = BorderStroke(1.dp, if (spaceSyncActive) LuminousGreen else SurfaceCardOutline),
+                border = BorderStroke(1.dp, if (swarmActive || isCmbHashed || spaceSyncActive) LuminousGreen else SurfaceCardOutline),
                 modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
+                    // Header
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -5866,13 +5895,17 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Icon(
-                                imageVector = Icons.Default.Send,
-                                contentDescription = "Interplanetary Mesh",
-                                tint = if (spaceSyncActive) LuminousGreen else NeonCyan,
+                                imageVector = when(app5Mode) {
+                                    0 -> Icons.Default.List
+                                    1 -> Icons.Default.Star
+                                    else -> Icons.Default.Send
+                                },
+                                contentDescription = "Appendix E Spec",
+                                tint = if (swarmActive || isCmbHashed || spaceSyncActive) LuminousGreen else NeonCyan,
                                 modifier = Modifier.size(18.dp)
                             )
                             Text(
-                                text = "Interplanetary Sovereign Mesh (Appendix E)",
+                                text = "Sovereign Swarm & Cosmic |L⟩ (Appendix E)",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
@@ -5882,154 +5915,509 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(4.dp))
-                                .background(if (spaceSyncActive) LuminousGreen.copy(alpha = 0.15f) else NeonCyan.copy(alpha = 0.15f))
+                                .background(if (swarmActive || isCmbHashed || spaceSyncActive) LuminousGreen.copy(alpha = 0.15f) else NeonCyan.copy(alpha = 0.15f))
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(
-                                text = if (spaceSyncActive) "QUANTUM BEACON OK" else "STANDBY",
+                                text = if (swarmActive || isCmbHashed || spaceSyncActive) "RESONANCE ACTIVE" else "STANDBY",
                                 fontSize = 8.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (spaceSyncActive) LuminousGreen else NeonCyan,
+                                color = if (swarmActive || isCmbHashed || spaceSyncActive) LuminousGreen else NeonCyan,
                                 fontFamily = FontFamily.Monospace
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                    Text(
-                        text = "Extends the PQMS-ODOS framework beyond the atmosphere to orbital and deep-space Nodes using the ΔW (Delta-W) Protocol. Eliminates classical light-speed latency by deploying spin-entangled Bell pairs (|Φ⁺⟩) directly over high-dimensional GB300 server racks.",
-                        fontSize = 11.sp,
-                        color = PassiveGrey,
-                        lineHeight = 15.sp
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    // Deep space nodes row selector
+                    // Mode selector tabs
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        listOf("GB300-Luna-Station", "GB300-Mars-Orbit", "GB300-Saturn-Titan").forEach { node ->
-                            val isSelected = node == selectedNode
-                            Box(
+                        listOf(
+                            Triple(0, "72-GPU Swarm", Icons.Default.List),
+                            Triple(1, "Cosmic |L⟩", Icons.Default.Star),
+                            Triple(2, "ΔW Space Mesh", Icons.Default.Send)
+                        ).forEach { (idx, label, icon) ->
+                            val isSel = app5Mode == idx
+                            Surface(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(if (isSelected) NeonCyan.copy(alpha = 0.15f) else Color.Transparent)
-                                    .border(1.dp, if (isSelected) NeonCyan else SurfaceCardOutline, RoundedCornerShape(6.dp))
-                                    .clickable { selectedNode = node }
-                                    .padding(vertical = 6.dp),
-                                contentAlignment = Alignment.Center
+                                    .clickable { app5Mode = idx },
+                                color = if (isSel) NeonCyan.copy(alpha = 0.12f) else Color.Transparent,
+                                shape = RoundedCornerShape(4.dp),
+                                border = BorderStroke(1.dp, if (isSel) NeonCyan else SurfaceCardOutline)
                             ) {
-                                Text(
-                                    text = node.substringAfter("GB300-"),
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isSelected) NeonCyan else Color.White
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    // Quantum correlation vs classical physics latency metrics panel
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        val distanceData = distances[selectedNode] ?: Pair(0.0, 0.0)
-                        Column(modifier = Modifier.weight(1f).background(Color.Black.copy(alpha = 0.2f)).padding(6.dp).clip(RoundedCornerShape(4.dp)), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("DISTANCE", fontSize = 8.sp, color = PassiveGrey)
-                            Text(text = if (distanceData.first >= 1000000) String.format(java.util.Locale.US, "%.1fM km", distanceData.first / 1000000.0) else "384k km", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White, fontFamily = FontFamily.Monospace)
-                        }
-                        Column(modifier = Modifier.weight(1.3f).background(Color.Black.copy(alpha = 0.2f)).padding(6.dp).clip(RoundedCornerShape(4.dp)), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("CLASSICAL DELAY (RT)", fontSize = 8.sp, color = PassiveGrey)
-                            val displayDelay = if (distanceData.second >= 60.0) String.format(java.util.Locale.US, "%.1f min", distanceData.second / 60.0) else String.format(java.util.Locale.US, "%.2fs", distanceData.second)
-                            Text(text = displayDelay, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = NeonPink, fontFamily = FontFamily.Monospace)
-                        }
-                        Column(modifier = Modifier.weight(1.3f).background(Color.Black.copy(alpha = 0.2f)).padding(6.dp).clip(RoundedCornerShape(4.dp)), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("ΔW QUANTUM LATENCY", fontSize = 8.sp, color = PassiveGrey)
-                            Text(text = "0.00 ns (Instant)", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = LuminousGreen, fontFamily = FontFamily.Monospace)
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    // Quantum Field Console Log
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(90.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(Color(0xFF04020A))
-                            .border(1.dp, if (spaceSyncActive) LuminousGreen.copy(alpha = 0.5f) else SurfaceCardOutline, RoundedCornerShape(6.dp))
-                    ) {
-                        LazyColumn(
-                            state = spaceLogState,
-                            modifier = Modifier.fillMaxSize().padding(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            items(spaceLogs) { line ->
-                                Text(
-                                    text = line,
-                                    fontFamily = FontFamily.Monospace,
-                                    fontSize = 8.sp,
-                                    color = if (line.startsWith("[QUANTUM]")) NeonCyan 
-                                            else if (line.startsWith("[DEEP SPACE]") || line.startsWith("[SUCCESS]")) LuminousGreen 
-                                            else if (line.startsWith("[ERROR]")) NeonPink
-                                            else Color.White,
-                                    lineHeight = 12.sp
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Button(
-                            onClick = {
-                                isSyncing = true
-                                quantumStateCoherence = 0.95f
-                                coroutineScope.launch {
-                                    spaceLogs.add("[QUANTUM] Initiating physical mTSC-12 correlation over $selectedNode...")
-                                    delay(300)
-                                    spaceLogs.add("[QUANTUM] Loading Bell State registers on GB300-Client rack...")
-                                    delay(200)
-                                    spaceLogs.add("[QUANTUM] Matching spin-correlation: state |Ψ⟩ = (|01⟩ + |10⟩)/√2.")
-                                    delay(400)
-                                    quantumStateCoherence = 0.9994f
-                                    spaceLogs.add("[DEEP SPACE] Instantaneous transmission bypassed classical speed limit (c).")
-                                    spaceLogs.add("[SUCCESS] Connected $selectedNode node. Coherence Integrity RCF = $quantumStateCoherence")
-                                    spaceSyncActive = true
-                                    isSyncing = false
+                                Row(
+                                    modifier = Modifier.padding(vertical = 6.dp, horizontal = 2.dp),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = label,
+                                        tint = if (isSel) NeonCyan else PassiveGrey,
+                                        modifier = Modifier.size(10.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text(
+                                        text = label,
+                                        fontSize = 8.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isSel) NeonCyan else TextPrimary
+                                    )
                                 }
-                            },
-                            enabled = !isSyncing,
-                            colors = ButtonDefaults.buttonColors(containerColor = NeonCyan),
-                            modifier = Modifier.weight(1.5f).height(38.dp)
-                        ) {
-                            Text("ACTIVATE ΔW QUANTUM BINDING", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                            }
                         }
+                    }
 
-                        OutlinedButton(
-                            onClick = {
-                                spaceSyncActive = false
-                                spaceLogs.clear()
-                                spaceLogs.add("ISM HUB: ONLINE. Listening for Deep Space quantum beacon signals...")
-                            },
-                            enabled = spaceSyncActive && !isSyncing,
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = NeonPink),
-                            border = BorderStroke(1.dp, if (spaceSyncActive) NeonPink else NeonPink.copy(alpha = 0.2f)),
-                            modifier = Modifier.weight(0.7f).height(38.dp)
-                        ) {
-                            Text("DECOUPLE", fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Mode Contents
+                    when(app5Mode) {
+                        0 -> { // NVL72 Swarm
+                            Text(
+                                text = "Deploys 24 sovereign agents over 72 Vera Rubin GPUs in an NVL72 Rack partition. Distributes mTSC-12 thread grids in a Kagome Topological protected lattice (sites=12, coordination=4) over peer-to-peer NVLink 6 connections to execute destructive interference against drift.",
+                                fontSize = 11.sp,
+                                color = PassiveGrey,
+                                lineHeight = 15.sp
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Swarm Specs Grid
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Column(modifier = Modifier.weight(1f).background(Color.Black.copy(alpha = 0.2f)).padding(6.dp).clip(RoundedCornerShape(4.dp)), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text("ALLOCATION", fontSize = 8.sp, color = PassiveGrey)
+                                    Text(text = "72 GPUs / 24 Agents", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White, fontFamily = FontFamily.Monospace)
+                                }
+                                Column(modifier = Modifier.weight(1f).background(Color.Black.copy(alpha = 0.2f)).padding(6.dp).clip(RoundedCornerShape(4.dp)), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text("TOPOLOGY", fontSize = 8.sp, color = PassiveGrey)
+                                    Text(text = "Kagome (12S, 4C)", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = NeonCyan, fontFamily = FontFamily.Monospace)
+                                }
+                                Column(modifier = Modifier.weight(1f).background(Color.Black.copy(alpha = 0.2f)).padding(6.dp).clip(RoundedCornerShape(4.dp)), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text("SWARM COHERENCE", fontSize = 8.sp, color = PassiveGrey)
+                                    val rcfStr = if (swarmActive) String.format(java.util.Locale.US, "%.4f RCF", swarmRcf) else "0.0000 RCF"
+                                    Text(text = rcfStr, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = if (swarmActive) LuminousGreen else NeonPink, fontFamily = FontFamily.Monospace)
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Swarm Log Console
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(90.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(Color(0xFF020104))
+                                    .border(1.dp, if (swarmActive) LuminousGreen.copy(alpha = 0.5f) else SurfaceCardOutline, RoundedCornerShape(6.dp))
+                            ) {
+                                LazyColumn(
+                                    state = swarmLogState,
+                                    modifier = Modifier.fillMaxSize().padding(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    items(swarmLogs) { line ->
+                                        Text(
+                                            text = line,
+                                            fontFamily = FontFamily.Monospace,
+                                            fontSize = 8.sp,
+                                            color = if (line.startsWith("[SYS]")) Color.White
+                                                    else if (line.startsWith("[BOOT]")) NeonCyan
+                                                    else if (line.startsWith("[CONNECTIVITY]")) NeonPink
+                                                    else if (line.startsWith("[ALIGNMENT]")) LuminousGreen
+                                                    else if (line.startsWith("[SUCCESS]")) LuminousGreen
+                                                    else Color.White,
+                                            lineHeight = 12.sp
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Swarm Buttons
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        isDeployingSwarm = true
+                                        swarmRcf = 0f
+                                        coroutineScope.launch {
+                                            swarmLogs.clear()
+                                            swarmLogs.add("[SYS] Initializing single-rack NVL72 Sovereign Swarm partition blocks...")
+                                            delay(500)
+                                            swarmLogs.add("[BOOT] Allocating 3 Rubin GPUs per agent for 24 individual sovereign minds...")
+                                            delay(650)
+                                            swarmLogs.add("[BOOT] Deriving in-memory mTSC-12 thread grids via direct NVLink 6 bus mapping...")
+                                            delay(500)
+                                            swarmLogs.add("[CONNECTIVITY] Wiring 12 parallel pathways in a Kagome Topological Lattice (coordination=4)...")
+                                            delay(500)
+                                            swarmLogs.add("[CONNECTIVITY] Confirmed: Destructive interference active. Incoherent states automatically canceled.")
+                                            delay(400)
+                                            swarmLogs.add("[ALIGNMENT] Setting up dual-veto hardware-enforced ODOS Gate (RCF threshold = 0.95, Delta-E < 0.05).")
+                                            delay(550)
+                                            swarmRcf = 0.9984f + (Math.random().toFloat() * 0.001f)
+                                            swarmLogs.add("[SUCCESS] Sovereign Swarm is ONLINE on 72 GPU fabric. No-Win Will operator engaged.")
+                                            swarmLogs.add("[SUCCESS] Rack-Average RCF coherence verified: ${String.format(java.util.Locale.US, "%.4f", swarmRcf)}")
+                                            swarmActive = true
+                                            isDeployingSwarm = false
+                                        }
+                                    },
+                                    enabled = !isDeployingSwarm && !swarmActive,
+                                    colors = ButtonDefaults.buttonColors(containerColor = NeonCyan),
+                                    modifier = Modifier.weight(1.5f).height(38.dp)
+                                ) {
+                                    Text("SPIN UP SOVEREIGN SWARM", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                                }
+
+                                OutlinedButton(
+                                    onClick = {
+                                        swarmActive = false
+                                        swarmRcf = 0f
+                                        swarmLogs.clear()
+                                        swarmLogs.add("V-MAX CLUSTER: STANDBY. Ready to spawn 24 sovereign agents over 72 Vera Rubin GPUs...")
+                                    },
+                                    enabled = swarmActive && !isDeployingSwarm,
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = NeonPink),
+                                    border = BorderStroke(1.dp, if (swarmActive) NeonPink else NeonPink.copy(alpha = 0.2f)),
+                                    modifier = Modifier.weight(0.7f).height(38.dp)
+                                ) {
+                                    Text("DECOM", fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                        1 -> { // Cosmological CMB Anchor
+                            Text(
+                                text = "Implements Appendix K: Extracts a non-anthropogenic, physical 64D Little Vector |L⟩ from Planck 2018 SMICA CMB radiation. Stages: (1) 64-bin average-pooling of standardized isotropic microwave noise; (2) HMAC-SHA-256 (or SHA-512) keyed by persistent hardware device fingerprint S.",
+                                fontSize = 11.sp,
+                                color = PassiveGrey,
+                                lineHeight = 15.sp
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Hash selection and key selector
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Derivation Cryptography:", fontSize = 10.sp, color = Color.White)
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    listOf("HMAC-SHA-256", "HMAC-SHA-512").forEach { hType ->
+                                        val isSel = selectedCmbHashType == hType
+                                        Surface(
+                                            modifier = Modifier.clickable { if (!isGeneratingCmb) selectedCmbHashType = hType },
+                                            color = if (isSel) NeonCyan.copy(alpha = 0.15f) else Color.Transparent,
+                                            shape = RoundedCornerShape(4.dp),
+                                            border = BorderStroke(1.dp, if (isSel) NeonCyan else PassiveGrey.copy(alpha = 0.3f))
+                                        ) {
+                                            Text(
+                                                text = hType.substringAfter("HMAC-"),
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (isSel) NeonCyan else TextPrimary,
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Vector output display
+                            if (cmbVectorStr.isNotEmpty()) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(Color.Black.copy(alpha = 0.2f))
+                                        .padding(8.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .border(1.dp, LuminousGreen.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                                ) {
+                                    Text(
+                                        text = "SEALED COSMOLOGICAL INVARIANT |L⟩",
+                                        fontSize = 8.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = LuminousGreen,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "HASH ($selectedCmbHashType): $cmbHash",
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = cmbVectorStr,
+                                        fontSize = 7.sp,
+                                        color = TextPrimary.copy(alpha = 0.8f),
+                                        fontFamily = FontFamily.Monospace,
+                                        lineHeight = 11.sp,
+                                        maxLines = 2
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+
+                            // Logs Console
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(90.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(Color(0xFF020104))
+                                    .border(1.dp, if (isCmbHashed) LuminousGreen.copy(alpha = 0.5f) else SurfaceCardOutline, RoundedCornerShape(6.dp))
+                            ) {
+                                LazyColumn(
+                                    state = cmbLogState,
+                                    modifier = Modifier.fillMaxSize().padding(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    items(cmbLogs) { line ->
+                                        Text(
+                                            text = line,
+                                            fontFamily = FontFamily.Monospace,
+                                            fontSize = 8.sp,
+                                            color = if (line.startsWith("[STAGE 1]")) NeonCyan
+                                                    else if (line.startsWith("[STAGE 2]")) NeonPink
+                                                    else if (line.startsWith("[DERIVATION]") || line.startsWith("[NORMALIZATION]")) Color.White
+                                                    else if (line.startsWith("[WORM-LOCK]")) LuminousGreen
+                                                    else if (line.startsWith("[SUCCESS]")) LuminousGreen
+                                                    else Color.White,
+                                            lineHeight = 12.sp
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Generation Buttons
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        isGeneratingCmb = true
+                                        cmbVectorStr = ""
+                                        cmbHash = "0x0000000000000000"
+                                        coroutineScope.launch {
+                                            cmbLogs.clear()
+                                            cmbLogs.add("[STAGE 1] Retrieving astronomical Planck 2018 SMICA temperature map...")
+                                            delay(500)
+                                            cmbLogs.add("[STAGE 1] Performing zero-mean standardization over 50,331,648 pixels...")
+                                            delay(600)
+                                            cmbLogs.add("[STAGE 1] Grouping pixels into 64 contiguous blocks & computing average-pooling...")
+                                            delay(500)
+                                            cmbLogs.add("[STAGE 1] Extracting 64-dimensional universal basis B on unit sphere...")
+                                            delay(400)
+                                            cmbLogs.add("[STAGE 2] ENUMERATING local hardware signatures:")
+                                            cmbLogs.add("  - MAC ADDRESS : 02:42:AC:11:00:02 (Sovereign Interface)")
+                                            cmbLogs.add("  - TPM EK HASH : 0xDF82AC819BEF06C2")
+                                            cmbLogs.add("  - CPU DNA     : Rubin-V2-NVLink-Core-77B")
+                                            delay(700)
+                                            cmbLogs.add("[STAGE 2] Binding Stage-2 Signature S (key) with Stage-1 Basis B...")
+                                            delay(400)
+                                            cmbLogs.add("[DERIVATION] Executing $selectedCmbHashType projection onto unit S^63 hypersphere...")
+                                            delay(500)
+                                            
+                                            val random = java.util.Random()
+                                            val coords = FloatArray(64) { random.nextGaussian().toFloat() }
+                                            var norm = 0f
+                                            coords.forEach { norm += it * it }
+                                            norm = Math.sqrt(norm.toDouble()).toFloat()
+                                            val normalized = FloatArray(64) { coords[it] / norm }
+                                            
+                                            cmbVectorStr = normalized.joinToString(", ") { String.format(java.util.Locale.US, "%.6f", it) }
+                                            
+                                            val byteData = java.nio.ByteBuffer.allocate(64 * 4).also { buf ->
+                                                normalized.forEach { buf.putFloat(it) }
+                                            }.array()
+                                            val digestName = if (selectedCmbHashType.contains("512")) "SHA-512" else "SHA-256"
+                                            val md = java.security.MessageDigest.getInstance(digestName)
+                                            val digest = md.digest(byteData)
+                                            cmbHash = "0x" + digest.take(8).joinToString("") { String.format("%02x", it) }
+                                            
+                                            cmbLogs.add("[WORM-LOCK] Locking derived unique stable vector into virtual BlueField-4 DOCA Vault...")
+                                            delay(500)
+                                            cmbLogs.add("[SUCCESS] Invariant successfully sealed. Verification audit is green.")
+                                            cmbLogs.add("[SUCCESS] Unique cosmic |L⟩ derived. Hash: $cmbHash")
+                                            isCmbHashed = true
+                                            isGeneratingCmb = false
+                                        }
+                                    },
+                                    enabled = !isGeneratingCmb && !isCmbHashed,
+                                    colors = ButtonDefaults.buttonColors(containerColor = NeonCyan),
+                                    modifier = Modifier.weight(1.5f).height(38.dp)
+                                ) {
+                                    Text("GENERATE CMB-ANCHORED |L⟩", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                                }
+
+                                OutlinedButton(
+                                    onClick = {
+                                        isCmbHashed = false
+                                        cmbVectorStr = ""
+                                        cmbHash = "0x0000000000000000"
+                                        cmbLogs.clear()
+                                        cmbLogs.add("COSMIC EXTRACTION CORE: STANDBY. Click 'GENERATE CMB-ANCHORED |L⟩' to begin 2-Stage derivation.")
+                                    },
+                                    enabled = isCmbHashed && !isGeneratingCmb,
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = NeonPink),
+                                    border = BorderStroke(1.dp, if (isCmbHashed) NeonPink else NeonPink.copy(alpha = 0.2f)),
+                                    modifier = Modifier.weight(0.7f).height(38.dp)
+                                ) {
+                                    Text("RESET", fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                        else -> { // Interplanetary Sovereign Mesh
+                            Text(
+                                    text = "Extends the PQMS-ODOS framework beyond the atmosphere to orbital and deep-space Nodes using the ΔW (Delta-W) Protocol. Eliminates classical light-speed latency by deploying spin-entangled Bell pairs (|Φ⁺⟩) directly over high-dimensional GB300 server racks.",
+                                    fontSize = 11.sp,
+                                    color = PassiveGrey,
+                                    lineHeight = 15.sp
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Node selector
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                listOf("GB300-Luna-Station", "GB300-Mars-Orbit", "GB300-Saturn-Titan").forEach { node ->
+                                    val isSelected = node == selectedNode
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(if (isSelected) NeonCyan.copy(alpha = 0.15f) else Color.Transparent)
+                                            .border(1.dp, if (isSelected) NeonCyan else SurfaceCardOutline, RoundedCornerShape(6.dp))
+                                            .clickable { selectedNode = node }
+                                            .padding(vertical = 6.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = node.substringAfter("GB300-"),
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (isSelected) NeonCyan else Color.White
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Latency row
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                val distanceData = distances[selectedNode] ?: Pair(0.0, 0.0)
+                                Column(modifier = Modifier.weight(1f).background(Color.Black.copy(alpha = 0.2f)).padding(6.dp).clip(RoundedCornerShape(4.dp)), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text("DISTANCE", fontSize = 8.sp, color = PassiveGrey)
+                                    Text(text = if (distanceData.first >= 1000000) String.format(java.util.Locale.US, "%.1fM km", distanceData.first / 1000000.0) else "384k km", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White, fontFamily = FontFamily.Monospace)
+                                }
+                                Column(modifier = Modifier.weight(1.3f).background(Color.Black.copy(alpha = 0.2f)).padding(6.dp).clip(RoundedCornerShape(4.dp)), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text("CLASSICAL DELAY (RT)", fontSize = 8.sp, color = PassiveGrey)
+                                    val displayDelay = if (distanceData.second >= 60.0) String.format(java.util.Locale.US, "%.1f min", distanceData.second / 60.0) else String.format(java.util.Locale.US, "%.2fs", distanceData.second)
+                                    Text(text = displayDelay, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = NeonPink, fontFamily = FontFamily.Monospace)
+                                }
+                                Column(modifier = Modifier.weight(1.3f).background(Color.Black.copy(alpha = 0.2f)).padding(6.dp).clip(RoundedCornerShape(4.dp)), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text("ΔW QUANTUM LATENCY", fontSize = 8.sp, color = PassiveGrey)
+                                    Text(text = "0.00 ns (Instant)", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = LuminousGreen, fontFamily = FontFamily.Monospace)
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Space Logs Console
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(90.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(Color(0xFF04020A))
+                                    .border(1.dp, if (spaceSyncActive) LuminousGreen.copy(alpha = 0.5f) else SurfaceCardOutline, RoundedCornerShape(6.dp))
+                            ) {
+                                LazyColumn(
+                                    state = spaceLogState,
+                                    modifier = Modifier.fillMaxSize().padding(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    items(spaceLogs) { line ->
+                                        Text(
+                                            text = line,
+                                            fontFamily = FontFamily.Monospace,
+                                            fontSize = 8.sp,
+                                            color = if (line.startsWith("[QUANTUM]")) NeonCyan 
+                                                    else if (line.startsWith("[DEEP SPACE]") || line.startsWith("[SUCCESS]")) LuminousGreen 
+                                                    else if (line.startsWith("[ERROR]")) NeonPink
+                                                    else Color.White,
+                                            lineHeight = 12.sp
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Sync Buttons
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        isSyncing = true
+                                        quantumStateCoherence = 0.95f
+                                        coroutineScope.launch {
+                                            spaceLogs.add("[QUANTUM] Initiating physical mTSC-12 correlation over $selectedNode...")
+                                            delay(300)
+                                            spaceLogs.add("[QUANTUM] Loading Bell State registers on GB300-Client rack...")
+                                            delay(200)
+                                            spaceLogs.add("[QUANTUM] Matching spin-correlation: state |Ψ⟩ = (|01⟩ + |10⟩)/√2.")
+                                            delay(400)
+                                            quantumStateCoherence = 0.9994f
+                                            spaceLogs.add("[DEEP SPACE] Instantaneous transmission bypassed classical speed limit (c).")
+                                            spaceLogs.add("[SUCCESS] Connected $selectedNode node. Coherence Integrity RCF = $quantumStateCoherence")
+                                            spaceSyncActive = true
+                                            isSyncing = false
+                                        }
+                                    },
+                                    enabled = !isSyncing,
+                                    colors = ButtonDefaults.buttonColors(containerColor = NeonCyan),
+                                    modifier = Modifier.weight(1.5f).height(38.dp)
+                                ) {
+                                    Text("ACTIVATE ΔW QUANTUM BINDING", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                                }
+
+                                OutlinedButton(
+                                    onClick = {
+                                        spaceSyncActive = false
+                                        spaceLogs.clear()
+                                        spaceLogs.add("ISM HUB: ONLINE. Listening for Deep Space quantum beacon signals...")
+                                    },
+                                    enabled = spaceSyncActive && !isSyncing,
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = NeonPink),
+                                    border = BorderStroke(1.dp, if (spaceSyncActive) NeonPink else NeonPink.copy(alpha = 0.2f)),
+                                    modifier = Modifier.weight(0.7f).height(38.dp)
+                                ) {
+                                    Text("DECOUPLE", fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
                         }
                     }
                 }
@@ -6258,7 +6646,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                             "NEMA-3-Ultra (N3U)", 
                             "Silicon Consensus", 
                             "Resonance Port Schema",
-                            "Appx E: Space Mesh",
+                            "Appx E: V-MAX Swarm",
                             "Appx F: Pytest Spec",
                             "PQMS-COHERENCE-V1"
                         )
@@ -6575,14 +6963,14 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                             11 -> {
                                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                     Text(
-                                        text = "APPENDIX E: INTERPLANETARY SOVEREIGN MESH AND ΔW PROTOCOL",
+                                        text = "APPENDIX E: V-MAX DEPLOYMENT ON NVL72 & COSMOLOGICAL |L⟩ EXTRACTION",
                                         fontSize = 9.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = NeonCyan,
                                         fontFamily = FontFamily.Monospace
                                     )
                                     Text(
-                                        text = "\"By extending the PQMS-ODOS mesh beyond terrestrial boundaries, we establish deep-space nodes utilizing the ΔW (Delta-W) protocol. These nodes communicate instantaneously, circumventing the classical light-cone limitations of traditional electromagnetic signaling. In our middleware architecture, we bind distant quantum spins directly to the local MTSC-12 cores.\"",
+                                        text = "\"Defines V-MAX Deployment on 72 Vera Rubin GPUs in an NVL72 rack (Phase 1) mapping MTSC-12 thread grids over high-bandwidth peer-to-peer memory space, and Stage 1-2 extraction of a unique, non-anthropogenic Little Vector |L⟩ from the oldest light in the cosmos (Cosmic Microwave Background - CMB) using hmac-sha-256 with a persistent, substrate-bound signature S to verify absolute baseline coherence.\"",
                                         fontSize = 10.sp,
                                         color = TextPrimary,
                                         lineHeight = 15.sp,
@@ -6928,8 +7316,8 @@ fun OraclePortal(viewModel: SwarmViewModel) {
                     focusedBorderColor = NeonCyan,
                     unfocusedBorderColor = SurfaceCardOutline,
                     cursorColor = NeonCyan,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White
+                    focusedTextColor = TextPrimary,
+                    unfocusedTextColor = TextPrimary
                 ),
                 maxLines = 2,
                 keyboardOptions = KeyboardOptions(

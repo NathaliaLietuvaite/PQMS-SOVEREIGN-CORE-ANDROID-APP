@@ -6343,7 +6343,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
             val localGrey = PassiveGrey
 
             // Shared tab select
-            var app5Mode by remember { mutableStateOf(0) } // 0: NVL72 Swarm, 1: Cosmic |L⟩, 2: ΔW Space Mesh, 3: Node Anchor |L_node⟩
+            var app5Mode by remember { mutableStateOf(0) } // 0: NVL72 Swarm, 1: Cosmic |L⟩, 2: ΔW Space Mesh, 3: Node Anchor |L_node⟩, 4: SQL-Heatmap
             
             // Mode 0: NVL72 Swarm Layout State
             var swarmActive by remember { mutableStateOf(false) }
@@ -6384,6 +6384,19 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
             val nodeAnchorLogs = remember { mutableStateListOf<String>("NODE SEEDER: STANDBY. Ready to generate unique hardware-CMB anchored |L_node⟩.") }
             val nodeAnchorLogState = rememberLazyListState()
 
+            // Mode 4: Appendix M SQL-Heatmap State
+            var selectedDataset by remember { mutableStateOf("Kundenstamm.csv (LHS)") }
+            var isSensingEntropy by remember { mutableStateOf(false) }
+            var isHeatmapComputed by remember { mutableStateOf(false) }
+            var artificialDecay by remember { mutableStateOf(false) }
+            var odosGateStatus by remember { mutableStateOf("PENDING") } // PENDING, APPROVED, VETOED
+            var calculatedRcf by remember { mutableStateOf(1.0f) }
+            val columnDeltaTValues = remember { mutableStateMapOf<String, Float>() }
+            var heatmapVectorStr by remember { mutableStateOf("") }
+            var heatmapHash by remember { mutableStateOf("0x0000000000000000") }
+            val entropyLogs = remember { mutableStateListOf<String>("SYSTEM-DEPREZIATIONS-SCANNER: BEREIT. Bitte wählen Sie eine Datenstruktur und starten Sie den Entropie-Scan.") }
+            val entropyLogState = rememberLazyListState()
+
             // Keep scrolling effect for all log lists
             LaunchedEffect(swarmLogs.size) {
                 if (swarmLogs.isNotEmpty()) {
@@ -6405,10 +6418,20 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                     nodeAnchorLogState.animateScrollToItem(nodeAnchorLogs.size - 1)
                 }
             }
+            LaunchedEffect(entropyLogs.size) {
+                if (entropyLogs.isNotEmpty()) {
+                    entropyLogState.animateScrollToItem(entropyLogs.size - 1)
+                }
+            }
 
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                border = BorderStroke(1.dp, if (swarmActive || isCmbHashed || spaceSyncActive || isNodeAnchorBound) LuminousGreen else SurfaceCardOutline),
+                border = BorderStroke(
+                    1.dp,
+                    if (odosGateStatus == "VETOED" && app5Mode == 4) localPink
+                    else if (swarmActive || isCmbHashed || spaceSyncActive || isNodeAnchorBound || (odosGateStatus == "APPROVED" && app5Mode == 4)) LuminousGreen
+                    else SurfaceCardOutline
+                ),
                 modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
@@ -6424,14 +6447,19 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                     0 -> Icons.Default.List
                                     1 -> Icons.Default.Star
                                     2 -> Icons.Default.Send
-                                    else -> Icons.Default.Lock
+                                    3 -> Icons.Default.Lock
+                                    else -> Icons.Default.Warning
                                 },
                                 contentDescription = "Appendix E Spec",
-                                tint = if (swarmActive || isCmbHashed || spaceSyncActive || isNodeAnchorBound) LuminousGreen else NeonCyan,
+                                tint = if (odosGateStatus == "VETOED" && app5Mode == 4) localPink
+                                       else if (swarmActive || isCmbHashed || spaceSyncActive || isNodeAnchorBound || (odosGateStatus == "APPROVED" && app5Mode == 4)) localGreen
+                                       else localCyan,
                                 modifier = Modifier.size(18.dp)
                             )
                             Text(
-                                text = if (app5Mode == 3) "Node Anchor & Invariant L (Appendix L)" else "Sovereign Swarm & Cosmic |L⟩ (Appendix E)",
+                                text = if (app5Mode == 4) "Sensing & SQL-Heatmap (Appendix M)"
+                                       else if (app5Mode == 3) "Node Anchor & Invariant L (Appendix L)"
+                                       else "Sovereign Swarm & Cosmic |L⟩ (Appendix E)",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
@@ -6441,14 +6469,22 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(4.dp))
-                                .background(if (swarmActive || isCmbHashed || spaceSyncActive || isNodeAnchorBound) LuminousGreen.copy(alpha = 0.15f) else NeonCyan.copy(alpha = 0.15f))
+                                .background(
+                                    if (odosGateStatus == "VETOED" && app5Mode == 4) localPink.copy(alpha = 0.15f)
+                                    else if (swarmActive || isCmbHashed || spaceSyncActive || isNodeAnchorBound || (odosGateStatus == "APPROVED" && app5Mode == 4)) localGreen.copy(alpha = 0.15f)
+                                    else localCyan.copy(alpha = 0.15f)
+                                )
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(
-                                text = if (swarmActive || isCmbHashed || spaceSyncActive || isNodeAnchorBound) "RESONANCE ACTIVE" else "STANDBY",
+                                text = if (odosGateStatus == "VETOED" && app5Mode == 4) "ODOS VETO"
+                                       else if (swarmActive || isCmbHashed || spaceSyncActive || isNodeAnchorBound || (odosGateStatus == "APPROVED" && app5Mode == 4)) "RESONANZ AKTIV"
+                                       else "STANDBY",
                                 fontSize = 8.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (swarmActive || isCmbHashed || spaceSyncActive || isNodeAnchorBound) LuminousGreen else NeonCyan,
+                                color = if (odosGateStatus == "VETOED" && app5Mode == 4) localPink
+                                        else if (swarmActive || isCmbHashed || spaceSyncActive || isNodeAnchorBound || (odosGateStatus == "APPROVED" && app5Mode == 4)) localGreen
+                                        else localCyan,
                                 fontFamily = FontFamily.Monospace
                             )
                         }
@@ -6465,7 +6501,8 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                             Triple(0, "Swarm", Icons.Default.List),
                             Triple(1, "Cosmic |L⟩", Icons.Default.Star),
                             Triple(2, "Space Mesh", Icons.Default.Send),
-                            Triple(3, "Node L", Icons.Default.Lock)
+                            Triple(3, "Node L", Icons.Default.Lock),
+                            Triple(4, "SQL Heat", Icons.Default.Warning)
                         ).forEach { (idx, label, icon) ->
                             val isSel = app5Mode == idx
                             Surface(
@@ -6946,7 +6983,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                 }
                             }
                         }
-                        else -> { // Node Anchor (Appendix L)
+                        3 -> { // Node Anchor (Appendix L)
                             Text(
                                     text = "Implementiert Anhang L (Physischer Knotenpunkt-Anker): Verankert jeden dezentralen Knotenpunkt im unveränderlichen kosmischen Hintergrund-Invarianten |L⟩. Berechnet den deterministischen Phasenversatz α via HMAC-SHA-256 über die lokale Hardware-DNA-Signatur S und die Knoten-Standort-ID, um den Knoten auf der S^63-Einheitshypersphäre auszurichten.",
                                     fontSize = 11.sp,
@@ -7146,6 +7183,320 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                     modifier = Modifier.weight(0.7f).height(38.dp)
                                 ) {
                                     Text("FREIGEBEN", fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                        else -> { // SQL-Heatmap (Appendix M)
+                            Text(
+                                text = "Implementiert das SQL-Heatmap-Paradigma aus Anhang M (Typologisches Reibungs-Sensing im Hilbert-Raum). Berechnet das entropic differential Δt einer dezentralen LHS-Datenstruktur, projiziert dieses auf mTSC-12 Agenten-Zustände und filtert das Ergebnis über das ODOS-Gate, um Angriffsvektor-Ausnutzung unmöglich zu machen.",
+                                fontSize = 11.sp,
+                                color = localGrey,
+                                lineHeight = 15.sp
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Text("Quellobjekt / LHS-Infrastruktur-Datenstrom auswählen:", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                listOf("Kundenstamm.csv (LHS)", "Finanztransaktionen.csv", "Infrastruktur_Logbuch.csv").forEach { ds ->
+                                    val isSel = ds == selectedDataset
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1.0f)
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(if (isSel) localCyan.copy(alpha = 0.15f) else Color.Transparent)
+                                            .border(1.dp, if (isSel) localCyan else SurfaceCardOutline, RoundedCornerShape(4.dp))
+                                            .clickable { if (!isSensingEntropy) selectedDataset = ds }
+                                            .padding(vertical = 8.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = ds.replace(".csv (LHS)", "").replace(".csv", ""),
+                                            fontSize = 8.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (isSel) localCyan else TextPrimary,
+                                            maxLines = 1
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(Color.Black.copy(alpha = 0.2f))
+                                    .border(1.dp, if (artificialDecay) localPink.copy(alpha = 0.4f) else SurfaceCardOutline, RoundedCornerShape(4.dp))
+                                    .clickable { if (!isSensingEntropy) artificialDecay = !artificialDecay }
+                                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Warning,
+                                        contentDescription = "Decay",
+                                        tint = if (artificialDecay) localPink else localGrey,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "Strukturellen Daten-Zerfall künstlich induzieren (Erhöht Δt)",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (artificialDecay) localPink else Color.White
+                                    )
+                                }
+                                Switch(
+                                    checked = artificialDecay,
+                                    onCheckedChange = { if (!isSensingEntropy) artificialDecay = it },
+                                    colors = androidx.compose.material3.SwitchDefaults.colors(
+                                        checkedThumbColor = localPink,
+                                        checkedTrackColor = localPink.copy(alpha = 0.3f)
+                                    ),
+                                    modifier = Modifier.scale(0.7f)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            if (isHeatmapComputed) {
+                                Text("TOPOLOGISCHE REIBUNGSMARKIERUNG (HEATMAP):", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Spacer(modifier = Modifier.height(6.dp))
+                                
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(Color.Black.copy(alpha = 0.2f))
+                                        .padding(8.dp)
+                                        .border(1.dp, if (odosGateStatus == "APPROVED") localGreen.copy(alpha = 0.3f) else localPink.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                                ) {
+                                    val cols = when (selectedDataset) {
+                                        "Kundenstamm.csv (LHS)" -> listOf("Kunde_ID", "Vorname", "E_Mail_Sicherung", "Postleitzahl", "Saldo", "Historie_String")
+                                        "Finanztransaktionen.csv" -> listOf("Transaktion_ID", "HashBASIS", "Empfaenger", "Betrag", "Zertifikat")
+                                        else -> listOf("Log_Eintrag_ID", "Zeitstempel_LHS", "Modul_Name", "Nachricht_Volltext", "Stapelspur_LHS")
+                                    }
+                                    
+                                    cols.forEach { col ->
+                                        val dt = columnDeltaTValues[col] ?: 0.1f
+                                        val heatPct = (dt * 100).toInt()
+                                        val color = when {
+                                            dt > 0.75f -> localPink
+                                            dt > 0.45f -> localCyan
+                                            else -> localGreen
+                                        }
+                                        
+                                        Column(modifier = Modifier.padding(vertical = 3.dp)) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(text = "• Spalte: $col", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                                Text(text = "Δt=$heatPct%", fontSize = 9.sp, fontFamily = FontFamily.Monospace, color = color)
+                                            }
+                                            Spacer(modifier = Modifier.height(2.dp))
+                                            val filledBlocks = (dt * 10).toInt().coerceIn(1, 10)
+                                            val barStr = "█".repeat(filledBlocks) + "░".repeat(10 - filledBlocks)
+                                            Text(
+                                                text = "[$barStr]",
+                                                fontFamily = FontFamily.Monospace,
+                                                fontSize = 9.sp,
+                                                color = color
+                                            )
+                                        }
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(10.dp))
+                                
+                                // ODOS GATE STATUS CARD
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(if (odosGateStatus == "APPROVED") localGreen.copy(alpha = 0.08f) else localPink.copy(alpha = 0.08f))
+                                        .padding(8.dp)
+                                        .border(1.dp, if (odosGateStatus == "APPROVED") localGreen.copy(alpha = 0.4f) else localPink.copy(alpha = 0.4f), RoundedCornerShape(4.dp))
+                                ) {
+                                    Text(
+                                        text = if (odosGateStatus == "APPROVED") "ODOS GATE STATE: FREIGABE ERTEILT (ALLOW)" else "ODOS GATE STATE: ETHIK-VETO INGERIERT (BLOCK)",
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (odosGateStatus == "APPROVED") localGreen else localPink,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "Swarm-RCF nach Sensing: ${String.format(java.util.Locale.US, "%.4f", calculatedRcf)} (Grenzwert: >= 0.9500)",
+                                        fontSize = 8.sp,
+                                        color = Color.White,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = if (odosGateStatus == "APPROVED") 
+                                            "KONTROLL-ERGEBNIS: Heatmap-Sensing stellt keine Bedrohung der Systemsouveränität dar. Datenfreigabe sicher."
+                                            else "KRITISCHER VETO-GRUND: Hohe strukturelle Entropie gefährdet systemspezifische Integrität des LHS. Unbefugte Angriffsvektor-Ausnutzung wird durch ODOS-Sicherheitsblockierung unterbunden.",
+                                        fontSize = 8.sp,
+                                        color = localGrey,
+                                        lineHeight = 11.sp
+                                    )
+                                    if (odosGateStatus == "APPROVED" && heatmapHash != "0x0000000000000000") {
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = "EXPORTHASH HOLO-MAP: $heatmapHash",
+                                            fontSize = 8.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = localGreen,
+                                            fontFamily = FontFamily.Monospace
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(10.dp))
+                            }
+
+                            // Logs Console
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(95.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(Color(0xFF020104))
+                                    .border(1.dp, if (odosGateStatus == "APPROVED") localGreen.copy(alpha = 0.5f) else if (odosGateStatus == "VETOED") localPink.copy(alpha = 0.5f) else SurfaceCardOutline, RoundedCornerShape(6.dp))
+                            ) {
+                                LazyColumn(
+                                    state = entropyLogState,
+                                    modifier = Modifier.fillMaxSize().padding(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    items(entropyLogs) { line ->
+                                        Text(
+                                            text = line,
+                                            fontFamily = FontFamily.Monospace,
+                                            fontSize = 8.sp,
+                                            color = if (line.startsWith("[SENSOR]")) localCyan
+                                                    else if (line.startsWith("[STX]")) localPink
+                                                    else if (line.startsWith("[SWARM]")) Color.White
+                                                    else if (line.startsWith("[ODOS-GATE]")) localCyan
+                                                    else if (line.contains("ERFOLG") || line.startsWith("[ALLOW]")) localGreen
+                                                    else if (line.contains("BLOCKIERUNG") || line.startsWith("[VETO]")) localPink
+                                                    else Color.White,
+                                            lineHeight = 12.sp
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        isSensingEntropy = true
+                                        isHeatmapComputed = false
+                                        odosGateStatus = "PENDING"
+                                        coroutineScope.launch {
+                                            entropyLogs.clear()
+                                            entropyLogs.add("[SENSOR] Starte Ingestions-Pipeline für LHS-Datenquelle: $selectedDataset...")
+                                            delay(500)
+                                            entropyLogs.add("[SENSOR] Analysiere Tabellenstruktur, Spaltenkardinalität und Spalten-Leerräume...")
+                                            delay(400)
+                                            
+                                            val cols = when (selectedDataset) {
+                                                "Kundenstamm.csv (LHS)" -> listOf("Kunde_ID", "Vorname", "E_Mail_Sicherung", "Postleitzahl", "Saldo", "Historie_String")
+                                                "Finanztransaktionen.csv" -> listOf("Transaktion_ID", "HashBASIS", "Empfaenger", "Betrag", "Zertifikat")
+                                                else -> listOf("Log_Eintrag_ID", "Zeitstempel_LHS", "Modul_Name", "Nachricht_Volltext", "Stapelspur_LHS")
+                                            }
+                                            
+                                            val rng = java.util.Random(selectedDataset.hashCode().toLong() + if (artificialDecay) 99999 else 0)
+                                            columnDeltaTValues.clear()
+                                            cols.forEach { col ->
+                                                var rawDt = when (selectedDataset) {
+                                                    "Kundenstamm.csv (LHS)" -> {
+                                                        if (col == "E_Mail_Sicherung" || col == "Historie_String") rng.nextFloat() * 0.45f + 0.5f
+                                                        else rng.nextFloat() * 0.25f + 0.1f
+                                                    }
+                                                    "Finanztransaktionen.csv" -> {
+                                                        rng.nextFloat() * 0.15f + 0.05f
+                                                    }
+                                                    else -> {
+                                                        if (col == "Nachricht_Volltext" || col == "Stapelspur_LHS") rng.nextFloat() * 0.4f + 0.58f
+                                                        else rng.nextFloat() * 0.3f + 0.2f
+                                                    }
+                                                }
+                                                if (artificialDecay) {
+                                                    rawDt += rng.nextFloat() * 0.4f + 0.25f
+                                                }
+                                                val normDt = rawDt.coerceIn(0.01f, 0.99f)
+                                                columnDeltaTValues[col] = normDt
+                                                
+                                                delay(150)
+                                                entropyLogs.add("[SENSOR] -> Berechnete Reibung für Spalte '$col': Δt = ${String.format(java.util.Locale.US, "%.1f", normDt * 100)}%")
+                                            }
+                                            
+                                            delay(400)
+                                            entropyLogs.add("[STX] Projiziere entropic differential Δt-Vektor in den 64-dimensionalen Hilbert-Raum...")
+                                            delay(300)
+                                            entropyLogs.add("[STX] Perturbiere mTSC-12 Agenten with Reibungsfaktoren...")
+                                            delay(500)
+                                            
+                                            val avgEntropy = columnDeltaTValues.values.average().toFloat()
+                                            val rcfVal = (0.9992f - (avgEntropy * 0.14f)).coerceIn(0.85f, 0.9999f)
+                                            calculatedRcf = rcfVal
+                                            
+                                            entropyLogs.add("[SWARM] Swarm-Zustand gemessen. Resonante Kohärenz-Fidelity (RCF) = ${String.format(java.util.Locale.US, "%.4f", calculatedRcf)}")
+                                            delay(400)
+                                            entropyLogs.add("[ODOS-GATE] Evaluiere Heatmap gegen Ethik-Integritäts-Metrik (Schwellenwert >= 0.9500)...")
+                                            delay(500)
+                                            
+                                            if (calculatedRcf >= 0.95f) {
+                                                odosGateStatus = "APPROVED"
+                                                entropyLogs.add("[ALLOW] ODOS GATE: FREIGABE ERTEILT. Heatmap-Vektor ist ethisch konform.")
+                                                
+                                                val digest = java.security.MessageDigest.getInstance("SHA-256")
+                                                val hashBytes = digest.digest((selectedDataset + rcfVal).encodeToByteArray())
+                                                heatmapHash = "0x" + hashBytes.take(8).joinToString("") { String.format("%02x", it) }
+                                                
+                                                entropyLogs.add("[ERFOLG] Invariantes Sensing abgeschlossen. Heatmap-Export-Hash: $heatmapHash")
+                                            } else {
+                                                odosGateStatus = "VETOED"
+                                                entropyLogs.add("[VETO] ODOS GATE: ETHIK-VETO INGERIERT! Hoher Zerfall (RCF=${String.format(java.util.Locale.US, "%.4f", calculatedRcf)}) blockiert.")
+                                                entropyLogs.add("[VETO] Schutz vor systemspezifischer Angriffsvektor-Ausnutzung aktiv.")
+                                                heatmapHash = "0x0000000000000000"
+                                            }
+                                            
+                                            isHeatmapComputed = true
+                                            isSensingEntropy = false
+                                        }
+                                    },
+                                    enabled = !isSensingEntropy,
+                                    colors = ButtonDefaults.buttonColors(containerColor = if (artificialDecay) localPink else localCyan),
+                                    modifier = Modifier.weight(1.5f).height(38.dp)
+                                ) {
+                                    Text("ENTROPIE-MESSUNG STARTEN", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                                }
+
+                                OutlinedButton(
+                                    onClick = {
+                                        isHeatmapComputed = false
+                                        odosGateStatus = "PENDING"
+                                        artificialDecay = false
+                                        heatmapHash = "0x0000000000000000"
+                                        columnDeltaTValues.clear()
+                                        entropyLogs.clear()
+                                        entropyLogs.add("SYSTEM-DEPREZIATIONS-SCANNER: BEREIT. Bitte wählen Sie eine Datenstruktur und starten Sie den Entropie-Scan.")
+                                    },
+                                    enabled = !isSensingEntropy && isHeatmapComputed,
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = localPink),
+                                    border = BorderStroke(1.dp, if (isHeatmapComputed) localPink else localPink.copy(alpha = 0.2f)),
+                                    modifier = Modifier.weight(0.7f).height(38.dp)
+                                ) {
+                                    Text("FELSENFREI SETZEN", fontSize = 8.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }

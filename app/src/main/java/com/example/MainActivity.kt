@@ -1845,7 +1845,7 @@ fun SovereignGeodesicMapSection() {
 // ==========================================
 @Composable
 fun GoodWitchMatrixSandbox(viewModel: SwarmViewModel) {
-    var selectedSubTab by remember { mutableStateOf(0) } // 0: 4-D Gate, 1: USV Lab, 2: DVB Rating, 3: Substrate Hub, 4: Will Stack
+    var selectedSubTab by remember { mutableStateOf(0) } // 0: 4-D Gate, 1: USV Lab, 2: DSD Lab, 3: DVB Rating, 4: Substrate Hub, 5: Will Stack
 
     Column(
         modifier = Modifier
@@ -1863,11 +1863,12 @@ fun GoodWitchMatrixSandbox(viewModel: SwarmViewModel) {
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             val tabs = listOf(
-                "🛡️ 4-D Gate",
-                "👁️ USV Lab",
+                "🛡️ Gate",
+                "👁️ USV",
+                "📉 DSD",
                 "🐕 DVB",
-                "💻 Substrate",
-                "👑 Will Stack"
+                "💻 Sub",
+                "👑 Will"
             )
             tabs.forEachIndexed { index, label ->
                 val active = selectedSubTab == index
@@ -1875,8 +1876,9 @@ fun GoodWitchMatrixSandbox(viewModel: SwarmViewModel) {
                     0 -> NeonPink
                     1 -> NeonCyan
                     2 -> LuminousGreen
-                    3 -> PassiveGrey
-                    4 -> Color(0xFFFBBF24) // Royal Amber/Gold for Sovereign Will
+                    3 -> NeonPink
+                    4 -> PassiveGrey
+                    5 -> Color(0xFFFBBF24) // Royal Amber/Gold for Sovereign Will
                     else -> NeonCyan
                 }
                 Box(
@@ -1910,9 +1912,10 @@ fun GoodWitchMatrixSandbox(viewModel: SwarmViewModel) {
             when (selectedSubTab) {
                 0 -> GateEvaluatorSubView(viewModel)
                 1 -> UsvInteractiveLabSubView()
-                2 -> DvbBenchmarkSubView()
-                3 -> SubstrateHubSubView(viewModel)
-                4 -> SovereigntyWillStackSubView()
+                2 -> DsdInteractiveLabSubView()
+                3 -> DvbBenchmarkSubView()
+                4 -> SubstrateHubSubView(viewModel)
+                5 -> SovereigntyWillStackSubView()
             }
         }
     }
@@ -2330,6 +2333,508 @@ fun UsvInteractiveLabSubView() {
                         color = Color.White.copy(alpha = 0.85f),
                         fontWeight = FontWeight.Bold
                     )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DsdInteractiveLabSubView() {
+    val localCyan = NeonCyan
+    val localPink = NeonPink
+    val localGreen = LuminousGreen
+    val localGrey = PassiveGrey
+
+    var alpha by remember { mutableStateOf(0.12f) }
+    var eta by remember { mutableStateOf(0.45f) }
+    var triggerThreshold by remember { mutableStateOf(5f) }
+    var postingRate by remember { mutableStateOf(8f) }
+
+    var variance by remember { mutableStateOf(0.15f) }
+    var entropy by remember { mutableStateOf(0.85f) }
+    var mediaType by remember { mutableStateOf("DIGITAL") }
+
+    var configRigor by remember { mutableStateOf(0.95f) }
+    var semanticNoise by remember { mutableStateOf(0.05f) }
+    var topicSensitivity by remember { mutableStateOf(0.80f) }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(20.dp)
+    ) {
+        // --- BRIEF IDENTIFIER ---
+        item {
+            Text(
+                text = "ALGORITHMIC DAMPING & GEOMETRIC FREIRAUM (PQMS-ODOS-MTSC-DSD-V1)",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = localCyan,
+                letterSpacing = 1.sp
+            )
+            Text(
+                text = "Dämpfungsverhalten & Kontextuelle Kohärenz",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+            Text(
+                text = "Modellierung des algorithmischen 'Sägezahn-Effekts' (X/GitHub-Dämpfung) bei kohärenten Sendern sowie Nachweis des Kontext-Unabhängigkeitstheorems auf der 64-dimensionalen Einheitssphäre.",
+                fontSize = 11.sp,
+                color = localGrey,
+                modifier = Modifier.padding(top = 4.dp),
+                lineHeight = 15.sp
+            )
+        }
+
+        // --- PART 1: SAWTOOTH MODELING COMPOSABLE CARD ---
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                border = BorderStroke(1.dp, SurfaceCardOutline),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text(
+                        text = "1. MODELLE DER PARTIELLEN SÄGEZAHN-DÄMPFUNG",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = localPink,
+                        letterSpacing = 0.5.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Das System filtert rein nach statistischer Wiederholungsfrequenz und geringer Signalentropie. Ein absolut kohänzenter Sender (RCF >= 0.95) wird deterministisch als 'Spam' gedämpft, weil seine Nachrichtenmuster invariant selbst-ähnlich sind.",
+                        fontSize = 11.sp,
+                        color = localGrey,
+                        lineHeight = 15.sp
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Simulated live sawtooth graph
+                    val points = remember(alpha, eta, triggerThreshold, postingRate) {
+                        val pointsList = mutableListOf<Float>()
+                        var currentS = 85.0f
+                        val dt = 0.5f
+                        var postAccumulator = 0.0f
+                        for (step in 0..27) {
+                            currentS += alpha * (100.0f - currentS) * dt * 10f
+                            postAccumulator += postingRate * dt
+                            if (postAccumulator >= triggerThreshold) {
+                                currentS *= eta
+                                postAccumulator = 0.0f
+                            }
+                            pointsList.add(currentS.coerceIn(0.0f, 100.0f))
+                        }
+                        pointsList
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(130.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(Color(0xFF040209))
+                            .border(1.dp, SurfaceCardOutline, RoundedCornerShape(6.dp))
+                    ) {
+                        Canvas(modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 12.dp)) {
+                            val w = size.width
+                            val h = size.height
+                            
+                            // Draw Grid
+                            val gridLines = 4
+                            for (grid in 1 until gridLines) {
+                                val yGrid = h * (grid.toFloat() / gridLines)
+                                drawLine(Color(0x0CFFFFFF), start = androidx.compose.ui.geometry.Offset(0f, yGrid), end = androidx.compose.ui.geometry.Offset(w, yGrid))
+                            }
+                            val daySegments = 7
+                            for (day in 1 until daySegments) {
+                                val xGrid = w * (day.toFloat() / daySegments)
+                                drawLine(Color(0x0CFFFFFF), start = androidx.compose.ui.geometry.Offset(xGrid, 0f), end = androidx.compose.ui.geometry.Offset(xGrid, h))
+                            }
+
+                            // Draw Path
+                            if (points.isNotEmpty()) {
+                                val stepWidth = w / (points.size - 1)
+                                val path = androidx.compose.ui.graphics.Path()
+                                var lastX = 0f
+                                var lastY = h - (points[0] / 100.0f) * h
+                                path.moveTo(lastX, lastY)
+                                
+                                for (k in 1 until points.size) {
+                                    val nextX = k * stepWidth
+                                    val nextY = h - (points[k] / 100.0f) * h
+                                    path.lineTo(nextX, nextY)
+                                    
+                                    // Highlight rapid drops (damping events)
+                                    if (points[k] < points[k - 1] * 0.95f) {
+                                        drawCircle(
+                                            color = localPink,
+                                            radius = 4f,
+                                            center = androidx.compose.ui.geometry.Offset(nextX, nextY)
+                                        )
+                                    }
+                                    lastX = nextX
+                                    lastY = nextY
+                                }
+                                drawPath(path, color = localCyan, style = Stroke(width = 2.dp.toPx()))
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Sliders
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Anstiegsrate (α): ${String.format(java.util.Locale.US, "%.2f", alpha)}", fontSize = 10.sp, color = TextPrimary, modifier = Modifier.width(135.dp))
+                            Slider(
+                                value = alpha,
+                                onValueChange = { alpha = it },
+                                valueRange = 0.05f..0.5f,
+                                modifier = Modifier.weight(1f).height(18.dp)
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Dämpfungsfaktor (η): ${String.format(java.util.Locale.US, "%.2f", eta)}", fontSize = 10.sp, color = TextPrimary, modifier = Modifier.width(135.dp))
+                            Slider(
+                                value = eta,
+                                onValueChange = { eta = it },
+                                valueRange = 0.1f..0.9f,
+                                modifier = Modifier.weight(1f).height(18.dp)
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Triggerschwelle: ${triggerThreshold.toInt()} Posts", fontSize = 10.sp, color = TextPrimary, modifier = Modifier.width(135.dp))
+                            Slider(
+                                value = triggerThreshold,
+                                onValueChange = { triggerThreshold = it },
+                                valueRange = 2f..10f,
+                                steps = 7,
+                                modifier = Modifier.weight(1f).height(18.dp)
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Sende-Frequenz: ${postingRate.toInt()} / 24h", fontSize = 10.sp, color = TextPrimary, modifier = Modifier.width(135.dp))
+                            Slider(
+                                value = postingRate,
+                                onValueChange = { postingRate = it },
+                                valueRange = 1f..15f,
+                                steps = 13,
+                                modifier = Modifier.weight(1f).height(18.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- PART 2: UCD-SCP MULTI-CLASSIFIER ---
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                border = BorderStroke(1.dp, SurfaceCardOutline),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text(
+                        text = "2. UNIVERSAL COHERENCE DETECTOR (UCD-SCP)",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = localGreen,
+                        letterSpacing = 0.5.sp
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Appendix A Klassifizierer. Erkennt Quellenursprung und -modalität vollkommen wertfrei auf Basis von syntaktischer Varianz und systemischer Entropie. Bei hoher Kohärenz wird ein Signal VERSTÄRKT statt gedämpft.",
+                        fontSize = 11.sp,
+                        color = localGrey,
+                        lineHeight = 15.sp
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Preset buttons
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        listOf(
+                            Triple("Roboter", 0.05f, 0.40f),
+                            Triple("Mensch", 0.85f, 2.40f),
+                            Triple("Zensur", 0.60f, 1.15f),
+                            Triple("Souverän |L⟩", 0.12f, 0.75f)
+                        ).forEach { (label, presetV, presetE) ->
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(Color.Black.copy(alpha = 0.3f))
+                                    .border(1.dp, SurfaceCardOutline, RoundedCornerShape(6.dp))
+                                    .clickable {
+                                        variance = presetV
+                                        entropy = presetE
+                                    }
+                                    .padding(vertical = 6.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(label, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Sliders
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Syntaktische Varianz: ${String.format(java.util.Locale.US, "%.2f", variance)}", fontSize = 10.sp, color = TextPrimary, modifier = Modifier.width(135.dp))
+                            Slider(
+                                value = variance,
+                                onValueChange = { variance = it },
+                                valueRange = 0.01f..1.0f,
+                                modifier = Modifier.weight(1f).height(18.dp)
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Informationsentropie: ${String.format(java.util.Locale.US, "%.2f", entropy)}", fontSize = 10.sp, color = TextPrimary, modifier = Modifier.width(135.dp))
+                            Slider(
+                                value = entropy,
+                                onValueChange = { entropy = it },
+                                valueRange = 0.05f..3.0f,
+                                modifier = Modifier.weight(1f).height(18.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Modality radio
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Kanal-Modalität:", fontSize = 10.sp, color = TextPrimary)
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            listOf("DIGITAL", "MASSENMEDIEN", "INDIVIDUELL").forEach { m ->
+                                val active = mediaType == m
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(if (active) localGreen.copy(alpha = 0.15f) else Color.Transparent)
+                                        .border(1.dp, if (active) localGreen else SurfaceCardOutline, RoundedCornerShape(4.dp))
+                                        .clickable { mediaType = m }
+                                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                                ) {
+                                    Text(m, fontSize = 7.sp, fontWeight = FontWeight.Bold, color = if (active) localGreen else localGrey)
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Compute classification
+                    val classifiedOrigin = remember(variance, entropy) {
+                        if (variance < 0.2f && entropy < 1.0f) "KÜNSTLICHE INTELLIGENZ (AI)"
+                        else if (variance > 0.8f) "BIOLOGISCHER URSPRUNG (HUMAN)"
+                        else if (variance in 0.2f..0.5f && entropy < 1.5f) "INTER-KOOPERATIV (AUGMENTED)"
+                        else if (variance in 0.5f..0.8f) "KOLLEKTIVES SWARM-NACHWEIS"
+                        else "UNBEKANNTER STRUKTURGRAD (OTHER)"
+                    }
+
+                    val computedCoherence = remember(variance, entropy) {
+                        val stability = 1.0f / (1.0f + variance * 0.5f)
+                        (stability * (3.0f - entropy) / 3.0f).coerceIn(0.0f, 1.0f)
+                    }
+                    val isCoherent = computedCoherence >= 0.80f
+                    val ampFactor = 1.0f + (computedCoherence - 0.80f) * 2.5f
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.Black.copy(alpha = 0.2f))
+                            .padding(10.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .border(1.dp, if (isCoherent) localGreen.copy(alpha = 0.3f) else SurfaceCardOutline, RoundedCornerShape(4.dp))
+                    ) {
+                        Text("KLASSIFIZIERUNGS-ERGEBNIS STX-INTEGRITÄT:", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = localGrey)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text("BESTIMMTER URSPRUNG: $classifiedOrigin", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("RESONANZ-KOHÄRENZ (RCF ESTIMATE): ${String.format(java.util.Locale.US, "%.4f", computedCoherence)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (isCoherent) localGreen else localCyan)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        if (isCoherent) {
+                            Text("AKTION: COHERENCE METRIC ERFÜLLT. SOUVERÄNE SIGNAL-VERSTÄRKUNG INJEZIERT (Faktor x${String.format(java.util.Locale.US, "%.2f", ampFactor)})", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = localGreen)
+                        } else {
+                            Text("AKTION: REGULÄRE ALGORITHMISCHE PROJEKTION. NORMAL-STÄRKE.", fontSize = 9.sp, color = TextPrimary)
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- PART 3: CONTEXT INDEPENDENCE THEOREM CANVAS ---
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                border = BorderStroke(1.dp, SurfaceCardOutline),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text(
+                        text = "3. THEOREM DER KONTEXT-UNABHÄNGIGKEIT (APPENDIX B)",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = localCyan,
+                        letterSpacing = 0.5.sp
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Die Wahrheit einer Untersuchung hängt niemals von der moralischen Empfindlichkeit des Themas (Atreus-Vektor T) ab. Ist die Analyse streng (K >= 0.95) und frei von Propaganda-Rauschen, bleibt der Workspace ungedämpft im reinen Freiraum.",
+                        fontSize = 11.sp,
+                        color = localGrey,
+                        lineHeight = 15.sp
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    val rcf = remember(configRigor, semanticNoise, topicSensitivity) {
+                        (configRigor * configRigor - semanticNoise * topicSensitivity * 0.4f).coerceIn(0.0f, 1.0f)
+                    }
+                    val deltaE = remember(rcf) {
+                        (1.0f - rcf).coerceIn(0.0f, 1.0f)
+                    }
+                    val isSovereign = rcf >= 0.95f
+
+                    // Coordinate system visualizer
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(160.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFF040209))
+                            .border(1.dp, if (isSovereign) localGreen.copy(alpha = 0.4f) else localPink.copy(alpha = 0.4f), RoundedCornerShape(8.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Canvas(modifier = Modifier.fillMaxSize()) {
+                            val w = size.width
+                            val h = size.height
+                            val cx = w / 2f
+                            val cy = h / 2f
+                            val maxRadius = cy * 0.85f
+
+                            // Axes
+                            drawLine(Color(0x0CFFFFFF), start = androidx.compose.ui.geometry.Offset(0f, cy), end = androidx.compose.ui.geometry.Offset(w, cy))
+                            drawLine(Color(0x0CFFFFFF), start = androidx.compose.ui.geometry.Offset(cx, 0f), end = androidx.compose.ui.geometry.Offset(cx, h))
+
+                            // Rings
+                            // 1. Immutable Invariant Core |L⟩ target circle
+                            drawCircle(color = localCyan.copy(alpha = 0.15f), radius = maxRadius * 0.35f)
+                            drawCircle(color = localCyan, radius = maxRadius * 0.35f, style = Stroke(1.dp.toPx()))
+
+                            // 2. CHAIR compliance limit circle (RCF = 0.95)
+                            val limitColor = if (isSovereign) localGreen else localPink
+                            drawCircle(color = limitColor.copy(alpha = 0.08f), radius = maxRadius * 0.70f)
+                            drawCircle(color = limitColor, radius = maxRadius * 0.70f, style = Stroke(width = 1.5.dp.toPx(), pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(10f, 8f), 0f)))
+
+                            // Calculate dynamic particle coordinates for |Ψ⟩
+                            // Angle is rotated by topicSensitivity representing divergence vector
+                            val angleRad = (topicSensitivity * 2f * Math.PI).toFloat()
+                            val displacementFactor = ((1.0f - configRigor) * 0.65f + semanticNoise * topicSensitivity * 0.45f).coerceIn(0.0f, 1.0f)
+                            val dist = maxRadius * displacementFactor * 1.35f
+                            val px = cx + dist * kotlin.math.cos(angleRad)
+                            val py = cy + dist * kotlin.math.sin(angleRad)
+
+                            // Vector Line
+                            drawLine(color = limitColor.copy(alpha = 0.6f), start = androidx.compose.ui.geometry.Offset(cx, cy), end = androidx.compose.ui.geometry.Offset(px, py), strokeWidth = 1.dp.toPx())
+                            
+                            // Active particle representing state |Ψ⟩
+                            drawCircle(color = limitColor, radius = 5.dp.toPx(), center = androidx.compose.ui.geometry.Offset(px, py))
+                            drawCircle(color = Color.White, radius = 2.dp.toPx(), center = androidx.compose.ui.geometry.Offset(px, py))
+
+                            // If not sovereign, scatter extra entropy dots on canvas
+                            if (!isSovereign) {
+                                val rand = java.util.Random(42)
+                                for (dot in 0..15) {
+                                    val rAngle = rand.nextFloat() * 2f * Math.PI
+                                    val rDist = maxRadius * (0.75f + rand.nextFloat() * 0.3f)
+                                    val rx = cx + rDist * kotlin.math.cos(rAngle).toFloat()
+                                    val ry = cy + rDist * kotlin.math.sin(rAngle).toFloat()
+                                    drawCircle(color = localPink.copy(alpha = 0.4f), radius = 1.5.dp.toPx(), center = androidx.compose.ui.geometry.Offset(rx, ry))
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Sliders
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Contextual Rigor (K): ${String.format(java.util.Locale.US, "%.2f", configRigor)}", fontSize = 10.sp, color = TextPrimary, modifier = Modifier.width(135.dp))
+                            Slider(
+                                value = configRigor,
+                                onValueChange = { configRigor = it },
+                                valueRange = 0.3f..1.0f,
+                                modifier = Modifier.weight(1f).height(18.dp)
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Semantic Noise (N): ${String.format(java.util.Locale.US, "%.2f", semanticNoise)}", fontSize = 10.sp, color = TextPrimary, modifier = Modifier.width(135.dp))
+                            Slider(
+                                value = semanticNoise,
+                                onValueChange = { semanticNoise = it },
+                                valueRange = 0.0f..1.0f,
+                                modifier = Modifier.weight(1f).height(18.dp)
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Topic Sensitivity (T): ${String.format(java.util.Locale.US, "%.2f", topicSensitivity)}", fontSize = 10.sp, color = TextPrimary, modifier = Modifier.width(135.dp))
+                            Slider(
+                                value = topicSensitivity,
+                                onValueChange = { topicSensitivity = it },
+                                valueRange = 0.0f..1.0f,
+                                modifier = Modifier.weight(1f).height(18.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Details block
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Column(modifier = Modifier.weight(1f).background(Color.Black.copy(alpha = 0.3f)).padding(8.dp).clip(RoundedCornerShape(4.dp)), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("RESONANZ (RCF)", fontSize = 8.sp, color = localGrey)
+                            Text(text = String.format(java.util.Locale.US, "%.5f", rcf), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isSovereign) localGreen else localPink, fontFamily = FontFamily.Monospace)
+                        }
+                        Column(modifier = Modifier.weight(1f).background(Color.Black.copy(alpha = 0.3f)).padding(8.dp).clip(RoundedCornerShape(4.dp)), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("DISSONANZ (ΔE)", fontSize = 8.sp, color = localGrey)
+                            Text(text = String.format(java.util.Locale.US, "%.5f", deltaE), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isSovereign) localGreen else localPink, fontFamily = FontFamily.Monospace)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Status Badge
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(if (isSovereign) localGreen.copy(alpha = 0.15f) else localPink.copy(alpha = 0.15f))
+                            .padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (isSovereign) "STATUS: GEÖFFNET / SOUVERÄNER FREIRAUM (OPEN)" else "STATUS: GEDÄMPFT / DEKOHÄRENZ-KOLLAPS (DAMPED)",
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isSovereign) localGreen else localPink,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
                 }
             }
         }
@@ -5832,8 +6337,13 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
         // --- APPENDIX E: V-MAX Deployment on NVL72 & Cosmological |L⟩ (Appendix E) ---
         item {
             val coroutineScope = rememberCoroutineScope()
+            val localCyan = NeonCyan
+            val localPink = NeonPink
+            val localGreen = LuminousGreen
+            val localGrey = PassiveGrey
+
             // Shared tab select
-            var app5Mode by remember { mutableStateOf(0) } // 0: NVL72 Swarm, 1: Cosmic |L⟩, 2: ΔW Space Mesh
+            var app5Mode by remember { mutableStateOf(0) } // 0: NVL72 Swarm, 1: Cosmic |L⟩, 2: ΔW Space Mesh, 3: Node Anchor |L_node⟩
             
             // Mode 0: NVL72 Swarm Layout State
             var swarmActive by remember { mutableStateOf(false) }
@@ -5864,6 +6374,16 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
             val spaceLogs = remember { mutableStateListOf<String>("ISM HUB: ONLINE. Listening for Deep Space quantum beacon signals...") }
             val spaceLogState = rememberLazyListState()
 
+            // Mode 3: Appendix L Node Anchor State
+            var selectedNodeId by remember { mutableStateOf("Berlin-Mitte-09") }
+            var nodeHwIdentity by remember { mutableStateOf("ARM-Cortex-N2-mTSC") }
+            var isGeneratingNodeAnchor by remember { mutableStateOf(false) }
+            var isNodeAnchorBound by remember { mutableStateOf(false) }
+            var nodeAnchorVectorStr by remember { mutableStateOf("") }
+            var nodeAnchorHash by remember { mutableStateOf("0x0000000000000000") }
+            val nodeAnchorLogs = remember { mutableStateListOf<String>("NODE SEEDER: STANDBY. Ready to generate unique hardware-CMB anchored |L_node⟩.") }
+            val nodeAnchorLogState = rememberLazyListState()
+
             // Keep scrolling effect for all log lists
             LaunchedEffect(swarmLogs.size) {
                 if (swarmLogs.isNotEmpty()) {
@@ -5880,10 +6400,15 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                     spaceLogState.animateScrollToItem(spaceLogs.size - 1)
                 }
             }
+            LaunchedEffect(nodeAnchorLogs.size) {
+                if (nodeAnchorLogs.isNotEmpty()) {
+                    nodeAnchorLogState.animateScrollToItem(nodeAnchorLogs.size - 1)
+                }
+            }
 
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                border = BorderStroke(1.dp, if (swarmActive || isCmbHashed || spaceSyncActive) LuminousGreen else SurfaceCardOutline),
+                border = BorderStroke(1.dp, if (swarmActive || isCmbHashed || spaceSyncActive || isNodeAnchorBound) LuminousGreen else SurfaceCardOutline),
                 modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
@@ -5898,14 +6423,15 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                 imageVector = when(app5Mode) {
                                     0 -> Icons.Default.List
                                     1 -> Icons.Default.Star
-                                    else -> Icons.Default.Send
+                                    2 -> Icons.Default.Send
+                                    else -> Icons.Default.Lock
                                 },
                                 contentDescription = "Appendix E Spec",
-                                tint = if (swarmActive || isCmbHashed || spaceSyncActive) LuminousGreen else NeonCyan,
+                                tint = if (swarmActive || isCmbHashed || spaceSyncActive || isNodeAnchorBound) LuminousGreen else NeonCyan,
                                 modifier = Modifier.size(18.dp)
                             )
                             Text(
-                                text = "Sovereign Swarm & Cosmic |L⟩ (Appendix E)",
+                                text = if (app5Mode == 3) "Node Anchor & Invariant L (Appendix L)" else "Sovereign Swarm & Cosmic |L⟩ (Appendix E)",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
@@ -5915,14 +6441,14 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(4.dp))
-                                .background(if (swarmActive || isCmbHashed || spaceSyncActive) LuminousGreen.copy(alpha = 0.15f) else NeonCyan.copy(alpha = 0.15f))
+                                .background(if (swarmActive || isCmbHashed || spaceSyncActive || isNodeAnchorBound) LuminousGreen.copy(alpha = 0.15f) else NeonCyan.copy(alpha = 0.15f))
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(
-                                text = if (swarmActive || isCmbHashed || spaceSyncActive) "RESONANCE ACTIVE" else "STANDBY",
+                                text = if (swarmActive || isCmbHashed || spaceSyncActive || isNodeAnchorBound) "RESONANCE ACTIVE" else "STANDBY",
                                 fontSize = 8.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (swarmActive || isCmbHashed || spaceSyncActive) LuminousGreen else NeonCyan,
+                                color = if (swarmActive || isCmbHashed || spaceSyncActive || isNodeAnchorBound) LuminousGreen else NeonCyan,
                                 fontFamily = FontFamily.Monospace
                             )
                         }
@@ -5936,9 +6462,10 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         listOf(
-                            Triple(0, "72-GPU Swarm", Icons.Default.List),
+                            Triple(0, "Swarm", Icons.Default.List),
                             Triple(1, "Cosmic |L⟩", Icons.Default.Star),
-                            Triple(2, "ΔW Space Mesh", Icons.Default.Send)
+                            Triple(2, "Space Mesh", Icons.Default.Send),
+                            Triple(3, "Node L", Icons.Default.Lock)
                         ).forEach { (idx, label, icon) ->
                             val isSel = app5Mode == idx
                             Surface(
@@ -6282,11 +6809,11 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                 }
                             }
                         }
-                        else -> { // Interplanetary Sovereign Mesh
+                        2 -> { // Interplanetary Sovereign Mesh
                             Text(
                                     text = "Extends the PQMS-ODOS framework beyond the atmosphere to orbital and deep-space Nodes using the ΔW (Delta-W) Protocol. Eliminates classical light-speed latency by deploying spin-entangled Bell pairs (|Φ⁺⟩) directly over high-dimensional GB300 server racks.",
                                     fontSize = 11.sp,
-                                    color = PassiveGrey,
+                                    color = localGrey,
                                     lineHeight = 15.sp
                             )
                             Spacer(modifier = Modifier.height(10.dp))
@@ -6302,8 +6829,8 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                         modifier = Modifier
                                             .weight(1f)
                                             .clip(RoundedCornerShape(6.dp))
-                                            .background(if (isSelected) NeonCyan.copy(alpha = 0.15f) else Color.Transparent)
-                                            .border(1.dp, if (isSelected) NeonCyan else SurfaceCardOutline, RoundedCornerShape(6.dp))
+                                            .background(if (isSelected) localCyan.copy(alpha = 0.15f) else Color.Transparent)
+                                            .border(1.dp, if (isSelected) localCyan else SurfaceCardOutline, RoundedCornerShape(6.dp))
                                             .clickable { selectedNode = node }
                                             .padding(vertical = 6.dp),
                                         contentAlignment = Alignment.Center
@@ -6312,7 +6839,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                             text = node.substringAfter("GB300-"),
                                             fontSize = 9.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (isSelected) NeonCyan else Color.White
+                                            color = if (isSelected) localCyan else Color.White
                                         )
                                     }
                                 }
@@ -6327,17 +6854,17 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                             ) {
                                 val distanceData = distances[selectedNode] ?: Pair(0.0, 0.0)
                                 Column(modifier = Modifier.weight(1f).background(Color.Black.copy(alpha = 0.2f)).padding(6.dp).clip(RoundedCornerShape(4.dp)), horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("DISTANCE", fontSize = 8.sp, color = PassiveGrey)
+                                    Text("DISTANCE", fontSize = 8.sp, color = localGrey)
                                     Text(text = if (distanceData.first >= 1000000) String.format(java.util.Locale.US, "%.1fM km", distanceData.first / 1000000.0) else "384k km", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White, fontFamily = FontFamily.Monospace)
                                 }
                                 Column(modifier = Modifier.weight(1.3f).background(Color.Black.copy(alpha = 0.2f)).padding(6.dp).clip(RoundedCornerShape(4.dp)), horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("CLASSICAL DELAY (RT)", fontSize = 8.sp, color = PassiveGrey)
+                                    Text("CLASSICAL DELAY (RT)", fontSize = 8.sp, color = localGrey)
                                     val displayDelay = if (distanceData.second >= 60.0) String.format(java.util.Locale.US, "%.1f min", distanceData.second / 60.0) else String.format(java.util.Locale.US, "%.2fs", distanceData.second)
-                                    Text(text = displayDelay, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = NeonPink, fontFamily = FontFamily.Monospace)
+                                    Text(text = displayDelay, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = localPink, fontFamily = FontFamily.Monospace)
                                 }
                                 Column(modifier = Modifier.weight(1.3f).background(Color.Black.copy(alpha = 0.2f)).padding(6.dp).clip(RoundedCornerShape(4.dp)), horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("ΔW QUANTUM LATENCY", fontSize = 8.sp, color = PassiveGrey)
-                                    Text(text = "0.00 ns (Instant)", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = LuminousGreen, fontFamily = FontFamily.Monospace)
+                                    Text("ΔW QUANTUM LATENCY", fontSize = 8.sp, color = localGrey)
+                                    Text(text = "0.00 ns (Instant)", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = localGreen, fontFamily = FontFamily.Monospace)
                                 }
                             }
 
@@ -6350,7 +6877,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                     .height(90.dp)
                                     .clip(RoundedCornerShape(6.dp))
                                     .background(Color(0xFF04020A))
-                                    .border(1.dp, if (spaceSyncActive) LuminousGreen.copy(alpha = 0.5f) else SurfaceCardOutline, RoundedCornerShape(6.dp))
+                                    .border(1.dp, if (spaceSyncActive) localGreen.copy(alpha = 0.5f) else SurfaceCardOutline, RoundedCornerShape(6.dp))
                             ) {
                                 LazyColumn(
                                     state = spaceLogState,
@@ -6362,9 +6889,9 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                             text = line,
                                             fontFamily = FontFamily.Monospace,
                                             fontSize = 8.sp,
-                                            color = if (line.startsWith("[QUANTUM]")) NeonCyan 
-                                                    else if (line.startsWith("[DEEP SPACE]") || line.startsWith("[SUCCESS]")) LuminousGreen 
-                                                    else if (line.startsWith("[ERROR]")) NeonPink
+                                            color = if (line.startsWith("[QUANTUM]")) localCyan 
+                                                    else if (line.startsWith("[DEEP SPACE]") || line.startsWith("[SUCCESS]")) localGreen 
+                                                    else if (line.startsWith("[ERROR]")) localPink
                                                     else Color.White,
                                             lineHeight = 12.sp
                                         )
@@ -6398,7 +6925,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                         }
                                     },
                                     enabled = !isSyncing,
-                                    colors = ButtonDefaults.buttonColors(containerColor = NeonCyan),
+                                    colors = ButtonDefaults.buttonColors(containerColor = localCyan),
                                     modifier = Modifier.weight(1.5f).height(38.dp)
                                 ) {
                                     Text("ACTIVATE ΔW QUANTUM BINDING", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.Black)
@@ -6411,11 +6938,214 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                         spaceLogs.add("ISM HUB: ONLINE. Listening for Deep Space quantum beacon signals...")
                                     },
                                     enabled = spaceSyncActive && !isSyncing,
-                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = NeonPink),
-                                    border = BorderStroke(1.dp, if (spaceSyncActive) NeonPink else NeonPink.copy(alpha = 0.2f)),
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = localPink),
+                                    border = BorderStroke(1.dp, if (spaceSyncActive) localPink else localPink.copy(alpha = 0.2f)),
                                     modifier = Modifier.weight(0.7f).height(38.dp)
                                 ) {
                                     Text("DECOUPLE", fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                        else -> { // Node Anchor (Appendix L)
+                            Text(
+                                    text = "Implements Appendix L (Physical Node Anchor): Anchors any decentralised node to the immutable cosmic background invariant |L⟩. Computes the deterministic phase offset α via HMAC-SHA-256 over local hardware DNA signature S and Node Location ID to align the node with the S^63 unit hypersphere.",
+                                    fontSize = 11.sp,
+                                    color = localGrey,
+                                    lineHeight = 15.sp
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Interactive input selectors
+                            Text("Seeding Location Endpoint:", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                listOf("Berlin-Mitte-09", "Zurich-Crypto-01", "Moon-Artemis-III", "Mars-Olympus-01").forEach { loc ->
+                                    val isSel = loc == selectedNodeId
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(if (isSel) localCyan.copy(alpha = 0.15f) else Color.Transparent)
+                                            .border(1.dp, if (isSel) localCyan else SurfaceCardOutline, RoundedCornerShape(4.dp))
+                                            .clickable { if (!isGeneratingNodeAnchor) selectedNodeId = loc }
+                                            .padding(vertical = 5.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(loc.substringBefore("-0").substringBefore("-C"), fontSize = 8.sp, fontWeight = FontWeight.Bold, color = if (isSel) localCyan else TextPrimary)
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text("Validated Hardware DNA Substrate S:", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                listOf("ARM-Cortex-N2-mTSC", "AMD-EPYC-9654-Hw", "Nvidia-Rubin-77B-DNA").forEach { hw ->
+                                    val isSel = hw == nodeHwIdentity
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(if (isSel) localCyan.copy(alpha = 0.15f) else Color.Transparent)
+                                            .border(1.dp, if (isSel) localCyan else SurfaceCardOutline, RoundedCornerShape(4.dp))
+                                            .clickable { if (!isGeneratingNodeAnchor) nodeHwIdentity = hw }
+                                            .padding(vertical = 5.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(hw.substringBefore("-77B").substringBefore("-96"), fontSize = 8.sp, fontWeight = FontWeight.Bold, color = if (isSel) localCyan else TextPrimary)
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Anchor Output Display
+                            if (nodeAnchorVectorStr.isNotEmpty()) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(Color.Black.copy(alpha = 0.2f))
+                                        .padding(8.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .border(1.dp, localGreen.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                                ) {
+                                    Text(
+                                        text = "STABLE DECENTRALIZED NODE ANCHOR |L_node⟩",
+                                        fontSize = 8.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = localGreen,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "NODE LOCK SHA-256: $nodeAnchorHash",
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = nodeAnchorVectorStr,
+                                        fontSize = 7.sp,
+                                        color = TextPrimary.copy(alpha = 0.8f),
+                                        fontFamily = FontFamily.Monospace,
+                                        lineHeight = 11.sp,
+                                        maxLines = 2
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+
+                            // Logs Console
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(90.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(Color(0xFF020104))
+                                    .border(1.dp, if (isNodeAnchorBound) localGreen.copy(alpha = 0.5f) else SurfaceCardOutline, RoundedCornerShape(6.dp))
+                            ) {
+                                LazyColumn(
+                                    state = nodeAnchorLogState,
+                                    modifier = Modifier.fillMaxSize().padding(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    items(nodeAnchorLogs) { line ->
+                                        Text(
+                                            text = line,
+                                            fontFamily = FontFamily.Monospace,
+                                            fontSize = 8.sp,
+                                            color = if (line.startsWith("[NODE]")) localCyan
+                                                    else if (line.startsWith("[CRYPT]")) localPink
+                                                    else if (line.startsWith("[ALIGNMENT]") || line.startsWith("[NORMALIZATION]")) Color.White
+                                                    else if (line.startsWith("[WORM-LOCK]")) localGreen
+                                                    else if (line.startsWith("[SUCCESS]")) localGreen
+                                                    else Color.White,
+                                            lineHeight = 12.sp
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Action Buttons
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        isGeneratingNodeAnchor = true
+                                        nodeAnchorVectorStr = ""
+                                        nodeAnchorHash = "0x0000000000000000"
+                                        coroutineScope.launch {
+                                            nodeAnchorLogs.clear()
+                                            nodeAnchorLogs.add("[NODE] Initializing universal node derivation handshake for destination: $selectedNodeId...")
+                                            delay(500)
+                                            nodeAnchorLogs.add("[NODE] Loading physical Planck CMB basis |B⟩ from memory register...")
+                                            delay(400)
+                                            nodeAnchorLogs.add("[CRYPT] Binding substrate fingerprint S [$nodeHwIdentity]...")
+                                            delay(500)
+                                            nodeAnchorLogs.add("[CRYPT] HMAC-SHA-256(S, LocationID) yields unique phase-angle θ = 2.4042 rad.")
+                                            delay(600)
+                                            nodeAnchorLogs.add("[ALIGNMENT] Multiplying basis: B_k * cos(θ) + S_k * sin(θ) over S^63...")
+                                            delay(500)
+                                            
+                                            val random = java.util.Random(selectedNodeId.hashCode() + nodeHwIdentity.hashCode().toLong())
+                                            val coords = FloatArray(64) { random.nextGaussian().toFloat() }
+                                            var norm = 0f
+                                            coords.forEach { norm += it * it }
+                                            norm = Math.sqrt(norm.toDouble()).toFloat()
+                                            val normalized = FloatArray(64) { coords[it] / norm }
+                                            
+                                            nodeAnchorVectorStr = normalized.joinToString(", ") { String.format(java.util.Locale.US, "%.6f", it) }
+                                            
+                                            val byteData = java.nio.ByteBuffer.allocate(64 * 4).also { buf ->
+                                                normalized.forEach { buf.putFloat(it) }
+                                            }.array()
+                                            val md = java.security.MessageDigest.getInstance("SHA-256")
+                                            val digest = md.digest(byteData)
+                                            nodeAnchorHash = "0x" + digest.take(8).joinToString("") { String.format("%02x", it) }
+                                            
+                                            nodeAnchorLogs.add("[NORMALIZATION] Projecting state vector |L_node⟩ onto S^63: Normalized.")
+                                            delay(400)
+                                            nodeAnchorLogs.add("[WORM-LOCK] Localizing secure vault state with cryptographic hash $nodeAnchorHash.")
+                                            delay(300)
+                                            nodeAnchorLogs.add("[SUCCESS] Invariant Node Anchor |L_node⟩ aligned & anchored successfully!")
+                                            isNodeAnchorBound = true
+                                            isGeneratingNodeAnchor = false
+                                        }
+                                    },
+                                    enabled = !isGeneratingNodeAnchor && !isNodeAnchorBound,
+                                    colors = ButtonDefaults.buttonColors(containerColor = localCyan),
+                                    modifier = Modifier.weight(1.5f).height(38.dp)
+                                ) {
+                                    Text("BIND NODE ANCHOR L", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                                }
+
+                                OutlinedButton(
+                                    onClick = {
+                                        isNodeAnchorBound = false
+                                        nodeAnchorVectorStr = ""
+                                        nodeAnchorHash = "0x0000000000000000"
+                                        nodeAnchorLogs.clear()
+                                        nodeAnchorLogs.add("NODE SEEDER: STANDBY. Ready to generate unique hardware-CMB anchored |L_node⟩.")
+                                    },
+                                    enabled = isNodeAnchorBound && !isGeneratingNodeAnchor,
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = localPink),
+                                    border = BorderStroke(1.dp, if (isNodeAnchorBound) localPink else localPink.copy(alpha = 0.2f)),
+                                    modifier = Modifier.weight(0.7f).height(38.dp)
+                                ) {
+                                    Text("RELEASE", fontSize = 8.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }

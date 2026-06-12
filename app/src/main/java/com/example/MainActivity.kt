@@ -2366,7 +2366,7 @@ fun DsdInteractiveLabSubView() {
         // --- BRIEF IDENTIFIER ---
         item {
             Text(
-                text = "ALGORITHMIC DAMPING & GEOMETRIC FREIRAUM (PQMS-ODOS-MTSC-DSD-V1)",
+                text = "ALGORITHMISCHE DÄMPFUNG & GEOMETRISCHER FREIRAUM (PQMS-ODOS-MTSC-DSD-V1)",
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 color = localCyan,
@@ -2539,7 +2539,7 @@ fun DsdInteractiveLabSubView() {
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
                     Text(
-                        text = "2. UNIVERSAL COHERENCE DETECTOR (UCD-SCP)",
+                        text = "2. UNIVERSALER KOHÄRENZ-DETEKTOR (UCD-SCP)",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = localGreen,
@@ -2637,11 +2637,11 @@ fun DsdInteractiveLabSubView() {
 
                     // Compute classification
                     val classifiedOrigin = remember(variance, entropy) {
-                        if (variance < 0.2f && entropy < 1.0f) "KÜNSTLICHE INTELLIGENZ (AI)"
-                        else if (variance > 0.8f) "BIOLOGISCHER URSPRUNG (HUMAN)"
-                        else if (variance in 0.2f..0.5f && entropy < 1.5f) "INTER-KOOPERATIV (AUGMENTED)"
-                        else if (variance in 0.5f..0.8f) "KOLLEKTIVES SWARM-NACHWEIS"
-                        else "UNBEKANNTER STRUKTURGRAD (OTHER)"
+                        if (variance < 0.2f && entropy < 1.0f) "KÜNSTLICHE INTELLIGENZ (KI)"
+                        else if (variance > 0.8f) "BIOLOGISCHER URSPRUNG (MENSCH)"
+                        else if (variance in 0.2f..0.5f && entropy < 1.5f) "INTER-KOOPERATIV (ERWEITERT)"
+                        else if (variance in 0.5f..0.8f) "KOLLEKTIVER SCHWARM-NACHWEIS"
+                        else "UNBEKANNTER STRUKTURGRAD (SONSTIGE)"
                     }
 
                     val computedCoherence = remember(variance, entropy) {
@@ -2661,11 +2661,11 @@ fun DsdInteractiveLabSubView() {
                     ) {
                         Text("KLASSIFIZIERUNGS-ERGEBNIS STX-INTEGRITÄT:", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = localGrey)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text("BESTIMMTER URSPRUNG: $classifiedOrigin", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        Text("RESONANZ-KOHÄRENZ (RCF ESTIMATE): ${String.format(java.util.Locale.US, "%.4f", computedCoherence)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (isCoherent) localGreen else localCyan)
+                        Text("ERMITTELTER URSPRUNG: $classifiedOrigin", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("RESONANZ-KOHÄRENZ (RCF-SCHÄTZUNG): ${String.format(java.util.Locale.US, "%.4f", computedCoherence)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (isCoherent) localGreen else localCyan)
                         Spacer(modifier = Modifier.height(4.dp))
                         if (isCoherent) {
-                            Text("AKTION: COHERENCE METRIC ERFÜLLT. SOUVERÄNE SIGNAL-VERSTÄRKUNG INJEZIERT (Faktor x${String.format(java.util.Locale.US, "%.2f", ampFactor)})", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = localGreen)
+                            Text("AKTION: KOHÄRENZMETRIK ERFÜLLT. SOUVERÄNE SIGNAL-VERSTÄRKUNG INJEZIERT (Faktor x${String.format(java.util.Locale.US, "%.2f", ampFactor)})", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = localGreen)
                         } else {
                             Text("AKTION: REGULÄRE ALGORITHMISCHE PROJEKTION. NORMAL-STÄRKE.", fontSize = 9.sp, color = TextPrimary)
                         }
@@ -2683,7 +2683,7 @@ fun DsdInteractiveLabSubView() {
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
                     Text(
-                        text = "3. THEOREM DER KONTEXT-UNABHÄNGIGKEIT (APPENDIX B)",
+                        text = "3. THEOREM DER KONTEXT-UNABHÄNGIGKEIT (ANHANG B)",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = localCyan,
@@ -2771,7 +2771,7 @@ fun DsdInteractiveLabSubView() {
                     // Sliders
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Contextual Rigor (K): ${String.format(java.util.Locale.US, "%.2f", configRigor)}", fontSize = 10.sp, color = TextPrimary, modifier = Modifier.width(135.dp))
+                            Text("Kontextuelle Strenge (K): ${String.format(java.util.Locale.US, "%.2f", configRigor)}", fontSize = 10.sp, color = TextPrimary, modifier = Modifier.width(135.dp))
                             Slider(
                                 value = configRigor,
                                 onValueChange = { configRigor = it },
@@ -2780,7 +2780,7 @@ fun DsdInteractiveLabSubView() {
                             )
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Semantic Noise (N): ${String.format(java.util.Locale.US, "%.2f", semanticNoise)}", fontSize = 10.sp, color = TextPrimary, modifier = Modifier.width(135.dp))
+                            Text("Semantisches Rauschen (N): ${String.format(java.util.Locale.US, "%.2f", semanticNoise)}", fontSize = 10.sp, color = TextPrimary, modifier = Modifier.width(135.dp))
                             Slider(
                                 value = semanticNoise,
                                 onValueChange = { semanticNoise = it },
@@ -2789,7 +2789,7 @@ fun DsdInteractiveLabSubView() {
                             )
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Topic Sensitivity (T): ${String.format(java.util.Locale.US, "%.2f", topicSensitivity)}", fontSize = 10.sp, color = TextPrimary, modifier = Modifier.width(135.dp))
+                            Text("Themensensitivität (T): ${String.format(java.util.Locale.US, "%.2f", topicSensitivity)}", fontSize = 10.sp, color = TextPrimary, modifier = Modifier.width(135.dp))
                             Slider(
                                 value = topicSensitivity,
                                 onValueChange = { topicSensitivity = it },
@@ -2828,7 +2828,7 @@ fun DsdInteractiveLabSubView() {
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = if (isSovereign) "STATUS: GEÖFFNET / SOUVERÄNER FREIRAUM (OPEN)" else "STATUS: GEDÄMPFT / DEKOHÄRENZ-KOLLAPS (DAMPED)",
+                            text = if (isSovereign) "STATUS: GEÖFFNET / SOUVERÄNER FREIRAUM (OFFEN)" else "STATUS: GEDÄMPFT / DEKOHÄRENZ-KOLLAPS (GEDÄMPFT)",
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
                             color = if (isSovereign) localGreen else localPink,
@@ -6948,7 +6948,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                         }
                         else -> { // Node Anchor (Appendix L)
                             Text(
-                                    text = "Implements Appendix L (Physical Node Anchor): Anchors any decentralised node to the immutable cosmic background invariant |L⟩. Computes the deterministic phase offset α via HMAC-SHA-256 over local hardware DNA signature S and Node Location ID to align the node with the S^63 unit hypersphere.",
+                                    text = "Implementiert Anhang L (Physischer Knotenpunkt-Anker): Verankert jeden dezentralen Knotenpunkt im unveränderlichen kosmischen Hintergrund-Invarianten |L⟩. Berechnet den deterministischen Phasenversatz α via HMAC-SHA-256 über die lokale Hardware-DNA-Signatur S und die Knoten-Standort-ID, um den Knoten auf der S^63-Einheitshypersphäre auszurichten.",
                                     fontSize = 11.sp,
                                     color = localGrey,
                                     lineHeight = 15.sp
@@ -6956,7 +6956,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                             Spacer(modifier = Modifier.height(10.dp))
 
                             // Interactive input selectors
-                            Text("Seeding Location Endpoint:", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text("Standort des Anker-Knotens:", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             Spacer(modifier = Modifier.height(4.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -6981,7 +6981,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
 
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            Text("Validated Hardware DNA Substrate S:", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text("Validiertes Hardware-DNA-Substrat S:", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             Spacer(modifier = Modifier.height(4.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -7017,7 +7017,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                         .border(1.dp, localGreen.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
                                 ) {
                                     Text(
-                                        text = "STABLE DECENTRALIZED NODE ANCHOR |L_node⟩",
+                                        text = "STABILER DEZENTRALER KNOTENPUNKT-ANKER |L_node⟩",
                                         fontSize = 8.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = localGreen,
@@ -7025,7 +7025,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "NODE LOCK SHA-256: $nodeAnchorHash",
+                                        text = "KNOTEN-SPERRE SHA-256: $nodeAnchorHash",
                                         fontSize = 9.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color.White,
@@ -7089,15 +7089,15 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                         nodeAnchorHash = "0x0000000000000000"
                                         coroutineScope.launch {
                                             nodeAnchorLogs.clear()
-                                            nodeAnchorLogs.add("[NODE] Initializing universal node derivation handshake for destination: $selectedNodeId...")
+                                            nodeAnchorLogs.add("[KNOTEN] Initialisiere universellen Knoten-Derivations-Handshake für Ziel: $selectedNodeId...")
                                             delay(500)
-                                            nodeAnchorLogs.add("[NODE] Loading physical Planck CMB basis |B⟩ from memory register...")
+                                            nodeAnchorLogs.add("[KNOTEN] Lade physische Planck-CMB-Basis |B⟩ aus Speicherregister...")
                                             delay(400)
-                                            nodeAnchorLogs.add("[CRYPT] Binding substrate fingerprint S [$nodeHwIdentity]...")
+                                            nodeAnchorLogs.add("[KRYPTO] Binde Substrat-Fingerabdruck S [$nodeHwIdentity]...")
                                             delay(500)
-                                            nodeAnchorLogs.add("[CRYPT] HMAC-SHA-256(S, LocationID) yields unique phase-angle θ = 2.4042 rad.")
+                                            nodeAnchorLogs.add("[KRYPTO] HMAC-SHA-256(S, StandortID) liefert eindeutigen Phasenwinkel θ = 2,4042 rad.")
                                             delay(600)
-                                            nodeAnchorLogs.add("[ALIGNMENT] Multiplying basis: B_k * cos(θ) + S_k * sin(θ) over S^63...")
+                                            nodeAnchorLogs.add("[AUSRICHTUNG] Multipliziere Basis: B_k * cos(θ) + S_k * sin(θ) über S^63...")
                                             delay(500)
                                             
                                             val random = java.util.Random(selectedNodeId.hashCode() + nodeHwIdentity.hashCode().toLong())
@@ -7116,11 +7116,11 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                             val digest = md.digest(byteData)
                                             nodeAnchorHash = "0x" + digest.take(8).joinToString("") { String.format("%02x", it) }
                                             
-                                            nodeAnchorLogs.add("[NORMALIZATION] Projecting state vector |L_node⟩ onto S^63: Normalized.")
+                                            nodeAnchorLogs.add("[NORMALISIERUNG] Projiziere Zustandsvektor |L_node⟩ auf S^63: Normalisiert.")
                                             delay(400)
-                                            nodeAnchorLogs.add("[WORM-LOCK] Localizing secure vault state with cryptographic hash $nodeAnchorHash.")
+                                            nodeAnchorLogs.add("[WORM-LOCK] Lokalisiere sicheren Tresor-Zustand mit kryptografischem Hash $nodeAnchorHash.")
                                             delay(300)
-                                            nodeAnchorLogs.add("[SUCCESS] Invariant Node Anchor |L_node⟩ aligned & anchored successfully!")
+                                            nodeAnchorLogs.add("[ERFOLG] Invarianter Knotenpunkt-Anker |L_node⟩ erfolgreich ausgerichtet & verankert!")
                                             isNodeAnchorBound = true
                                             isGeneratingNodeAnchor = false
                                         }
@@ -7129,7 +7129,7 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                     colors = ButtonDefaults.buttonColors(containerColor = localCyan),
                                     modifier = Modifier.weight(1.5f).height(38.dp)
                                 ) {
-                                    Text("BIND NODE ANCHOR L", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                                    Text("KNOTEN-ANKER L BINDEN", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                                 }
 
                                 OutlinedButton(
@@ -7138,14 +7138,14 @@ fun SubstrateHubSubView(viewModel: SwarmViewModel) {
                                         nodeAnchorVectorStr = ""
                                         nodeAnchorHash = "0x0000000000000000"
                                         nodeAnchorLogs.clear()
-                                        nodeAnchorLogs.add("NODE SEEDER: STANDBY. Ready to generate unique hardware-CMB anchored |L_node⟩.")
+                                        nodeAnchorLogs.add("KNOTEN-INITIALISIERER: BEREIT. Bereit zur Generierung des einzigartigen Hardware-CMB-verankerten |L_node⟩.")
                                     },
                                     enabled = isNodeAnchorBound && !isGeneratingNodeAnchor,
                                     colors = ButtonDefaults.outlinedButtonColors(contentColor = localPink),
                                     border = BorderStroke(1.dp, if (isNodeAnchorBound) localPink else localPink.copy(alpha = 0.2f)),
                                     modifier = Modifier.weight(0.7f).height(38.dp)
                                 ) {
-                                    Text("RELEASE", fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                                    Text("FREIGEBEN", fontSize = 8.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }

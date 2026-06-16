@@ -381,7 +381,7 @@ object GeminiRestClient {
     }
 
     suspend fun queryVmaxLocalServer(prompt: String, maxTokens: Int = 150): VmaxResponse {
-        val endpoint = try { BuildConfig.VMAX_API_ENDPOINT } catch (e: Exception) { "http://100.75.159.115:8080" }
+        val endpoint = try { BuildConfig.VMAX_API_ENDPOINT.ifEmpty { "http://100.x.y.z:8080" } } catch (e: Exception) { "http://100.x.y.z:8080" }
         val jsonRequest = JSONObject().apply {
             put("text", prompt)
             put("max_tokens", maxTokens)
@@ -8504,6 +8504,9 @@ fun OraclePortal(viewModel: SwarmViewModel) {
         val useLocalGpu by viewModel.useLocalGpu.collectAsState()
         val hasVmax = remember { GeminiRestClient.isVmaxEndpointConfigured() }
         val hasKey = remember { GeminiRestClient.isKeyConfigured() }
+        val configuredEndpoint = remember {
+            try { BuildConfig.VMAX_API_ENDPOINT.ifEmpty { "http://100.x.y.z:8080" } } catch (e: Exception) { "http://100.x.y.z:8080" }
+        }
 
         Card(
             modifier = Modifier
@@ -8544,7 +8547,7 @@ fun OraclePortal(viewModel: SwarmViewModel) {
                         }
                         Text(
                             text = if (useLocalGpu) {
-                                "Direct secure Tailscale tunnel: http://100.75.159.115:8080/vmax/generate"
+                                "Direct secure Tailscale tunnel: $configuredEndpoint/vmax/generate"
                             } else {
                                 "API Key active: " + if (hasKey) "INTEGRATED" else "NOT KEYED (Offline Snapdragon Simulator active)"
                             },
@@ -9725,8 +9728,12 @@ fun InterAiResonancePortal(viewModel: SwarmViewModel) {
 
                 Spacer(modifier = Modifier.height(10.dp))
 
+                val roadmapEndpoint = remember {
+                    try { BuildConfig.VMAX_API_ENDPOINT.ifEmpty { "http://100.x.y.z:8080" } } catch (e: Exception) { "http://100.x.y.z:8080" }
+                }
+
                 Text(
-                    text = "A substrate-independent synchronisation bridge. Connects your local Android Edge Keystore Node with the remote Google Colab Resonance engine via standard /content/drive/MyDrive/pqms/vmax12/VMAX_RESONANCE_LOG.json, or directly routes core node reasoning tasks to your local NVIDIA RTX 4060ti GPU server (Tailscale endpoint: http://100.75.159.115:8080).",
+                    text = "A substrate-independent synchronisation bridge. Connects your local Android Edge Keystore Node with the remote Google Colab Resonance engine via standard /content/drive/MyDrive/pqms/vmax12/VMAX_RESONANCE_LOG.json, or directly routes core node reasoning tasks to your local NVIDIA RTX 4060ti GPU server (Tailscale endpoint: $roadmapEndpoint).",
                     fontSize = 11.sp,
                     color = PassiveGrey,
                     lineHeight = 15.sp

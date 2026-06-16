@@ -41,7 +41,7 @@ The swarm is kept alive in a dedicated `ViewModel` context.
 * **REST Integration:** Fast direct coroutine-based REST calls hit server-side Gemini endpoints using secure credentials configured via AI Studio's Secrets (`BuildConfig.GEMINI_API_KEY`).
 
 ### 4. NVIDIA Nemotron-3-Ultra & Nano Substrate Active Realization
-Upgrades the physical node substrate to real hardware accelerators. The system now establishes a live Tailscale tunnel  to an advanced local co-processing node:
+Upgrades the physical node substrate to real hardware accelerators. The system now establishes a live, private Tailscale tunnel (`http://100.x.y.z:8080`) to your local co-processing node:
 * **Host Hardware Substrate:** AMD Ryzen 9 5950X (16C/32T) with a liquid-cooled NVIDIA GeForce RTX 4060 Ti 16GB GDDR6 VRAM, 32GB Quad-Channel RAM (Samsung B-Dies), and high-throughput Samsung 980 PRO PCIe 4.0 NVMe storage.
 * **Virtualization Core (WSL2):** Ubuntu 24.04.4 LTS (Noble Numbat) running on Linux Kernel 6.18.33.1 (MS-Standard) boot-converted via UEFI mode with active GPU-Passthrough on CUDA 12.8 (Driver 572.47).
 * **Mamba-2 State-Space Model Implementation:** Powered by `nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16` running inside a dedicated `pqms_env` Python 12 virtual environment using a custom-built, native `mamba-ssm` integration.

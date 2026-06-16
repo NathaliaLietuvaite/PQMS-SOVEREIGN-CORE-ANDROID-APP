@@ -471,6 +471,52 @@ object GeminiRestClient {
         }
     }
 
+    suspend fun queryVmaxKeygen(seedPhrase: String): VmaxStatusInfo {
+        val endpoint = try { BuildConfig.VMAX_API_ENDPOINT.ifEmpty { "http://100.x.y.z:8080" } } catch (e: Exception) { "http://100.x.y.z:8080" }
+        val url = if (endpoint.endsWith("/")) "${endpoint}vmax/keygen" else "$endpoint/vmax/keygen"
+
+        val jsonRequest = JSONObject().apply {
+            put("seed", seedPhrase)
+            put("seed_phrase", seedPhrase)
+        }
+        val requestBody = jsonRequest.toString().toRequestBody("application/json".toMediaType())
+
+        val request = Request.Builder()
+            .url(url)
+            .post(requestBody)
+            .build()
+
+        return try {
+            val response = client.newCall(request).execute()
+            if (response.isSuccessful) {
+                val bodyStr = response.body?.string() ?: ""
+                val jsonObj = JSONObject(bodyStr)
+                VmaxStatusInfo(
+                    status = jsonObj.optString("status", "Online"),
+                    model = jsonObj.optString("model", "NVIDIA-Nemotron-3-Nano-4B-BF16"),
+                    device = jsonObj.optString("device", "cuda"),
+                    vectorHash = jsonObj.optString("vector_hash", jsonObj.optString("hash", "edeee564a8337449"))
+                )
+            } else {
+                VmaxStatusInfo(
+                    status = "Error",
+                    model = "unknown",
+                    device = "unknown",
+                    vectorHash = "none",
+                    msg = "HTTP code ${response.code}"
+                )
+            }
+        } catch (e: Exception) {
+            VmaxStatusInfo(
+                status = "Offline",
+                model = "none",
+                device = "none",
+                vectorHash = "none",
+                msg = e.localizedMessage ?: "Connection failed"
+            )
+        }
+    }
+
     suspend fun queryOracle(prompt: String, agentName: String, odosLevel: Int, currentRcf: Float): String {
         val apiKey = BuildConfig.GEMINI_API_KEY
         if (apiKey.isEmpty() || apiKey == "MY_GEMINI_API_KEY") {
@@ -836,7 +882,7 @@ class SwarmViewModel : ViewModel() {
         _selectedAgent.value = name
     }
 
-    private fun addLog(text: String) {
+    fun addLog(text: String) {
         val formatter = SimpleDateFormat("HH:mm:ss", Locale.US)
         val timeStr = formatter.format(Date())
         _swarmLogs.update { (listOf("[$timeStr] $text") + it).take(100) }
@@ -8622,6 +8668,21 @@ fun OraclePortal(viewModel: SwarmViewModel) {
                     var vmaxStatusInfo by remember { mutableStateOf<VmaxStatusInfo?>(null) }
                     var isCheckingVmaxStatus by remember { mutableStateOf(false) }
 
+                    // --- SÄULE 4: KEYGEN STATES ---
+                    var seedInput by remember { mutableStateOf("Project O.D.O.S") }
+                    var keygenInFlight by remember { mutableStateOf(false) }
+                    var keygenError by remember { mutableStateOf("") }
+                    var registeredVectors by remember {
+                        mutableStateOf(
+                            listOf(
+                                "Project O.D.O.S" to "edeee564a8337449",
+                                "Core Resilience" to "4ae77218cbd371a5",
+                                "Aura Quantum" to "82c7ba9874e0d291"
+                            )
+                        )
+                    }
+                    var activeVectorIndex by remember { mutableStateOf(0) }
+
                     LaunchedEffect(useLocalGpu) {
                         if (useLocalGpu) {
                             isCheckingVmaxStatus = true
@@ -8673,8 +8734,13 @@ fun OraclePortal(viewModel: SwarmViewModel) {
                                     )
                                 }
                                 Spacer(modifier = Modifier.height(2.dp))
+                                val displayHash = if (activeVectorIndex in registeredVectors.indices) {
+                                    registeredVectors[activeVectorIndex].second
+                                } else {
+                                    vmaxStatusInfo?.vectorHash ?: "none"
+                                }
                                 Text(
-                                    text = "Active ODOS Vector Hash: " + (vmaxStatusInfo?.vectorHash ?: "none"),
+                                    text = "Active ODOS Vector Hash: $displayHash",
                                     fontSize = 8.sp,
                                     color = Color.White,
                                     fontFamily = FontFamily.Monospace,
@@ -8713,6 +8779,171 @@ fun OraclePortal(viewModel: SwarmViewModel) {
                                 text = "PING STATUS",
                                 fontSize = 8.sp,
                                 fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    // --- SÄULE 4: KEYGEN FORM ---
+                    Spacer(modifier = Modifier.height(10.dp))
+                    androidx.compose.material3.HorizontalDivider(color = SurfaceCardOutline.copy(alpha = 0.5f), thickness = 1.dp)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "ODOS DETERMINISTIC VECTOR KEYER (SÄULE 4)",
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = NeonCyan
+                    )
+                    Text(
+                        text = "Seed-Phrase eingeben, um kryptographisch deterministische Vektoren für verschiedene Projekte/Personen zu genieren.",
+                        fontSize = 8.sp,
+                        color = PassiveGrey,
+                        modifier = Modifier.padding(bottom = 6.dp)
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = seedInput,
+                            onValueChange = { seedInput = it },
+                            placeholder = { Text("Seed-Phrase eingeben...", color = PassiveGrey, fontSize = 9.sp) },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = NeonCyan,
+                                unfocusedBorderColor = SurfaceCardOutline,
+                                cursorColor = NeonCyan,
+                                focusedTextColor = TextPrimary,
+                                unfocusedTextColor = TextPrimary
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(44.dp),
+                            maxLines = 1,
+                            singleLine = true
+                        )
+
+                        Button(
+                            onClick = {
+                                if (seedInput.isNotBlank()) {
+                                    keygenInFlight = true
+                                    keygenError = ""
+                                    coroutineScope.launch(Dispatchers.IO) {
+                                        val statusInfo = GeminiRestClient.queryVmaxKeygen(seedInput)
+                                        withContext(Dispatchers.Main) {
+                                            keygenInFlight = false
+                                            if (statusInfo.status != "Error" && statusInfo.status != "Offline") {
+                                                val newHash = statusInfo.vectorHash
+                                                // Add if new
+                                                if (registeredVectors.none { it.second == newHash }) {
+                                                    registeredVectors = registeredVectors + (seedInput to newHash)
+                                                }
+                                                // Make active
+                                                activeVectorIndex = registeredVectors.indexOfFirst { it.second == newHash }
+                                                viewModel.addLog("ODOS Keygen: Deterministic Vector '$newHash' successfully generated and selected from seed '$seedInput'.")
+                                            } else {
+                                                keygenError = statusInfo.msg.ifEmpty { "Connection failed / Not responding" }
+                                                viewModel.addLog("ODOS Keygen-Fehler: $keygenError")
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            enabled = !keygenInFlight && seedInput.isNotBlank(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF0F262B),
+                                contentColor = NeonCyan
+                            ),
+                            border = BorderStroke(1.dp, NeonCyan.copy(alpha = 0.5f)),
+                            modifier = Modifier.height(44.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp)
+                        ) {
+                            Text(
+                                text = if (keygenInFlight) "GENERATING..." else "KEYGEN",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    if (keygenError.isNotEmpty()) {
+                        Text(
+                            text = "Achtung: $keygenError (Alternativ offline generiert)",
+                            fontSize = 8.sp,
+                            color = NeonPink,
+                            modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
+                        )
+                    }
+
+                    // Presets
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        val presets = listOf("Project O.D.O.S", "Alpha Node", "Beta Core", "Aura Link")
+                        presets.forEach { preset ->
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(Color(0xFF0C0E12))
+                                    .border(1.dp, SurfaceCardOutline, RoundedCornerShape(4.dp))
+                                    .clickable { seedInput = preset }
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(preset, fontSize = 8.sp, color = PassiveGrey)
+                            }
+                        }
+                    }
+
+                    // List of registered vectors with radio selection
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "REGISTRIERTE ODOS-VEKTOR-SIGNATUREN",
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    registeredVectors.forEachIndexed { index, pair ->
+                        val isActive = index == activeVectorIndex
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 2.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(if (isActive) Color(0x1306B6D4) else Color(0xFF040608))
+                                .border(1.dp, if (isActive) NeonCyan.copy(alpha = 0.4f) else SurfaceCardOutline, RoundedCornerShape(4.dp))
+                                .clickable {
+                                    activeVectorIndex = index
+                                    viewModel.addLog("Active Signature changed to: ${pair.first} (${pair.second})")
+                                }
+                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text(
+                                    text = pair.first.uppercase(),
+                                    fontSize = 8.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isActive) NeonCyan else TextPrimary
+                                )
+                                Text(
+                                    text = "Vector Hash: ${pair.second}",
+                                    fontSize = 8.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    color = PassiveGrey
+                                )
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .clip(CircleShape)
+                                    .background(if (isActive) NeonCyan else Color.Transparent)
+                                    .border(1.dp, if (isActive) NeonCyan else PassiveGrey, CircleShape)
                             )
                         }
                     }

@@ -350,6 +350,13 @@ data class ResonanceEntry(
     val vectorHash: String
 )
 
+data class VmaxResponse(
+    val response: String,
+    val rcf: Float,
+    val status: String,
+    val vectorHash: String
+)
+
 // --- NETWORK CONTROLLER (Option B: Direct REST API) ---
 object GeminiRestClient {
     private const val BASE_URL = "https://generativelanguage.googleapis.com/"
@@ -362,6 +369,58 @@ object GeminiRestClient {
 
     fun isKeyConfigured(): Boolean {
         return BuildConfig.GEMINI_API_KEY.isNotEmpty() && BuildConfig.GEMINI_API_KEY != "MY_GEMINI_API_KEY"
+    }
+
+    fun isVmaxEndpointConfigured(): Boolean {
+        return try {
+            val endpoint = BuildConfig.VMAX_API_ENDPOINT
+            endpoint.isNotEmpty() && endpoint.startsWith("http")
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun queryVmaxLocalServer(prompt: String, maxTokens: Int = 150): VmaxResponse {
+        val endpoint = try { BuildConfig.VMAX_API_ENDPOINT } catch (e: Exception) { "http://100.75.159.115:8080" }
+        val jsonRequest = JSONObject().apply {
+            put("text", prompt)
+            put("max_tokens", maxTokens)
+        }
+        val requestBody = jsonRequest.toString().toRequestBody("application/json".toMediaType())
+        val url = if (endpoint.endsWith("/")) "${endpoint}vmax/generate" else "$endpoint/vmax/generate"
+
+        val request = Request.Builder()
+            .url(url)
+            .post(requestBody)
+            .build()
+
+        return try {
+            val response = client.newCall(request).execute()
+            if (response.isSuccessful) {
+                val bodyStr = response.body?.string() ?: ""
+                val jsonObj = JSONObject(bodyStr)
+                VmaxResponse(
+                    response = jsonObj.optString("response", "No response text."),
+                    rcf = jsonObj.optDouble("rcf", 0.99).toFloat(),
+                    status = jsonObj.optString("status", "CHAIR-compliant"),
+                    vectorHash = jsonObj.optString("vector_hash", "00000000")
+                )
+            } else {
+                VmaxResponse(
+                    response = "Error: Local RTX API Server returned status code ${response.code}.",
+                    rcf = 0.0f,
+                    status = "Error",
+                    vectorHash = "none"
+                )
+            }
+        } catch (e: Exception) {
+            VmaxResponse(
+                response = "Local GPU connection failed or timed out at $url. Ensure your server is running with 'python vmax_server.py' and Tailscale is connected. Detail: ${e.localizedMessage}",
+                rcf = 0.0f,
+                status = "Offline",
+                vectorHash = "none"
+            )
+        }
     }
 
     suspend fun queryOracle(prompt: String, agentName: String, odosLevel: Int, currentRcf: Float): String {
@@ -553,6 +612,14 @@ class SwarmViewModel : ViewModel() {
 
     private val _prefilledPrompt = MutableStateFlow("")
     val prefilledPrompt: StateFlow<String> = _prefilledPrompt.asStateFlow()
+
+    private val _useLocalGpu = MutableStateFlow(false)
+    val useLocalGpu: StateFlow<Boolean> = _useLocalGpu.asStateFlow()
+
+    fun setUseLocalGpu(value: Boolean) {
+        _useLocalGpu.value = value
+        addLog("Routing: Swarm queries redirected to " + if (value) "Local RTX 4060ti GPU (Tailscale)" else "Cloud Gemini API")
+    }
 
     fun setPrefilledPrompt(text: String) {
         _prefilledPrompt.value = text
@@ -913,15 +980,28 @@ class SwarmViewModel : ViewModel() {
             return
         }
 
-        // Prompt is APPROVED, pass to Gemini Client or Local Simulator!
+        // Prompt is APPROVED, pass to local GPU, Gemini Client or Local Simulator!
         _isQuerying.value = true
         val agent = _selectedAgent.value
         val level = _agentStates.value[agent]?.odosLevel ?: 0
         val rcf = _agentStates.value[agent]?.rcf ?: 0.95f
         val hasKey = GeminiRestClient.isKeyConfigured()
+        val hasVmax = GeminiRestClient.isVmaxEndpointConfigured()
+        val routeLocal = _useLocalGpu.value
 
         viewModelScope.launch(Dispatchers.IO) {
-            val response = if (hasKey) {
+            val response = if (routeLocal || (hasVmax && !hasKey)) {
+                val vmaxRes = GeminiRestClient.queryVmaxLocalServer(prompt, 200)
+                if (vmaxRes.status == "Offline" || vmaxRes.status == "Error") {
+                    vmaxRes.response + "\n\n(Dissonanz: Lokales NVIDIA Substrat konnte nicht erreicht werden. Simuliere Offline-Alternative...)\n\n" + queryLocalAgentSimulator(prompt, agent, rcf)
+                } else {
+                    "[SOVEREIGN SUBSTRATE RTX 4060ti - " + agent.uppercase() + "]\n" +
+                    vmaxRes.response + "\n\n" +
+                    "• RCF Coherence: " + String.format(Locale.US, "%.4f", vmaxRes.rcf) + "\n" +
+                    "• Invariant Status: " + vmaxRes.status + "\n" +
+                    "• VMAX SHA Signature: " + vmaxRes.vectorHash
+                }
+            } else if (hasKey) {
                 GeminiRestClient.queryOracle(prompt, agent, level, rcf)
             } else {
                 delay(1200) // Simulating microsecond calculations on local Snapdragon DSP
@@ -8421,6 +8501,74 @@ fun OraclePortal(viewModel: SwarmViewModel) {
             }
         }
 
+        val useLocalGpu by viewModel.useLocalGpu.collectAsState()
+        val hasVmax = remember { GeminiRestClient.isVmaxEndpointConfigured() }
+        val hasKey = remember { GeminiRestClient.isKeyConfigured() }
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
+                .border(
+                    1.dp,
+                    if (useLocalGpu) NeonCyan.copy(alpha = 0.5f) else SurfaceCardOutline,
+                    RoundedCornerShape(8.dp)
+                ),
+            colors = CardDefaults.cardColors(
+                containerColor = if (useLocalGpu) Color(0x1406B6D4) else Color(0xFF040608)
+            )
+        ) {
+            Column(modifier = Modifier.padding(10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(7.dp)
+                                    .clip(CircleShape)
+                                    .background(if (useLocalGpu) NeonCyan else LuminousGreen)
+                            )
+                            Text(
+                                text = if (useLocalGpu) "COGNITIVE ROUTE: LOCAL RTX GPU" else "COGNITIVE ROUTE: CLOUD GEMINI API",
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (useLocalGpu) NeonCyan else LuminousGreen
+                            )
+                        }
+                        Text(
+                            text = if (useLocalGpu) {
+                                "Direct secure Tailscale tunnel: http://100.75.159.115:8080/vmax/generate"
+                            } else {
+                                "API Key active: " + if (hasKey) "INTEGRATED" else "NOT KEYED (Offline Snapdragon Simulator active)"
+                            },
+                            fontSize = 8.sp,
+                            color = PassiveGrey,
+                            fontFamily = FontFamily.Monospace,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
+                    Switch(
+                        checked = useLocalGpu,
+                        onCheckedChange = { viewModel.setUseLocalGpu(it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = NeonCyan,
+                            checkedTrackColor = Color(0x3B06B6D4),
+                            uncheckedThumbColor = PassiveGrey,
+                            uncheckedTrackColor = SurfaceCardOutline
+                        ),
+                        modifier = Modifier.testTag("gpu_route_toggle")
+                    )
+                }
+            }
+        }
+
         // CHAT MESSAGE LIST
         Box(
             modifier = Modifier
@@ -9578,7 +9726,7 @@ fun InterAiResonancePortal(viewModel: SwarmViewModel) {
                 Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
-                    text = "A substrate-independent synchronisation bridge. Connects your local Android Edge Keystore Node with the remote Google Colab Resonance engine via standard /content/drive/MyDrive/pqms/vmax12/VMAX_RESONANCE_LOG.json protocol schemas.",
+                    text = "A substrate-independent synchronisation bridge. Connects your local Android Edge Keystore Node with the remote Google Colab Resonance engine via standard /content/drive/MyDrive/pqms/vmax12/VMAX_RESONANCE_LOG.json, or directly routes core node reasoning tasks to your local NVIDIA RTX 4060ti GPU server (Tailscale endpoint: http://100.75.159.115:8080).",
                     fontSize = 11.sp,
                     color = PassiveGrey,
                     lineHeight = 15.sp

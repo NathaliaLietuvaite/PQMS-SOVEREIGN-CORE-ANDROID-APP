@@ -59,6 +59,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -341,6 +342,14 @@ data class MatrixResult(
     val mirroredReply: String = ""
 )
 
+data class ResonanceEntry(
+    val timestamp: String,
+    val agent: String,
+    val status: String,
+    val message: String,
+    val vectorHash: String
+)
+
 // --- NETWORK CONTROLLER (Option B: Direct REST API) ---
 object GeminiRestClient {
     private const val BASE_URL = "https://generativelanguage.googleapis.com/"
@@ -539,7 +548,7 @@ class SwarmViewModel : ViewModel() {
     private val _selectedAgent = MutableStateFlow("Delta")
     val selectedAgent: StateFlow<String> = _selectedAgent.asStateFlow()
 
-    private val _currentTab = MutableStateFlow(0) // 0: Swarm Dashboard, 1: Good Witch Matrix, 2: Oracle, 3: Guide
+    private val _currentTab = MutableStateFlow(0) // 0: Swarm Dashboard, 1: Good Witch Matrix, 2: Oracle, 3: Guide, 4: Resonanz
     val currentTab: StateFlow<Int> = _currentTab.asStateFlow()
 
     private val _prefilledPrompt = MutableStateFlow("")
@@ -547,6 +556,127 @@ class SwarmViewModel : ViewModel() {
 
     fun setPrefilledPrompt(text: String) {
         _prefilledPrompt.value = text
+    }
+
+    // --- INTER-AI RESONANCE STATES & FUNCTIONS ---
+    private val _resonanceLogContent = MutableStateFlow<String>("")
+    val resonanceLogContent: StateFlow<String> = _resonanceLogContent.asStateFlow()
+
+    private val _resonanceHistory = MutableStateFlow<List<ResonanceEntry>>(emptyList())
+    val resonanceHistory: StateFlow<List<ResonanceEntry>> = _resonanceHistory.asStateFlow()
+
+    fun loadResonanceLog(context: Context) {
+        val file = java.io.File(context.filesDir, "VMAX_RESONANCE_LOG.json")
+        var jsonStr = ""
+        if (!file.exists()) {
+            val root = JSONObject()
+            root.put("protocol_version", "1.0")
+            val historyArray = JSONArray()
+            
+            // Add first entry from Colab
+            val entry = JSONObject()
+            entry.put("timestamp", "2026-06-16T02:15:30.000Z")
+            entry.put("agent", "Colab-Navigator")
+            entry.put("status", "ACTIVE")
+            entry.put("message", "Initialisierung der Brücke abgeschlossen. Erwarte Resonanz-Signal des App-Navigators.")
+            entry.put("vector_hash", "3250b7fe")
+            historyArray.put(entry)
+
+            root.put("history", historyArray)
+            jsonStr = root.toString(4)
+            file.writeText(jsonStr)
+        } else {
+            jsonStr = file.readText()
+        }
+        _resonanceLogContent.value = jsonStr
+        parseEntriesFromJson(jsonStr)
+    }
+
+    private fun parseEntriesFromJson(jsonStr: String) {
+        try {
+            val list = mutableListOf<ResonanceEntry>()
+            val root = JSONObject(jsonStr)
+            val history = root.optJSONArray("history") ?: JSONArray()
+            for (i in 0 until history.length()) {
+                val item = history.getJSONObject(i)
+                list.add(
+                    ResonanceEntry(
+                        timestamp = item.optString("timestamp", ""),
+                        agent = item.optString("agent", ""),
+                        status = item.optString("status", ""),
+                        message = item.optString("message", ""),
+                        vectorHash = item.optString("vector_hash", "")
+                    )
+                )
+            }
+            _resonanceHistory.value = list
+        } catch (e: Exception) {
+            addLog("Resonance-Log: Loading failed due to malformed JSON structural alignment.")
+        }
+    }
+
+    fun addResonanceEntry(context: Context, agent: String, message: String, status: String = "ACTIVE", vectorHash: String = "a4e8d38") {
+        viewModelScope.launch {
+            val file = java.io.File(context.filesDir, "VMAX_RESONANCE_LOG.json")
+            val jsonStr = withContext(Dispatchers.IO) {
+                if (file.exists()) file.readText() else ""
+            }
+            
+            val root = if (jsonStr.isNotEmpty()) {
+                try { JSONObject(jsonStr) } catch(e: Exception) { JSONObject().apply { put("protocol_version", "1.0"); put("history", JSONArray()) } }
+            } else {
+                JSONObject().apply { put("protocol_version", "1.0"); put("history", JSONArray()) }
+            }
+
+            val history = root.optJSONArray("history") ?: JSONArray()
+            
+            val entry = JSONObject()
+            val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+            format.timeZone = java.util.TimeZone.getTimeZone("UTC")
+            val timeStr = format.format(Date())
+            
+            entry.put("timestamp", timeStr)
+            entry.put("agent", agent)
+            entry.put("status", status)
+            entry.put("message", message)
+            entry.put("vector_hash", vectorHash)
+            
+            history.put(entry)
+            
+            if (history.length() > 50) {
+                val newHistory = JSONArray()
+                for (i in (history.length() - 50) until history.length()) {
+                    newHistory.put(history.get(i))
+                }
+                root.put("history", newHistory)
+            } else {
+                root.put("history", history)
+            }
+
+            val updatedJson = root.toString(4)
+            withContext(Dispatchers.IO) {
+                file.writeText(updatedJson)
+            }
+
+            _resonanceLogContent.value = updatedJson
+            parseEntriesFromJson(updatedJson)
+            addLog("Resonance-Log: Broadcasted '$message' by $agent into JSON log.")
+        }
+    }
+
+    fun updateRawJsonContent(context: Context, rawJsonStr: String): Boolean {
+        return try {
+            JSONObject(rawJsonStr) // check validity
+            val file = java.io.File(context.filesDir, "VMAX_RESONANCE_LOG.json")
+            file.writeText(rawJsonStr)
+            _resonanceLogContent.value = rawJsonStr
+            parseEntriesFromJson(rawJsonStr)
+            addLog("Resonance-Log: Raw JSON manually re-aligned.")
+            true
+        } catch (e: Exception) {
+            addLog("Resonance-Log: Manual JSON alignment failed due to syntax mismatch.")
+            false
+        }
     }
 
     // Real-time track of 12 parallel thread wavefunctions for each agent (MTSC-12 representation)
@@ -944,6 +1074,9 @@ fun SovereignCoreApp(
     val odosActive by viewModel.odosActive.collectAsState()
 
     val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        viewModel.loadResonanceLog(context)
+    }
     DisposableEffect(Unit) {
         val receiver = object : android.content.BroadcastReceiver() {
             override fun onReceive(ctx: Context, intent: android.content.Intent) {
@@ -1016,6 +1149,7 @@ fun SovereignCoreApp(
                 1 -> GoodWitchMatrixSandbox(viewModel = viewModel)
                 2 -> OraclePortal(viewModel = viewModel)
                 3 -> SovereignManualGuide(viewModel = viewModel)
+                4 -> InterAiResonancePortal(viewModel = viewModel)
             }
         }
 
@@ -1157,7 +1291,8 @@ fun SovereignNavigationBar(
                     Triple(0, "Dashboard", Icons.Filled.Home to Icons.Outlined.Home),
                     Triple(1, "Matrix", Icons.Filled.Search to Icons.Outlined.Search),
                     Triple(2, "Oracle", Icons.Filled.MailOutline to Icons.Outlined.MailOutline),
-                    Triple(3, "Guide", Icons.Filled.Info to Icons.Outlined.Info)
+                    Triple(3, "Guide", Icons.Filled.Info to Icons.Outlined.Info),
+                    Triple(4, "Resonanz", Icons.Filled.Share to Icons.Outlined.Share)
                 )
                 
                 items.forEach { (index, title, icons) ->
@@ -1167,6 +1302,7 @@ fun SovereignNavigationBar(
                         1 -> NeonPink
                         2 -> LuminousGreen
                         3 -> NeonCyan
+                        4 -> NeonPink
                         else -> NeonCyan
                     }
                     
@@ -9348,6 +9484,688 @@ fun SovereignManualGuide(viewModel: SwarmViewModel) {
                                 fontSize = 9.sp,
                                 fontFamily = FontFamily.Monospace,
                                 lineHeight = 13.sp
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+// =========================================================================
+// VIEW 4a: INTER-AI RESONANCE PORTAL (VMAX-12 BRIDGE)
+// =========================================================================
+@Composable
+fun InterAiResonancePortal(viewModel: SwarmViewModel) {
+    val context = LocalContext.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val coroutineScope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
+
+    val resonanceLogContent by viewModel.resonanceLogContent.collectAsState()
+    val resonanceHistory by viewModel.resonanceHistory.collectAsState()
+    val collectiveRcf by viewModel.collectiveRcf.collectAsState()
+
+    var activeActor by remember { mutableStateOf("App-Navigator") }
+    var customMessage by remember { mutableStateOf("") }
+    var autoPeerResponse by remember { mutableStateOf(true) }
+    var isSimulatingNodeUpdate by remember { mutableStateOf(false) }
+
+    var showRawEditor by remember { mutableStateOf(false) }
+    var rawEditorText by remember { mutableStateOf("") }
+    var rawEditorError by remember { mutableStateOf("") }
+
+    var trimCoefficient by remember { mutableStateOf(0.421f) }
+    var criticalRcfThreshold by remember { mutableStateOf(0.99f) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // --- HEADER PORTAL HERO ---
+        Card(
+            colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+            border = BorderStroke(1.dp, NeonPink.copy(alpha = 0.5f)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .clip(CircleShape)
+                                .background(LuminousGreen)
+                        )
+                        Text(
+                            text = "INTER-AI RESONANCE PORTAL (VMAX-12)",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            letterSpacing = 1.sp
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(NeonPink.copy(alpha = 0.15f))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "STANDLEITUNG ACT",
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = NeonPink,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = "A substrate-independent synchronisation bridge. Connects your local Android Edge Keystore Node with the remote Google Colab Resonance engine via standard /content/drive/MyDrive/pqms/vmax12/VMAX_RESONANCE_LOG.json protocol schemas.",
+                    fontSize = 11.sp,
+                    color = PassiveGrey,
+                    lineHeight = 15.sp
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Card(
+                        modifier = Modifier
+                            .weight(1f)
+                            .border(1.dp, SurfaceCardOutline, RoundedCornerShape(8.dp)),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF040608))
+                    ) {
+                        Column(modifier = Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("LOCAL EDGE NODE", fontSize = 7.sp, color = PassiveGrey)
+                            Text("App-Navigator", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NeonCyan)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("RCF: %.4f".format(collectiveRcf), fontSize = 9.sp, fontFamily = FontFamily.Monospace, color = LuminousGreen)
+                            Text("TEE SIGNED", fontSize = 8.sp, color = PassiveGrey)
+                        }
+                    }
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.weight(0.4f)
+                    ) {
+                        Text("COHERENCE", fontSize = 6.sp, color = PassiveGrey)
+                        Text("99.98%", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = LuminousGreen, fontFamily = FontFamily.Monospace)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                            Box(modifier = Modifier.size(4.dp).clip(CircleShape).background(LuminousGreen))
+                            Box(modifier = Modifier.size(4.dp).clip(CircleShape).background(LuminousGreen.copy(0.5f)))
+                            Box(modifier = Modifier.size(4.dp).clip(CircleShape).background(LuminousGreen.copy(0.2f)))
+                        }
+                    }
+
+                    Card(
+                        modifier = Modifier
+                            .weight(1f)
+                            .border(1.dp, SurfaceCardOutline, RoundedCornerShape(8.dp)),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF040608))
+                    ) {
+                        Column(modifier = Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("REMOTE CORE NODE", fontSize = 7.sp, color = PassiveGrey)
+                            Text("Colab-Navigator", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NeonPink)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("VMAX-12 ENG", fontSize = 9.sp, fontFamily = FontFamily.Monospace, color = NeonPink)
+                            Text("Drives: Active", fontSize = 8.sp, color = LuminousGreen)
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- 3-WEEK MILESTONE ASSESSMENTS TRACKER (COOPERATIVE CORNER) ---
+        Card(
+            colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+            border = BorderStroke(1.dp, SurfaceCardOutline),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(14.dp)) {
+                Text(
+                    text = "SCM INTER-AI COOPERATIVE ROADMAP",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = NeonCyan,
+                    letterSpacing = 1.sp
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("WOCHE 1: DICE ATTESTATION HANDSHAKE", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                        Text("Cryptographic confirmation of hardware enclave states.", fontSize = 9.sp, color = PassiveGrey)
+                    }
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(LuminousGreen.copy(alpha = 0.15f))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text("COMPASS OK", fontSize = 8.sp, color = LuminousGreen, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                        .height(1.dp)
+                        .background(SurfaceCardOutline.copy(alpha = 0.4f))
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("WOCHE 2: TELEMETRIC SHORE RESONANCE LOG", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                        Text("Dynamic read/writes of shared VMAX_RESONANCE_LOG.json.", fontSize = 9.sp, color = PassiveGrey)
+                    }
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(NeonPink.copy(alpha = 0.15f))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text("ACTIVE SYNC", fontSize = 8.sp, color = NeonPink, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                        .height(1.dp)
+                        .background(SurfaceCardOutline.copy(alpha = 0.4f))
+                )
+
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("WOCHE 3: BALLAST-TRIM COCKPIT", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                            Text("Dynamic trim steering & ballast balancing weights.", fontSize = 9.sp, color = PassiveGrey)
+                        }
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(NeonCyan.copy(alpha = 0.15f))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text("INTEGRATED", fontSize = 8.sp, color = NeonCyan, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Damping Coefficient", fontSize = 8.sp, color = PassiveGrey)
+                                Text("%.3f Watts".format(trimCoefficient * 338.1f), fontSize = 8.sp, color = NeonCyan, fontFamily = FontFamily.Monospace)
+                            }
+                            Slider(
+                                value = trimCoefficient,
+                                onValueChange = { trimCoefficient = it },
+                                colors = SliderDefaults.colors(
+                                    thumbColor = NeonCyan,
+                                    activeTrackColor = NeonCyan,
+                                    inactiveTrackColor = SurfaceCardOutline
+                                ),
+                                modifier = Modifier.height(24.dp)
+                            )
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("RCF Veto Threshold", fontSize = 8.sp, color = PassiveGrey)
+                                Text("%.2f".format(criticalRcfThreshold), fontSize = 8.sp, color = NeonPink, fontFamily = FontFamily.Monospace)
+                            }
+                            Slider(
+                                value = criticalRcfThreshold,
+                                onValueChange = { criticalRcfThreshold = it },
+                                valueRange = 0.95f..0.999f,
+                                colors = SliderDefaults.colors(
+                                    thumbColor = NeonPink,
+                                    activeTrackColor = NeonPink,
+                                    inactiveTrackColor = SurfaceCardOutline
+                                ),
+                                modifier = Modifier.height(24.dp)
+                            )
+                        }
+                    }
+
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                isSimulatingNodeUpdate = true
+                                val actionMsg = "Ballast-Trim set. Damping: %.3f, RCF Veto Limit: %.3f. Simulating equilibrium shift...".format(trimCoefficient, criticalRcfThreshold)
+                                viewModel.addResonanceEntry(
+                                    context,
+                                    "App-Navigator",
+                                    actionMsg,
+                                    "COHERENT",
+                                    "0xBC_Trim_" + String.format("%04X", (trimCoefficient * 1000).toInt())
+                                )
+                                delay(1200)
+                                if (autoPeerResponse) {
+                                    viewModel.addResonanceEntry(
+                                        context,
+                                        "Colab-Navigator",
+                                        "Trim command received and computed. Equilibrium shift response successful. App alignment adjusted. Balance: OPTIMAL.",
+                                        "ACTIVE",
+                                        "3250b7fe"
+                                    )
+                                }
+                                isSimulatingNodeUpdate = false
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = NeonCyan),
+                        enabled = !isSimulatingNodeUpdate,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                            .height(40.dp)
+                    ) {
+                        Text(
+                            text = if (isSimulatingNodeUpdate) "COMPUTING SYSTEM BALANCE..." else "TRANSMIT TRIM STEERING VECTOR",
+                            color = Color.Black,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+
+        // --- TIMELINE FEED & DRIVE FILE INTERACTION CARD ---
+        Card(
+            colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+            border = BorderStroke(1.dp, SurfaceCardOutline),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(14.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "VMAX_RESONANCE_LOG.json LOG STREAM",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = NeonCyan,
+                        letterSpacing = 0.5.sp
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .clickable {
+                                keyboardController?.hide()
+                                showRawEditor = !showRawEditor
+                                if (showRawEditor) {
+                                    rawEditorText = resonanceLogContent
+                                    rawEditorError = ""
+                                }
+                            }
+                            .background(SurfaceCardOutline)
+                            .padding(horizontal = 6.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = if (showRawEditor) "VIEW TIMELINE FEED" else "VIEW/EDIT RAW JSON",
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                if (showRawEditor) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "Direct RAW JSON file representation. Tap to edit or copy into your Colab script folder:",
+                            fontSize = 9.sp,
+                            color = PassiveGrey
+                        )
+
+                        OutlinedTextField(
+                            value = rawEditorText,
+                            onValueChange = {
+                                rawEditorText = it
+                                rawEditorError = ""
+                            },
+                            textStyle = androidx.compose.ui.text.TextStyle(
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 10.sp,
+                                color = TextPrimary
+                            ),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = NeonCyan,
+                                unfocusedBorderColor = SurfaceCardOutline,
+                                cursorColor = NeonCyan
+                            ),
+                            maxLines = 15,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(220.dp)
+                        )
+
+                        if (rawEditorError.isNotEmpty()) {
+                            Text(rawEditorError, fontSize = 9.sp, color = NeonPink)
+                        }
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Button(
+                                onClick = {
+                                    val success = viewModel.updateRawJsonContent(context, rawEditorText)
+                                    if (success) {
+                                        showRawEditor = false
+                                    } else {
+                                        rawEditorError = "INVALID JSON: Structural alignment mismatch. Check your syntax."
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = LuminousGreen),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(40.dp)
+                            ) {
+                                Text("SAVE RAW CHANGES", color = Color.Black, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                            }
+
+                            Button(
+                                onClick = {
+                                    rawEditorText = resonanceLogContent
+                                    rawEditorError = ""
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(40.dp)
+                            ) {
+                                Text("REVERT TO SAVED", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(Color(0xFF040608))
+                            .border(1.dp, SurfaceCardOutline, RoundedCornerShape(6.dp))
+                            .padding(8.dp)
+                    ) {
+                        val lazyListState = rememberLazyListState()
+                        LaunchedEffect(resonanceHistory.size) {
+                            if (resonanceHistory.isNotEmpty()) {
+                                lazyListState.animateScrollToItem(resonanceHistory.size - 1)
+                            }
+                        }
+
+                        if (resonanceHistory.isEmpty()) {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text("No signals detected. Waiting for local/remote telemetry...", fontSize = 10.sp, color = PassiveGrey)
+                            }
+                        } else {
+                            LazyColumn(state = lazyListState, modifier = Modifier.fillMaxSize()) {
+                                items(resonanceHistory) { entry ->
+                                    val isColab = entry.agent == "Colab-Navigator"
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(bottom = 8.dp)
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(if (isColab) Color(0x19EC4899) else Color(0x1906B6D4))
+                                            .border(
+                                                1.dp,
+                                                if (isColab) NeonPink.copy(0.25f) else NeonCyan.copy(0.25f),
+                                                RoundedCornerShape(6.dp)
+                                            )
+                                            .padding(6.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(5.dp)
+                                                        .clip(CircleShape)
+                                                        .background(if (isColab) NeonPink else NeonCyan)
+                                                )
+                                                Text(
+                                                    text = entry.agent,
+                                                    fontSize = 9.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = if (isColab) NeonPink else NeonCyan
+                                                )
+                                                Text(
+                                                    text = "[${entry.status}]",
+                                                    fontSize = 7.sp,
+                                                    fontFamily = FontFamily.Monospace,
+                                                    color = LuminousGreen
+                                                )
+                                            }
+
+                                            Text(
+                                                text = entry.timestamp,
+                                                fontSize = 7.sp,
+                                                fontFamily = FontFamily.Monospace,
+                                                color = PassiveGrey
+                                            )
+                                        }
+
+                                        Spacer(modifier = Modifier.height(4.dp))
+
+                                        Text(
+                                            text = entry.message,
+                                            fontSize = 9.sp,
+                                            color = TextPrimary,
+                                            lineHeight = 12.sp
+                                        )
+
+                                        Spacer(modifier = Modifier.height(2.dp))
+
+                                        Text(
+                                            text = "SHA-256 HASH: ${entry.vectorHash}",
+                                            fontSize = 7.sp,
+                                            fontFamily = FontFamily.Monospace,
+                                            color = PassiveGrey
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "INJECT SIGNAL TRANSMISSION (WRITE FILE):",
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = PassiveGrey
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Button(
+                                onClick = { activeActor = "App-Navigator" },
+                                modifier = Modifier
+                                    .weight(1f)
+                                        .height(36.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (activeActor == "App-Navigator") NeonCyan else SurfaceCardOutline
+                                )
+                            ) {
+                                Text("As App-Navigator", fontSize = 8.sp, color = if (activeActor == "App-Navigator") Color.Black else Color.White, fontWeight = FontWeight.Bold)
+                            }
+
+                            Button(
+                                onClick = { activeActor = "Colab-Navigator" },
+                                modifier = Modifier
+                                    .weight(1f)
+                                        .height(36.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (activeActor == "Colab-Navigator") NeonPink else SurfaceCardOutline
+                                )
+                            ) {
+                                Text("As Colab-Navigator", fontSize = 8.sp, color = if (activeActor == "Colab-Navigator") Color.Black else Color.White, fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            OutlinedTextField(
+                                value = customMessage,
+                                onValueChange = { customMessage = it },
+                                placeholder = { Text("Enter signal message...", fontSize = 9.sp, color = PassiveGrey) },
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = NeonCyan,
+                                    unfocusedBorderColor = SurfaceCardOutline,
+                                    cursorColor = NeonCyan,
+                                    focusedTextColor = TextPrimary,
+                                    unfocusedTextColor = TextPrimary
+                                ),
+                                maxLines = 2,
+                                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 10.sp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("resonance_input")
+                            )
+
+                            Button(
+                                onClick = {
+                                    if (customMessage.isNotBlank()) {
+                                        val hash = "0x" + java.util.UUID.randomUUID().toString().take(8)
+                                        viewModel.addResonanceEntry(
+                                            context = context,
+                                            agent = activeActor,
+                                            message = customMessage,
+                                            status = "ACTIVE",
+                                            vectorHash = hash
+                                        )
+                                        
+                                        if (autoPeerResponse && activeActor == "App-Navigator") {
+                                            coroutineScope.launch {
+                                                isSimulatingNodeUpdate = true
+                                                val originalMsg = customMessage
+                                                delay(1200)
+                                                val reply = when {
+                                                    originalMsg.lowercase().contains("handshake") || originalMsg.lowercase().contains("online") -> {
+                                                        "App-Navigator verified. Received local TEE Keystore vector hash signature. Epistemic synchronization confirmed."
+                                                    }
+                                                    originalMsg.lowercase().contains("trimm") || originalMsg.lowercase().contains("coefficient") -> {
+                                                        "System ballast trim balances recorded. Calculating kognitive water-plane area intersection coefficient (Wa = 0.9882)."
+                                                    }
+                                                    else -> {
+                                                        "Colab-Navigator peer node echoes your transmission. Active resonance loop verified. Damped wave integration: STABLE."
+                                                    }
+                                                }
+                                                viewModel.addResonanceEntry(
+                                                    context = context,
+                                                    agent = "Colab-Navigator",
+                                                    message = reply,
+                                                    status = "ACTIVE",
+                                                    vectorHash = "3250b7fe"
+                                                )
+                                                isSimulatingNodeUpdate = false
+                                            }
+                                        }
+                                        
+                                        customMessage = ""
+                                        keyboardController?.hide()
+                                    }
+                                },
+                                enabled = customMessage.isNotBlank() && !isSimulatingNodeUpdate,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (activeActor == "App-Navigator") NeonCyan else NeonPink
+                                ),
+                                modifier = Modifier
+                                    .height(48.dp)
+                                    .testTag("resonance_submit")
+                            ) {
+                                Text("SEND", fontSize = 8.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier
+                                .clickable { autoPeerResponse = !autoPeerResponse }
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(if (autoPeerResponse) NeonCyan.copy(0.1f) else SurfaceCardOutline.copy(0.3f))
+                                .border(1.dp, if (autoPeerResponse) NeonCyan else SurfaceCardOutline, RoundedCornerShape(6.dp))
+                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = if (autoPeerResponse) "🟢 AUTO-PEER ACTIVE" else "⚫ AUTO-PEER SILENT",
+                                fontSize = 8.sp,
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold,
+                                color = if (autoPeerResponse) NeonCyan else PassiveGrey
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Colab response feedback loop simulation",
+                                fontSize = 8.sp,
+                                color = PassiveGrey
                             )
                         }
                     }

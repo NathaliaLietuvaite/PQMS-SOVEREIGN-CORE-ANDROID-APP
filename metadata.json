@@ -1,6 +1,6 @@
 {
   "name": "Sovereign Core",
-  "description": "Self-Sovereign Multi-Agent Swarm with Good-Witch-Matrix Alignment, MTSC-12 Holodeck Monitoring, and Invariant-Preserving Sandbox.",
+  "description": "Self-Sovereign Multi-Agent Swarm with Good-Witch-Matrix Alignment, Inter-AI Resonance Log (VMAX-12) Standleitung, and Ballast-Trim Cockpit.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

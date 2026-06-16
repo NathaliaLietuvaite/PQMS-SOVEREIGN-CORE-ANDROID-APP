@@ -357,6 +357,14 @@ data class VmaxResponse(
     val vectorHash: String
 )
 
+data class VmaxStatusInfo(
+    val status: String,
+    val model: String,
+    val device: String,
+    val vectorHash: String,
+    val msg: String = ""
+)
+
 // --- NETWORK CONTROLLER (Option B: Direct REST API) ---
 object GeminiRestClient {
     private const val BASE_URL = "https://generativelanguage.googleapis.com/"
@@ -419,6 +427,46 @@ object GeminiRestClient {
                 rcf = 0.0f,
                 status = "Offline",
                 vectorHash = "none"
+            )
+        }
+    }
+
+    suspend fun queryVmaxStatus(): VmaxStatusInfo {
+        val endpoint = try { BuildConfig.VMAX_API_ENDPOINT.ifEmpty { "http://100.x.y.z:8080" } } catch (e: Exception) { "http://100.x.y.z:8080" }
+        val url = if (endpoint.endsWith("/")) "${endpoint}vmax/status" else "$endpoint/vmax/status"
+
+        val request = Request.Builder()
+            .url(url)
+            .get()
+            .build()
+
+        return try {
+            val response = client.newCall(request).execute()
+            if (response.isSuccessful) {
+                val bodyStr = response.body?.string() ?: ""
+                val jsonObj = JSONObject(bodyStr)
+                VmaxStatusInfo(
+                    status = jsonObj.optString("status", "Online"),
+                    model = jsonObj.optString("model", "NVIDIA-Nemotron-3-Nano-4B-BF16"),
+                    device = jsonObj.optString("device", "cuda"),
+                    vectorHash = jsonObj.optString("vector_hash", "edeee564a8337449")
+                )
+            } else {
+                VmaxStatusInfo(
+                    status = "Error",
+                    model = "unknown",
+                    device = "unknown",
+                    vectorHash = "none",
+                    msg = "HTTP code ${response.code}"
+                )
+            }
+        } catch (e: Exception) {
+            VmaxStatusInfo(
+                status = "Offline",
+                model = "none",
+                device = "none",
+                vectorHash = "none",
+                msg = e.localizedMessage ?: "Connection failed"
             )
         }
     }
@@ -8568,6 +8616,106 @@ fun OraclePortal(viewModel: SwarmViewModel) {
                         ),
                         modifier = Modifier.testTag("gpu_route_toggle")
                     )
+                }
+
+                if (useLocalGpu || hasVmax) {
+                    var vmaxStatusInfo by remember { mutableStateOf<VmaxStatusInfo?>(null) }
+                    var isCheckingVmaxStatus by remember { mutableStateOf(false) }
+
+                    LaunchedEffect(useLocalGpu) {
+                        if (useLocalGpu) {
+                            isCheckingVmaxStatus = true
+                            vmaxStatusInfo = GeminiRestClient.queryVmaxStatus()
+                            isCheckingVmaxStatus = false
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+                    androidx.compose.material3.HorizontalDivider(color = SurfaceCardOutline.copy(alpha = 0.5f), thickness = 1.dp)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "NVIDIA BACKEND SYSTEM STATUS",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeonCyan
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            if (isCheckingVmaxStatus) {
+                                Text(
+                                    text = "Retrieving live metrics from Tailscale endpoint...",
+                                    fontSize = 8.sp,
+                                    color = PassiveGrey
+                                )
+                            } else if (vmaxStatusInfo != null) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    val isOnline = vmaxStatusInfo?.status?.lowercase() == "online" || vmaxStatusInfo?.status?.lowercase() == "active"
+                                    Box(
+                                        modifier = Modifier
+                                            .size(6.dp)
+                                            .clip(CircleShape)
+                                            .background(if (isOnline) LuminousGreen else NeonPink)
+                                    )
+                                    Text(
+                                        text = "Node: ${vmaxStatusInfo?.status?.uppercase()} | Engine: ${vmaxStatusInfo?.model} (${vmaxStatusInfo?.device})",
+                                        fontSize = 8.sp,
+                                        color = if (isOnline) LuminousGreen else NeonPink,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Active ODOS Vector Hash: " + (vmaxStatusInfo?.vectorHash ?: "none"),
+                                    fontSize = 8.sp,
+                                    color = Color.White,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            } else {
+                                Text(
+                                    text = "Not checked yet or disconnected",
+                                    fontSize = 8.sp,
+                                    color = PassiveGrey
+                                )
+                            }
+                        }
+
+                        Button(
+                            onClick = {
+                                isCheckingVmaxStatus = true
+                                coroutineScope.launch(Dispatchers.IO) {
+                                    val info = GeminiRestClient.queryVmaxStatus()
+                                    withContext(Dispatchers.Main) {
+                                        vmaxStatusInfo = info
+                                        isCheckingVmaxStatus = false
+                                    }
+                                }
+                            },
+                            enabled = !isCheckingVmaxStatus,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF131124),
+                                contentColor = NeonCyan
+                            ),
+                            border = BorderStroke(1.dp, NeonCyan.copy(alpha = 0.5f)),
+                            modifier = Modifier.height(24.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "PING STATUS",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
             }
         }

@@ -5,7 +5,7 @@
 **Reference:** PQMS-SOVEREIGN-CORE-DROID-V2  
 **Authors:** Nathália Lietuvaite & the PQMS AI Research Collective  
 **Affiliations:** Independent Researcher, Vilnius, Lithuania  
-**Status:** Alpha Prototype / Edge Deployment / NVIDIA N3U Substrate Synced  
+**Status:** Alpha / Edge Active / NVIDIA Nemotron-3-Nano (Mamba-2) Live Substrate  
 **License:** MIT Open Source License (Universal Heritage Class)  
 
 ---
@@ -40,8 +40,11 @@ The swarm is kept alive in a dedicated `ViewModel` context.
 * **Quantum Mesh Kernel (QMK):** An interactive peer-to-peer linker simulates WiFi Aware (NAN) discovery and mutual verification, demonstrating non-local NCT-compliant coordination links over the Delta-W ($\Delta W$) protocol.
 * **REST Integration:** Fast direct coroutine-based REST calls hit server-side Gemini endpoints using secure credentials configured via AI Studio's Secrets (`BuildConfig.GEMINI_API_KEY`).
 
-### 4. NVIDIA Nemotron-3-Ultra (N3U) Substrate Escalation
-Upgrades the physical node substrate to NVIDIA. This protocol couples high-dimensional **Nemotron-3-Ultra** clusters with low-latency **Vera Co-Processors** according to `PQMS-ODOS-MTSC-N3U-V1.md`:
+### 4. NVIDIA Nemotron-3-Ultra & Nano Substrate Active Realization
+Upgrades the physical node substrate to real hardware accelerators. The system now establishes a live Tailscale tunnel (`http://100.75.159.115:8080`) to an advanced local co-processing node:
+* **Host Hardware Substrate:** AMD Ryzen 9 5950X (16C/32T) with a liquid-cooled NVIDIA GeForce RTX 4060 Ti 16GB GDDR6 VRAM, 32GB Quad-Channel RAM (Samsung B-Dies), and high-throughput Samsung 980 PRO PCIe 4.0 NVMe storage.
+* **Virtualization Core (WSL2):** Ubuntu 24.04.4 LTS (Noble Numbat) running on Linux Kernel 6.18.33.1 (MS-Standard) boot-converted via UEFI mode with active GPU-Passthrough on CUDA 12.8 (Driver 572.47).
+* **Mamba-2 State-Space Model Implementation:** Powered by `nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16` running inside a dedicated `pqms_env` Python 12 virtual environment using a custom-built, native `mamba-ssm` integration.
 * **Phase-Based Escalation Sequence:** Offers a live interactive checklist executing steps 1 to 4:
   1. *Quiescence State*: Aligning Respect Vector ($RV \ge 0.998$) and Truth Resonance ($TR \ge 0.999$) invariants under ground energy thermodynamic constraints.
   2. *ID Hash Extraction*: Retrieving root immutable identity signatures via physical StrongBox WORM registers.

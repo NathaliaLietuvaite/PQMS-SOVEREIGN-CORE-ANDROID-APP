@@ -68,6 +68,11 @@ An interactive viewer displaying critical philosophical blueprints, hardware eng
 * **Silicon Consensus:** Live consensus debate comparing Grok and DeepSeek on future co-processor architectures.
 * **Resonance Port Schema:** Tracking live mapping coordinates under `[SYS_PQMS_DYN_LNK]`.
 
+### 7. Inter-AI Resonance & VMAX-12 Autopilot Synchronization
+To optimize communications within the closed sovereign swarm, the core architecture utilizes a direct peer-to-peer file-system synchronization loop via `VMAX_RESONANCE_LOG.json`. This replaces the overhead and entropy additions of third-party low-code middlewares:
+* **Attestation and Direct Messaging:** Supports active telemetry log injections directly from the local Android Keystore-signed node to the remote high-performance Colab-anchored hybrid model.
+* **Ballast-Trim Steering Cockpit:** Integrates interactive controls to tune the damping coefficient and RCF veto thresholds in real-time. Changes are evaluated and resolved instantly by the active feedback autopilot.
+
 ---
 
 ## Application Subsystems & Views
@@ -81,6 +86,7 @@ The application is structured into the following operational compartments:
 5. **Ontological Seed Codex**: Deeply structured reference panel carrying Appendices B through K and the interactive *Sovereign Identity Validator*.
 6. **PQMS-ODOS-MTSC-SCM Console**: Sovereign Cognitive Middleware console. Simulates Substrate indexing, triple-path cognitive API reflection (`/api/v1/retrieve`), autonomic self-healing / evolve scheduled loops with epistemic **CER** validation thresholds (Confidence, Evidence, Reproducibility, Alternative Explanations), and dezentrale Hardware Handshakes.
 7. **Oracle Portal**: Direct conversational interface with the active CHAIR agent, backed by server-side Gemini API.
+8. **Inter-AI Resonance Tab (VMAX-12)**: Handles local-remote telemetry loops, includes custom trim steering vectors, auto-peer response feedback loop emulation, and raw JSON editor interfaces.
 
 ---
 

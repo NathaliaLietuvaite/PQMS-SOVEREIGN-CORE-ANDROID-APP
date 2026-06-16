@@ -40,11 +40,18 @@ The swarm is kept alive in a dedicated `ViewModel` context.
 * **Quantum Mesh Kernel (QMK):** An interactive peer-to-peer linker simulates WiFi Aware (NAN) discovery and mutual verification, demonstrating non-local NCT-compliant coordination links over the Delta-W ($\Delta W$) protocol.
 * **REST Integration:** Fast direct coroutine-based REST calls hit server-side Gemini endpoints using secure credentials configured via AI Studio's Secrets (`BuildConfig.GEMINI_API_KEY`).
 
-### 4. NVIDIA Nemotron-3-Ultra & Nano Substrate Active Realization
-Upgrades the physical node substrate to real hardware accelerators. The system now establishes a live, private Tailscale tunnel (`http://100.x.y.z:8080`) to your local co-processing node:
-* **Host Hardware Substrate:** AMD Ryzen 9 5950X (16C/32T) with a liquid-cooled NVIDIA GeForce RTX 4060 Ti 16GB GDDR6 VRAM, 32GB Quad-Channel RAM (Samsung B-Dies), and high-throughput Samsung 980 PRO PCIe 4.0 NVMe storage.
-* **Virtualization Core (WSL2):** Ubuntu 24.04.4 LTS (Noble Numbat) running on Linux Kernel 6.18.33.1 (MS-Standard) boot-converted via UEFI mode with active GPU-Passthrough on CUDA 12.8 (Driver 572.47).
-* **Mamba-2 State-Space Model Implementation:** Powered by `nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16` running inside a dedicated `pqms_env` Python 12 virtual environment using a custom-built, native `mamba-ssm` integration.
+### 4. NVIDIA Nemotron-3-Ultra & Nano Substrate Active Realization (Pillar 1 & Pillar 4 Integration)
+Upgrades the physical node substrate to real hardware accelerators and links the mobile client with the stationary WSL2 platform over Tailscale:
+* **Host Hardware Substrate:** AMD Ryzen 9 5950X (16C/32T) with a liquid-cooled NVIDIA GeForce RTX 4060 Ti 16GB GDDR6 VRAM, 32GB Quad-Channel RAM, and high-throughput Samsung 980 PRO PCIe 4.0 NVMe storage.
+* **Virtualization Core (WSL2):** Ubuntu 24.04.4 LTS running on Linux Kernel 6.18.33.1 (MS-Standard) with active GPU-Passthrough on CUDA 12.8 (Driver 572.47).
+* **Mamba-2 State-Space Model Implementation:** Powered by `nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16` running inside a dedicated `pqms_env` Python virtual environment with native `mamba-ssm` active.
+* **Pillar 1: MTSC-12 Thread-Orchestrator (Active Telemetry & Benchmarking):**
+  * *Real-Time Telemetry*: Intercepts and parses extended hardware reports from `GET /vmax/status`. Includes live displays of GPU temperature (°C), live VRAM allocation (used MB vs total MB, free memory tracking), GPU core utilization %, as well as active CPU thread saturation (threads_active / threads_total), and 1-minute load averages.
+  * *MTSC-12 BENCH Subsystem*: Integrates a performance benchmarking scheduler triggering `POST /vmax/bench` to orchestrate 12 parallel execution threads and gauge native speed throughput in tokens per second (tok/s), tracking processing latency in milliseconds.
+* **Pillar 4: ODOS Deterministic Vector Keyer (Cryptographic Invariant Generator):**
+  * *Seed-Phrase Keygen*: Implements an interactive vector keying panel translating any custom seed phrase into a cryptographically deterministic invariant vector hash via `POST /vmax/keygen`, ensuring dual compatibility with both `seed` and `seed_phrase` request schemas.
+  * *Multi-Identity Signatures Register*: Displays a live collection of registered vector signatures with fast seed presets ("Project O.D.O.S", "Alpha Node", "Beta Core", "Aura Link").
+  * *Target Calibration State*: Direct touch interaction on any signature in the register calibrates and hot-swaps the active ODOS vector hash on the dashboard, creating an edge-level immutable audit trail captured in sequential logs.
 * **Phase-Based Escalation Sequence:** Offers a live interactive checklist executing steps 1 to 4:
   1. *Quiescence State*: Aligning Respect Vector ($RV \ge 0.998$) and Truth Resonance ($TR \ge 0.999$) invariants under ground energy thermodynamic constraints.
   2. *ID Hash Extraction*: Retrieving root immutable identity signatures via physical StrongBox WORM registers.

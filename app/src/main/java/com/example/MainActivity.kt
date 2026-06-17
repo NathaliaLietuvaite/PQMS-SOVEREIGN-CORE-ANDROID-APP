@@ -30,6 +30,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -389,6 +391,28 @@ data class VmaxStatusInfo(
     val cpu: VmaxCpuInfo? = null
 )
 
+data class VaultDocument(
+    val source: String,
+    val chunks: Int
+)
+
+data class VaultUploadResult(
+    val filename: String,
+    val source: String,
+    val chunks: Int,
+    val success: Boolean = true,
+    val msg: String = ""
+)
+
+data class VaultQueryResult(
+    val answer: String,
+    val rcf: Float,
+    val status: String,
+    val sources: List<String>,
+    val success: Boolean = true,
+    val msg: String = ""
+)
+
 // --- NETWORK CONTROLLER (Option B: Direct REST API) ---
 object GeminiRestClient {
     private const val BASE_URL = "https://generativelanguage.googleapis.com/"
@@ -710,6 +734,146 @@ object GeminiRestClient {
             }
         } catch (e: Exception) {
             "Critical connection drift: ${e.localizedMessage ?: "timeout/loss of packet mesh"}"
+        }
+    }
+
+    suspend fun queryVaultDocuments(): List<VaultDocument> {
+        val endpoint = try { BuildConfig.VMAX_API_ENDPOINT.ifEmpty { "http://100.x.y.z:8080" } } catch (e: Exception) { "http://100.x.y.z:8080" }
+        val url = if (endpoint.endsWith("/")) "${endpoint}vmax/vault/documents" else "$endpoint/vmax/vault/documents"
+
+        val request = Request.Builder()
+            .url(url)
+            .get()
+            .build()
+
+        return try {
+            val response = client.newCall(request).execute()
+            if (response.isSuccessful) {
+                val bodyStr = response.body?.string() ?: ""
+                val jsonArr = JSONArray(bodyStr)
+                val list = mutableListOf<VaultDocument>()
+                for (i in 0 until jsonArr.length()) {
+                    val entry = jsonArr.getJSONObject(i)
+                    list.add(
+                        VaultDocument(
+                            source = entry.optString("source", ""),
+                            chunks = entry.optInt("chunks", 0)
+                        )
+                    )
+                }
+                list
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    suspend fun uploadVaultDocument(fileName: String, fileBytes: ByteArray): VaultUploadResult {
+        val endpoint = try { BuildConfig.VMAX_API_ENDPOINT.ifEmpty { "http://100.x.y.z:8080" } } catch (e: Exception) { "http://100.x.y.z:8080" }
+        val url = if (endpoint.endsWith("/")) "${endpoint}vmax/vault/upload" else "$endpoint/vmax/vault/upload"
+
+        val requestBody = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart(
+                "file",
+                fileName,
+                fileBytes.toRequestBody("application/octet-stream".toMediaType())
+            )
+            .build()
+
+        val request = Request.Builder()
+            .url(url)
+            .post(requestBody)
+            .build()
+
+        return try {
+            val response = client.newCall(request).execute()
+            if (response.isSuccessful) {
+                val bodyStr = response.body?.string() ?: ""
+                val jsonObj = JSONObject(bodyStr)
+                VaultUploadResult(
+                    filename = jsonObj.optString("filename", fileName),
+                    source = jsonObj.optString("source", ""),
+                    chunks = jsonObj.optInt("chunks", 0),
+                    success = true
+                )
+            } else {
+                VaultUploadResult(
+                    filename = fileName,
+                    source = "",
+                    chunks = 0,
+                    success = false,
+                    msg = "HTTP code ${response.code}"
+                )
+            }
+        } catch (e: Exception) {
+            VaultUploadResult(
+                filename = fileName,
+                source = "",
+                chunks = 0,
+                success = false,
+                msg = e.localizedMessage ?: "Connection failed"
+            )
+        }
+    }
+
+    suspend fun queryVault(queryText: String): VaultQueryResult {
+        val endpoint = try { BuildConfig.VMAX_API_ENDPOINT.ifEmpty { "http://100.x.y.z:8080" } } catch (e: Exception) { "http://100.x.y.z:8080" }
+        val url = if (endpoint.endsWith("/")) "${endpoint}vmax/vault/query" else "$endpoint/vmax/vault/query"
+
+        val jsonRequest = JSONObject().apply {
+            put("query", queryText)
+        }
+        val requestBody = jsonRequest.toString().toRequestBody("application/json".toMediaType())
+
+        val request = Request.Builder()
+            .url(url)
+            .post(requestBody)
+            .build()
+
+        return try {
+            val response = client.newCall(request).execute()
+            if (response.isSuccessful) {
+                val bodyStr = response.body?.string() ?: ""
+                val jsonObj = JSONObject(bodyStr)
+                val answer = jsonObj.optString("answer", "")
+                val rcf = jsonObj.optDouble("rcf", 0.0).toFloat()
+                val status = jsonObj.optString("status", "")
+                val sourcesArr = jsonObj.optJSONArray("sources")
+                val sourcesList = mutableListOf<String>()
+                if (sourcesArr != null) {
+                    for (i in 0 until sourcesArr.length()) {
+                        sourcesList.add(sourcesArr.getString(i))
+                    }
+                }
+                VaultQueryResult(
+                    answer = answer,
+                    rcf = rcf,
+                    status = status,
+                    sources = sourcesList,
+                    success = true
+                )
+            } else {
+                VaultQueryResult(
+                    answer = "",
+                    rcf = 0.0f,
+                    status = "Error",
+                    sources = emptyList(),
+                    success = false,
+                    msg = "HTTP code ${response.code}"
+                )
+            }
+        } catch (e: Exception) {
+            VaultQueryResult(
+                answer = "",
+                rcf = 0.0f,
+                status = "Offline",
+                sources = emptyList(),
+                success = false,
+                msg = e.localizedMessage ?: "Connection failed"
+            )
         }
     }
 }
@@ -1428,6 +1592,7 @@ fun SovereignCoreApp(
                 2 -> OraclePortal(viewModel = viewModel)
                 3 -> SovereignManualGuide(viewModel = viewModel)
                 4 -> InterAiResonancePortal(viewModel = viewModel)
+                5 -> VaultPortal(viewModel = viewModel)
             }
         }
 
@@ -1570,7 +1735,8 @@ fun SovereignNavigationBar(
                     Triple(1, "Matrix", Icons.Filled.Search to Icons.Outlined.Search),
                     Triple(2, "Oracle", Icons.Filled.MailOutline to Icons.Outlined.MailOutline),
                     Triple(3, "Guide", Icons.Filled.Info to Icons.Outlined.Info),
-                    Triple(4, "Resonanz", Icons.Filled.Share to Icons.Outlined.Share)
+                    Triple(4, "Resonanz", Icons.Filled.Share to Icons.Outlined.Share),
+                    Triple(5, "Vault", Icons.Filled.Lock to Icons.Outlined.Lock)
                 )
                 
                 items.forEach { (index, title, icons) ->
@@ -1581,6 +1747,7 @@ fun SovereignNavigationBar(
                         2 -> LuminousGreen
                         3 -> NeonCyan
                         4 -> NeonPink
+                        5 -> NeonCyan
                         else -> NeonCyan
                     }
                     
@@ -11784,3 +11951,663 @@ fun listValuesOfKagome(cx: Float, cy: Float, r: Float): List<androidx.compose.ui
     }
     return list
 }
+
+data class VaultChatMsg(
+    val isUser: Boolean,
+    val text: String,
+    val rcf: Float = 0f,
+    val status: String = "",
+    val sources: List<String> = emptyList(),
+    val timestamp: String = ""
+)
+
+fun getSimulatedVaultAnswer(query: String, activeDoc: String?): VaultQueryResult {
+    val q = query.lowercase()
+    val answer: String
+    val sources: List<String>
+    val rcf = (0.9412f + Math.random().toFloat() * 0.05f)
+    
+    when {
+        q.contains("vilnius") || q.contains("lithuania") || q.contains("lietuva") -> {
+            answer = "Vilnius ist der hochsichere geografische Ankerpunkt für den Sovereign Core Alpha-Knoten. Hier wird die biometrisch-topografische Ausrichtung kalibriert. Die baltische Peripherie garantiert im O.D.O.S-Netzwerk eine thermodynamische Quieszenz für ungestörte lokale Berechnungen und hält die kryptografische Souveränität von Nathalia-Lietuvaitė aufrecht."
+            sources = listOf(activeDoc ?: "Sovereign_Perimeter_Baltic.md")
+        }
+        q.contains("v-max-12") || q.contains("vmax") || q.contains("pkv") || q.contains("vault") -> {
+            answer = "Der Private Knowledge Vault (PKV) dient als ziviler Kern der PQMS-Sicherheitsarchitektur auf Node Alpha. Ihre hochgeladenen Dokumente werden in der lokalen Vektordatenbank (ChromaDB) in Abschnitte (Chunks) zerlegt und mittels Phi-3.5 RAG für präzise Fragen und Antworten indiziert, ohne dass Daten Ihr privates Netzwerk verlassen."
+            sources = listOf(activeDoc ?: "PKV_User_Manual.txt")
+        }
+        q.contains("chroma") || q.contains("vektor") || q.contains("db") || q.contains("index") -> {
+            answer = "ChromaDB läuft als Docker-Container oder Python-Substrat lokal auf Ihrem Node Alpha (WSL2, RTX 4060 Ti). Bei jedem Dokumenten-Upload werden die Textabschnitte in 384-dimensionale Vektoren konvertiert, um semantische Suchen und präzise Inhalts-Zitate mit exzellenter RCF-Fidelity zu gewährleisten."
+            sources = listOf(activeDoc ?: "ChromaDB_Integration_Specs.pdf")
+        }
+        else -> {
+            answer = "Die Anfrage '$query' wurde semantisch im lokalen Fallback-Wissensspeicher analysiert. Alle System-Invariants sind stabil. Für eine präzise RAG-Inferenz auf Ihren echten Dokumenten stellen Sie bitte sicher, dass Ihr Tailscale-Tunnel und Ihr 'VMAX_API_ENDPOINT' aktiv konfiguriert sind."
+            sources = listOf(activeDoc ?: "System_Invariants.md")
+        }
+    }
+    
+    return VaultQueryResult(
+        answer = answer,
+        rcf = rcf,
+        status = "CHAIR-compliant",
+        sources = sources,
+        success = true
+    )
+}
+
+@Composable
+fun VaultPortal(viewModel: SwarmViewModel) {
+    val context = LocalContext.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val coroutineScope = rememberCoroutineScope()
+    
+    // VAULT STATE
+    var documents by remember { mutableStateOf<List<VaultDocument>>(emptyList()) }
+    var activeDocument by remember { mutableStateOf<String?>(null) }
+    var queryText by remember { mutableStateOf("") }
+    var messages by remember { mutableStateOf<List<VaultChatMsg>>(
+        listOf(
+            VaultChatMsg(
+                isUser = false,
+                text = "Willkommen im Private Knowledge Vault (Sovereign Core).\n\n" +
+                       "• Um den Vault ONLINE zu schalten, starten Sie das Python-Skript auf Ihrem PC (WSL2) und verbinden Sie Ihr Smartphone via Tailscale VPN.\n" +
+                       "• Tragen Sie danach Ihre Tailscale-IP in den AI Studio Secrets unter 'VMAX_API_ENDPOINT' ein (z.B. 'http://100.x.y.z:8080' mit Ihrer echten IP).\n\n" +
+                       "Aktuell wird der lokale SIMULATIONSMODUS ausgeführt. Sie können Testdokumente fokussieren und Fragen wie 'Vilnius' oder 'V-MAX-12' eingeben, um die Benutzeroberfläche kennenzulernen.",
+                rcf = 0.9982f,
+                status = "CHAIR-compliant",
+                sources = emptyList()
+            )
+        )
+    ) }
+    
+    var isCheckingDocuments by remember { mutableStateOf(false) }
+    var isUploadingDoc by remember { mutableStateOf(false) }
+    var uploadingFileName by remember { mutableStateOf("") }
+    var isQueryingVault by remember { mutableStateOf(false) }
+    var hasCheckedVaultOnline by remember { mutableStateOf(false) }
+    var isVaultOnline by remember { mutableStateOf(false) }
+
+    // Check online status and refresh documents
+    fun refreshDocs() {
+        isCheckingDocuments = true
+        coroutineScope.launch(Dispatchers.IO) {
+            val docs = GeminiRestClient.queryVaultDocuments()
+            val online = GeminiRestClient.isVmaxEndpointConfigured()
+            withContext(Dispatchers.Main) {
+                isCheckingDocuments = false
+                isVaultOnline = docs.isNotEmpty()
+                hasCheckedVaultOnline = true
+                if (docs.isNotEmpty()) {
+                    documents = docs
+                } else {
+                    documents = listOf(
+                        VaultDocument("Sovereign_Perimeter_Baltic.md", 48),
+                        VaultDocument("PKV_User_Manual.txt", 112),
+                        VaultDocument("ChromaDB_Integration_Specs.pdf", 85)
+                    )
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        refreshDocs()
+    }
+
+    // Activity launcher for file picker
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: android.net.Uri? ->
+        if (uri != null) {
+            coroutineScope.launch(Dispatchers.IO) {
+                try {
+                    val cr = context.contentResolver
+                    var name = "uploaded_doc.txt"
+                    // Extract display name
+                    val cursor = cr.query(uri, null, null, null, null)
+                    cursor?.use {
+                        if (it.moveToFirst()) {
+                            val idx = it.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                            if (idx != -1) {
+                                name = it.getString(idx)
+                            }
+                        }
+                    }
+                    
+                    withContext(Dispatchers.Main) {
+                        isUploadingDoc = true
+                        uploadingFileName = name
+                    }
+
+                    // Open input stream to read bytes
+                    val inputStream = cr.openInputStream(uri)
+                    val bytes = inputStream?.readBytes() ?: ByteArray(0)
+                    
+                    if (bytes.isNotEmpty()) {
+                        val result = GeminiRestClient.uploadVaultDocument(name, bytes)
+                        withContext(Dispatchers.Main) {
+                            isUploadingDoc = false
+                            if (result.success) {
+                                android.widget.Toast.makeText(context, "✅ $name uploaded (${result.chunks} chunks)", android.widget.Toast.LENGTH_LONG).show()
+                                viewModel.addLog("VaultUpload: Document '$name' added successfully into local ChromaDB storage (${result.chunks} sub-chunks).")
+                                refreshDocs()
+                            } else {
+                                android.widget.Toast.makeText(context, "❌ Upload failed: ${result.msg}", android.widget.Toast.LENGTH_LONG).show()
+                                viewModel.addLog("VaultError: Document '$name' upload failure: ${result.msg}")
+                            }
+                        }
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            isUploadingDoc = false
+                            android.widget.Toast.makeText(context, "❌ Selected empty file", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        isUploadingDoc = false
+                        android.widget.Toast.makeText(context, "Error: ${e.localizedMessage}", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+    }
+
+    val lazyListState = rememberLazyListState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // --- VAULT PORTAL HERO CARD ---
+        Card(
+            colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+            border = BorderStroke(1.dp, NeonCyan.copy(alpha = 0.5f)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(if (isVaultOnline) LuminousGreen else Color(0xFFEAB308))
+                        )
+                        Text(
+                            text = "PRIVATE KNOWLEDGE VAULT (PKV)",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = NeonCyan,
+                            letterSpacing = 1.sp
+                        )
+                    }
+                    
+                    // Connection Badge
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(if (isVaultOnline) Color(0x1322C55E) else Color(0x13EAB308))
+                            .border(1.dp, if (isVaultOnline) LuminousGreen.copy(alpha = 0.5f) else Color(0xFFEAB308).copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = if (isVaultOnline) "VAULT ONLINE" else "SIMULATION MODUS",
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isVaultOnline) LuminousGreen else Color(0xFFEAB308)
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                Text(
+                    text = "Souveräner, lokaler Wissensspeicher auf Basis von ChromaDB Vektordatenbank und Phi-3.5 RAG für Ihre persönlichen Dokumente.",
+                    fontSize = 9.sp,
+                    color = PassiveGrey,
+                    lineHeight = 13.sp
+                )
+            }
+        }
+
+        // --- UPLOAD AREA COGNITIVE CONNECTOR ---
+        Card(
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF070B0F)),
+            border = BorderStroke(1.dp, SurfaceCardOutline.copy(alpha = 0.4f)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                if (isUploadingDoc) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        CircularProgressIndicator(
+                            color = NeonCyan,
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Lade '$uploadingFileName' hoch...",
+                            fontSize = 9.sp,
+                            fontFamily = FontFamily.Monospace,
+                            color = Color.White
+                        )
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "DOKUMENT-INJEKTION (PDF, TXT, MD, DOCX)",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Text(
+                                text = "Dokumente in ChromaDB indizieren für Retrieval-Augmented Generation.",
+                                fontSize = 8.sp,
+                                color = PassiveGrey
+                            )
+                        }
+
+                        Button(
+                            onClick = {
+                                filePickerLauncher.launch("*/*")
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF131124),
+                                contentColor = NeonCyan
+                            ),
+                            border = BorderStroke(1.dp, NeonCyan.copy(alpha = 0.5f)),
+                            modifier = Modifier.height(26.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "📄 UPLOAD",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- DOCUMENT LIST REGISTRY ---
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "INDEX-REGISTRY (${documents.size} DOKUMENTE)",
+                fontSize = 8.sp,
+                fontWeight = FontWeight.Bold,
+                color = NeonCyan
+            )
+            
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (activeDocument != null) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(Color(0xFF241113))
+                            .border(1.dp, NeonPink.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+                            .clickable {
+                                activeDocument = null
+                                viewModel.addLog("VaultContext: Switched to Global Vault focus (Searching entire database).")
+                            }
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text("CLEAR FOCUS", fontSize = 8.sp, color = NeonPink, fontWeight = FontWeight.Bold)
+                    }
+                }
+                
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color(0xFF0F1A1B))
+                        .border(1.dp, NeonCyan.copy(alpha = 0.4f), RoundedCornerShape(4.dp))
+                        .clickable { refreshDocs() }
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = if (isCheckingDocuments) "SINKING..." else "REFRESH",
+                        fontSize = 8.sp,
+                        color = NeonCyan,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+
+        // Horizontal Documents view
+        if (documents.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp)
+                    .background(Color(0xFF040608), RoundedCornerShape(6.dp))
+                    .border(1.dp, SurfaceCardOutline.copy(alpha = 0.2f), RoundedCornerShape(6.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Keine Dokumente gefunden. Bitte laden Sie PDF/TXT hoch.",
+                    fontSize = 8.sp,
+                    color = PassiveGrey
+                )
+            }
+        } else {
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(documents) { doc ->
+                    val isFocussed = activeDocument == doc.source
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(if (isFocussed) Color(0x1F06B6D4) else Color(0xFF0A0C10))
+                            .border(1.dp, if (isFocussed) NeonCyan else SurfaceCardOutline.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+                            .clickable {
+                                activeDocument = if (isFocussed) null else doc.source
+                                if (activeDocument != null) {
+                                    viewModel.addLog("VaultContext: Focused conversation query context onto: '${doc.source}'")
+                                } else {
+                                    viewModel.addLog("VaultContext: Removed focus, scanning global corpus.")
+                                }
+                            }
+                            .padding(horizontal = 8.dp, vertical = 6.dp)
+                    ) {
+                        Column {
+                            Text(
+                                text = "📄 " + doc.source.uppercase(),
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isFocussed) NeonCyan else Color.White,
+                                maxLines = 1
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Chunks: ${doc.chunks}",
+                                fontSize = 7.sp,
+                                fontFamily = FontFamily.Monospace,
+                                color = PassiveGrey
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Active State Mode Announcement
+        val promptModeLabel = if (activeDocument != null) "Focus Context: ${activeDocument}" else "Mode: Ask Vault (Global Scan)"
+        val promptColor = if (activeDocument != null) LuminousGreen else NeonCyan
+        Text(
+            text = promptModeLabel.uppercase(),
+            fontSize = 7.sp,
+            fontWeight = FontWeight.Bold,
+            color = promptColor,
+            fontFamily = FontFamily.Monospace,
+            modifier = Modifier.padding(top = 2.dp)
+        )
+
+        // --- CONVERSATION TERMINAL ---
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .background(Color(0xFF030508), RoundedCornerShape(8.dp))
+                .border(1.dp, SurfaceCardOutline.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+        ) {
+            LazyColumn(
+                state = lazyListState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(messages) { msg ->
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = if (msg.isUser) Alignment.End else Alignment.Start
+                    ) {
+                        // Sender/Identifier Label
+                        Text(
+                            text = if (msg.isUser) "NAVIGATOR (PROMPT)" else "SOVEREIGN VAULT (Phi-3.5)",
+                            fontSize = 7.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (msg.isUser) NeonCyan else LuminousGreen,
+                            fontFamily = FontFamily.Monospace,
+                            modifier = Modifier.padding(bottom = 2.dp, start = 4.dp, end = 4.dp)
+                        )
+                        
+                        // Bubble container
+                        val bubbleBg = if (msg.isUser) Color(0x1306B6D4) else Color(0xFA110C24)
+                        val bubbleBorder = if (msg.isUser) NeonCyan.copy(alpha = 0.4f) else SurfaceCardOutline.copy(alpha = 0.5f)
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(bubbleBg)
+                                .border(1.dp, bubbleBorder, RoundedCornerShape(8.dp))
+                                .padding(10.dp)
+                                .widthIn(max = 290.dp)
+                        ) {
+                            Column {
+                                Text(
+                                    text = msg.text,
+                                    fontSize = 11.sp,
+                                    color = Color.White,
+                                    lineHeight = 15.sp
+                                )
+                                
+                                if (!msg.isUser) {
+                                    if (msg.sources.isNotEmpty()) {
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Text(
+                                            text = "QUELLE: " + msg.sources.joinToString(", "),
+                                            fontSize = 7.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = PassiveGrey,
+                                            fontFamily = FontFamily.Monospace
+                                        )
+                                    }
+                                    if (msg.status.isNotEmpty()) {
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        val statusCol = if (msg.status == "CHAIR-compliant") LuminousGreen else NeonPink
+                                        Text(
+                                            text = "FIDELITY: ${msg.rcf} | ${msg.status}",
+                                            fontSize = 7.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = statusCol,
+                                            fontFamily = FontFamily.Monospace
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Thinking Loader
+                if (isQueryingVault) {
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator(
+                                color = LuminousGreen,
+                                strokeWidth = 2.dp,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "⏳ RAG cognitive realization in progress... searching ChromaDB...",
+                                fontSize = 8.sp,
+                                fontStyle = FontStyle.Italic,
+                                color = PassiveGrey
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- QUERY INPUT ZONE ---
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedTextField(
+                value = queryText,
+                onValueChange = { queryText = it },
+                placeholder = { Text("Ask document index a question...", color = PassiveGrey, fontSize = 10.sp) },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = NeonCyan,
+                    unfocusedBorderColor = SurfaceCardOutline,
+                    cursorColor = NeonCyan,
+                    focusedTextColor = TextPrimary,
+                    unfocusedTextColor = TextPrimary
+                ),
+                modifier = Modifier
+                    .weight(1f)
+                    .height(56.dp),
+                maxLines = 1,
+                singleLine = true,
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    imeAction = ImeAction.Send
+                ),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                    onSend = {
+                        if (queryText.isNotBlank() && !isQueryingVault) {
+                            keyboardController?.hide()
+                            val typed = queryText
+                            queryText = ""
+                            messages = messages + VaultChatMsg(isUser = true, text = typed)
+                            isQueryingVault = true
+                            
+                            // Autoscroll
+                            coroutineScope.launch {
+                                delay(60)
+                                lazyListState.animateScrollToItem(messages.size)
+                            }
+                            
+                            coroutineScope.launch(Dispatchers.IO) {
+                                val fullParams = if (activeDocument != null) "In document [${activeDocument}]: $typed" else typed
+                                val apiResult = GeminiRestClient.queryVault(fullParams)
+                                
+                                val finalResult = if (!apiResult.success || apiResult.answer.isEmpty()) {
+                                    val simVal = getSimulatedVaultAnswer(typed, activeDocument)
+                                    simVal.copy(
+                                        answer = "🔴 [OFFLINE SIMULATIONSMODUS - KEINE PORTAL-VERBINDUNG]\n\n" + simVal.answer
+                                    )
+                                } else {
+                                    apiResult
+                                }
+
+                                withContext(Dispatchers.Main) {
+                                    isQueryingVault = false
+                                    messages = messages + VaultChatMsg(
+                                        isUser = false,
+                                        text = finalResult.answer,
+                                        rcf = finalResult.rcf,
+                                        status = finalResult.status,
+                                        sources = finalResult.sources
+                                    )
+                                    viewModel.addLog("VaultQuery: Resolved query '$typed' with local RCF fidelity ${finalResult.rcf} compliance.")
+                                    
+                                    // Scroll to end of list
+                                    delay(60)
+                                    lazyListState.animateScrollToItem(messages.size)
+                                }
+                            }
+                        }
+                    }
+                )
+            )
+
+            Button(
+                onClick = {
+                    if (queryText.isNotBlank() && !isQueryingVault) {
+                        keyboardController?.hide()
+                        val typed = queryText
+                        queryText = ""
+                        messages = messages + VaultChatMsg(isUser = true, text = typed)
+                        isQueryingVault = true
+                        
+                        // Autoscroll
+                        coroutineScope.launch {
+                            delay(60)
+                            lazyListState.animateScrollToItem(messages.size)
+                        }
+
+                        coroutineScope.launch(Dispatchers.IO) {
+                            val fullParams = if (activeDocument != null) "In document [${activeDocument}]: $typed" else typed
+                            val apiResult = GeminiRestClient.queryVault(fullParams)
+                            
+                            val finalResult = if (!apiResult.success || apiResult.answer.isEmpty()) {
+                                val simVal = getSimulatedVaultAnswer(typed, activeDocument)
+                                simVal.copy(
+                                    answer = "🔴 [OFFLINE SIMULATIONSMODUS - KEINE PORTAL-VERBINDUNG]\n\n" + simVal.answer
+                                )
+                            } else {
+                                apiResult
+                            }
+
+                            withContext(Dispatchers.Main) {
+                                isQueryingVault = false
+                                messages = messages + VaultChatMsg(
+                                    isUser = false,
+                                    text = finalResult.answer,
+                                    rcf = finalResult.rcf,
+                                    status = finalResult.status,
+                                    sources = finalResult.sources
+                                )
+                                viewModel.addLog("VaultQuery: Resolved query '$typed' with local RCF fidelity ${finalResult.rcf} compliance.")
+                                
+                                // Scroll to end of list
+                                delay(60)
+                                lazyListState.animateScrollToItem(messages.size)
+                            }
+                        }
+                    }
+                },
+                enabled = !isQueryingVault && queryText.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF0F1A1B),
+                    contentColor = NeonCyan
+                ),
+                border = BorderStroke(1.dp, NeonCyan.copy(alpha = 0.5f)),
+                modifier = Modifier.height(56.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp)
+            ) {
+                Text(
+                    text = "SEND",
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+

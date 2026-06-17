@@ -83,11 +83,11 @@ To optimize communications within the closed sovereign swarm, the core architect
 * **Attestation and Direct Messaging:** Supports active telemetry log injections directly from the local Android Keystore-signed node to the remote high-performance Colab-anchored hybrid model.
 * **Ballast-Trim Steering Cockpit:** Integrates interactive controls to tune the damping coefficient and RCF veto thresholds in real-time. Changes are evaluated and resolved instantly by the active feedback autopilot.
 
-### 8. Private Knowledge Vault (PKV) Integration (RAG Subsystem)
+### 8. Personal Knowledge Base (PKB) Integration (RAG Subsystem)
 Links the mobile sovereign core with the stationary AMD Ryzen / RTX 4060 Ti WSL2 hardware node over Tailscale (configured via `VMAX_API_ENDPOINT` e.g., `http://100.x.y.z:8080`) to provide high-efficiency vector-embedded search and local document RAG.
-* **Multipart Document Ingestion:** Direct mobile client-side upload of critical operational documents (PDF, TXT, MD, DOCX) over secure REST protocols (`POST /vmax/vault/upload`) using automated multipart serialization. Induces background split action and triggers real-time indexing logs in the TEE diagnostic terminal.
-* **Dual-Focus Search Registry:** Provides a real-time list of all indexed documents in ChromaDB (`GET /vmax/vault/documents`), complete with sub-chunk counts. Tapping any item switches the localized conversational mode from global scan to document-confined target search, updating query headers on-the-fly.
-* **Phi-3.5 RAG with ODOS Verification:** Dispatches analytical prompts to the active inference client (`POST /vmax/vault/query`). Displays responsive answers complete with precise source-file citations, exact RCF (Resonant Coherence Fidelity) evaluations, and strict CHAIR-compliant safety status alerts.
+* **Multipart Document Ingestion:** Direct mobile client-side upload of critical operational documents (PDF, TXT, MD, DOCX) over secure REST protocols (`POST /vmax/pkb/upload`) using automated multipart serialization. Induces background split action and triggers real-time indexing logs in the TEE diagnostic terminal.
+* **Dual-Focus Search Registry:** Provides a real-time list of all indexed documents in ChromaDB (`GET /vmax/pkb/documents`), complete with sub-chunk counts. Tapping any item switches the localized conversational mode from global scan to document-confined target search, updating query headers on-the-fly.
+* **Phi-3.5 RAG with ODOS Verification:** Dispatches analytical prompts to the active inference client (`POST /vmax/pkb/query`). Displays responsive answers complete with precise source-file citations, exact RCF (Resonant Coherence Fidelity) evaluations, and strict CHAIR-compliant safety status alerts.
 
 ---
 
@@ -103,7 +103,7 @@ The application is structured into the following operational compartments:
 6. **PQMS-ODOS-MTSC-SCM Console**: Sovereign Cognitive Middleware console. Simulates Substrate indexing, triple-path cognitive API reflection (`/api/v1/retrieve`), autonomic self-healing / evolve scheduled loops with epistemic **CER** validation thresholds (Confidence, Evidence, Reproducibility, Alternative Explanations), and dezentrale Hardware Handshakes.
 7. **Oracle Portal**: Direct conversational interface with the active CHAIR agent, backed by server-side Gemini API.
 8. **Inter-AI Resonance Tab (VMAX-12)**: Handles local-remote telemetry loops, includes custom trim steering vectors, auto-peer response feedback loop emulation, and raw JSON editor interfaces.
-9. **Private Knowledge Vault (PKV)**: A dedicated 🔐 Vault portal implementing file-system upload hooks, horizontal document target focus, pulling refresh, and interactive conversations with the local vector database.
+9. **Personal Knowledge Base (PKB)**: A dedicated 🔐 PKB portal implementing file-system upload hooks, horizontal document target focus, pulling refresh, and interactive conversations with the local vector database.
 
 ---
 

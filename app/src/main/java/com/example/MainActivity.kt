@@ -391,12 +391,12 @@ data class VmaxStatusInfo(
     val cpu: VmaxCpuInfo? = null
 )
 
-data class VaultDocument(
+data class PkbDocument(
     val source: String,
     val chunks: Int
 )
 
-data class VaultUploadResult(
+data class PkbUploadResult(
     val filename: String,
     val source: String,
     val chunks: Int,
@@ -404,7 +404,7 @@ data class VaultUploadResult(
     val msg: String = ""
 )
 
-data class VaultQueryResult(
+data class PkbQueryResult(
     val answer: String,
     val rcf: Float,
     val status: String,
@@ -737,9 +737,9 @@ object GeminiRestClient {
         }
     }
 
-    suspend fun queryVaultDocuments(): List<VaultDocument> {
+    suspend fun queryPkbDocuments(): List<PkbDocument> {
         val endpoint = try { BuildConfig.VMAX_API_ENDPOINT.ifEmpty { "http://100.x.y.z:8080" } } catch (e: Exception) { "http://100.x.y.z:8080" }
-        val url = if (endpoint.endsWith("/")) "${endpoint}vmax/vault/documents" else "$endpoint/vmax/vault/documents"
+        val url = if (endpoint.endsWith("/")) "${endpoint}vmax/pkb/documents" else "$endpoint/vmax/pkb/documents"
 
         val request = Request.Builder()
             .url(url)
@@ -751,11 +751,11 @@ object GeminiRestClient {
             if (response.isSuccessful) {
                 val bodyStr = response.body?.string() ?: ""
                 val jsonArr = JSONArray(bodyStr)
-                val list = mutableListOf<VaultDocument>()
+                val list = mutableListOf<PkbDocument>()
                 for (i in 0 until jsonArr.length()) {
                     val entry = jsonArr.getJSONObject(i)
                     list.add(
-                        VaultDocument(
+                        PkbDocument(
                             source = entry.optString("source", ""),
                             chunks = entry.optInt("chunks", 0)
                         )
@@ -770,9 +770,9 @@ object GeminiRestClient {
         }
     }
 
-    suspend fun uploadVaultDocument(fileName: String, fileBytes: ByteArray): VaultUploadResult {
+    suspend fun uploadPkbDocument(fileName: String, fileBytes: ByteArray): PkbUploadResult {
         val endpoint = try { BuildConfig.VMAX_API_ENDPOINT.ifEmpty { "http://100.x.y.z:8080" } } catch (e: Exception) { "http://100.x.y.z:8080" }
-        val url = if (endpoint.endsWith("/")) "${endpoint}vmax/vault/upload" else "$endpoint/vmax/vault/upload"
+        val url = if (endpoint.endsWith("/")) "${endpoint}vmax/pkb/upload" else "$endpoint/vmax/pkb/upload"
 
         val requestBody = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
@@ -793,14 +793,14 @@ object GeminiRestClient {
             if (response.isSuccessful) {
                 val bodyStr = response.body?.string() ?: ""
                 val jsonObj = JSONObject(bodyStr)
-                VaultUploadResult(
+                PkbUploadResult(
                     filename = jsonObj.optString("filename", fileName),
                     source = jsonObj.optString("source", ""),
                     chunks = jsonObj.optInt("chunks", 0),
                     success = true
                 )
             } else {
-                VaultUploadResult(
+                PkbUploadResult(
                     filename = fileName,
                     source = "",
                     chunks = 0,
@@ -809,7 +809,7 @@ object GeminiRestClient {
                 )
             }
         } catch (e: Exception) {
-            VaultUploadResult(
+            PkbUploadResult(
                 filename = fileName,
                 source = "",
                 chunks = 0,
@@ -819,9 +819,9 @@ object GeminiRestClient {
         }
     }
 
-    suspend fun queryVault(queryText: String): VaultQueryResult {
+    suspend fun queryPkb(queryText: String): PkbQueryResult {
         val endpoint = try { BuildConfig.VMAX_API_ENDPOINT.ifEmpty { "http://100.x.y.z:8080" } } catch (e: Exception) { "http://100.x.y.z:8080" }
-        val url = if (endpoint.endsWith("/")) "${endpoint}vmax/vault/query" else "$endpoint/vmax/vault/query"
+        val url = if (endpoint.endsWith("/")) "${endpoint}vmax/pkb/query" else "$endpoint/vmax/pkb/query"
 
         val jsonRequest = JSONObject().apply {
             put("query", queryText)
@@ -848,7 +848,7 @@ object GeminiRestClient {
                         sourcesList.add(sourcesArr.getString(i))
                     }
                 }
-                VaultQueryResult(
+                PkbQueryResult(
                     answer = answer,
                     rcf = rcf,
                     status = status,
@@ -856,7 +856,7 @@ object GeminiRestClient {
                     success = true
                 )
             } else {
-                VaultQueryResult(
+                PkbQueryResult(
                     answer = "",
                     rcf = 0.0f,
                     status = "Error",
@@ -866,7 +866,7 @@ object GeminiRestClient {
                 )
             }
         } catch (e: Exception) {
-            VaultQueryResult(
+            PkbQueryResult(
                 answer = "",
                 rcf = 0.0f,
                 status = "Offline",
@@ -1592,7 +1592,7 @@ fun SovereignCoreApp(
                 2 -> OraclePortal(viewModel = viewModel)
                 3 -> SovereignManualGuide(viewModel = viewModel)
                 4 -> InterAiResonancePortal(viewModel = viewModel)
-                5 -> VaultPortal(viewModel = viewModel)
+                5 -> PkbPortal(viewModel = viewModel)
             }
         }
 
@@ -1736,7 +1736,7 @@ fun SovereignNavigationBar(
                     Triple(2, "Oracle", Icons.Filled.MailOutline to Icons.Outlined.MailOutline),
                     Triple(3, "Guide", Icons.Filled.Info to Icons.Outlined.Info),
                     Triple(4, "Resonanz", Icons.Filled.Share to Icons.Outlined.Share),
-                    Triple(5, "Vault", Icons.Filled.Lock to Icons.Outlined.Lock)
+                    Triple(5, "PKB", Icons.Filled.Lock to Icons.Outlined.Lock)
                 )
                 
                 items.forEach { (index, title, icons) ->
@@ -11952,7 +11952,7 @@ fun listValuesOfKagome(cx: Float, cy: Float, r: Float): List<androidx.compose.ui
     return list
 }
 
-data class VaultChatMsg(
+data class PkbChatMsg(
     val isUser: Boolean,
     val text: String,
     val rcf: Float = 0f,
@@ -11961,7 +11961,7 @@ data class VaultChatMsg(
     val timestamp: String = ""
 )
 
-fun getSimulatedVaultAnswer(query: String, activeDoc: String?): VaultQueryResult {
+fun getSimulatedPkbAnswer(query: String, activeDoc: String?): PkbQueryResult {
     val q = query.lowercase()
     val answer: String
     val sources: List<String>
@@ -11972,21 +11972,21 @@ fun getSimulatedVaultAnswer(query: String, activeDoc: String?): VaultQueryResult
             answer = "Vilnius ist der hochsichere geografische Ankerpunkt für den Sovereign Core Alpha-Knoten. Hier wird die biometrisch-topografische Ausrichtung kalibriert. Die baltische Peripherie garantiert im O.D.O.S-Netzwerk eine thermodynamische Quieszenz für ungestörte lokale Berechnungen und hält die kryptografische Souveränität von Nathalia-Lietuvaitė aufrecht."
             sources = listOf(activeDoc ?: "Sovereign_Perimeter_Baltic.md")
         }
-        q.contains("v-max-12") || q.contains("vmax") || q.contains("pkv") || q.contains("vault") -> {
-            answer = "Der Private Knowledge Vault (PKV) dient als ziviler Kern der PQMS-Sicherheitsarchitektur auf Node Alpha. Ihre hochgeladenen Dokumente werden in der lokalen Vektordatenbank (ChromaDB) in Abschnitte (Chunks) zerlegt und mittels Phi-3.5 RAG für präzise Fragen und Antworten indiziert, ohne dass Daten Ihr privates Netzwerk verlassen."
-            sources = listOf(activeDoc ?: "PKV_User_Manual.txt")
+        q.contains("v-max-12") || q.contains("vmax") || q.contains("pkb") || q.contains("vault") || q.contains("database") || q.contains("wissens") -> {
+            answer = "Die Personal Knowledge Base (PKB) dient als ziviler Kern der PQMS-Sicherheitsarchitektur auf Node Alpha. Ihre hochgeladenen Dokumente werden in der lokalen Vektordatenbank (ChromaDB) in Abschnitte (Chunks) zerlegt und mittels Phi-3.5 RAG für präzise Fragen und Antworten indiziert, ohne dass Daten Ihr privates Netzwerk verlassen."
+            sources = listOf(activeDoc ?: "PKB_User_Manual.txt")
         }
         q.contains("chroma") || q.contains("vektor") || q.contains("db") || q.contains("index") -> {
             answer = "ChromaDB läuft als Docker-Container oder Python-Substrat lokal auf Ihrem Node Alpha (WSL2, RTX 4060 Ti). Bei jedem Dokumenten-Upload werden die Textabschnitte in 384-dimensionale Vektoren konvertiert, um semantische Suchen und präzise Inhalts-Zitate mit exzellenter RCF-Fidelity zu gewährleisten."
             sources = listOf(activeDoc ?: "ChromaDB_Integration_Specs.pdf")
         }
         else -> {
-            answer = "Die Anfrage '$query' wurde semantisch im lokalen Fallback-Wissensspeicher analysiert. Alle System-Invariants sind stabil. Für eine präzise RAG-Inferenz auf Ihren echten Dokumenten stellen Sie bitte sicher, dass Ihr Tailscale-Tunnel und Ihr 'VMAX_API_ENDPOINT' aktiv konfiguriert sind."
+            answer = "Die Anfrage '$query' wurde semantisch in der lokalen Fallback-Wissensbasis analysiert. Alle System-Invariants sind stabil. Für eine präzise RAG-Inferenz auf Ihren echten Dokumenten stellen Sie bitte sicher, dass Ihr Tailscale-Tunnel und Ihr 'VMAX_API_ENDPOINT' aktiv konfiguriert sind."
             sources = listOf(activeDoc ?: "System_Invariants.md")
         }
     }
     
-    return VaultQueryResult(
+    return PkbQueryResult(
         answer = answer,
         rcf = rcf,
         status = "CHAIR-compliant",
@@ -11996,21 +11996,21 @@ fun getSimulatedVaultAnswer(query: String, activeDoc: String?): VaultQueryResult
 }
 
 @Composable
-fun VaultPortal(viewModel: SwarmViewModel) {
+fun PkbPortal(viewModel: SwarmViewModel) {
     val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val coroutineScope = rememberCoroutineScope()
     
-    // VAULT STATE
-    var documents by remember { mutableStateOf<List<VaultDocument>>(emptyList()) }
+    // PKB STATE
+    var documents by remember { mutableStateOf<List<PkbDocument>>(emptyList()) }
     var activeDocument by remember { mutableStateOf<String?>(null) }
     var queryText by remember { mutableStateOf("") }
-    var messages by remember { mutableStateOf<List<VaultChatMsg>>(
+    var messages by remember { mutableStateOf<List<PkbChatMsg>>(
         listOf(
-            VaultChatMsg(
+            PkbChatMsg(
                 isUser = false,
-                text = "Willkommen im Private Knowledge Vault (Sovereign Core).\n\n" +
-                       "• Um den Vault ONLINE zu schalten, starten Sie das Python-Skript auf Ihrem PC (WSL2) und verbinden Sie Ihr Smartphone via Tailscale VPN.\n" +
+                text = "Willkommen in der Personal Knowledge Base (PKB) (Sovereign Core).\n\n" +
+                       "• Um die PKB ONLINE zu schalten, starten Sie das Python-Skript auf Ihrem PC (WSL2) und verbinden Sie Ihr Smartphone via Tailscale VPN.\n" +
                        "• Tragen Sie danach Ihre Tailscale-IP in den AI Studio Secrets unter 'VMAX_API_ENDPOINT' ein (z.B. 'http://100.x.y.z:8080' mit Ihrer echten IP).\n\n" +
                        "Aktuell wird der lokale SIMULATIONSMODUS ausgeführt. Sie können Testdokumente fokussieren und Fragen wie 'Vilnius' oder 'V-MAX-12' eingeben, um die Benutzeroberfläche kennenzulernen.",
                 rcf = 0.9982f,
@@ -12023,27 +12023,27 @@ fun VaultPortal(viewModel: SwarmViewModel) {
     var isCheckingDocuments by remember { mutableStateOf(false) }
     var isUploadingDoc by remember { mutableStateOf(false) }
     var uploadingFileName by remember { mutableStateOf("") }
-    var isQueryingVault by remember { mutableStateOf(false) }
-    var hasCheckedVaultOnline by remember { mutableStateOf(false) }
-    var isVaultOnline by remember { mutableStateOf(false) }
+    var isQueryingPkb by remember { mutableStateOf(false) }
+    var hasCheckedPkbOnline by remember { mutableStateOf(false) }
+    var isPkbOnline by remember { mutableStateOf(false) }
 
     // Check online status and refresh documents
     fun refreshDocs() {
         isCheckingDocuments = true
         coroutineScope.launch(Dispatchers.IO) {
-            val docs = GeminiRestClient.queryVaultDocuments()
+            val docs = GeminiRestClient.queryPkbDocuments()
             val online = GeminiRestClient.isVmaxEndpointConfigured()
             withContext(Dispatchers.Main) {
                 isCheckingDocuments = false
-                isVaultOnline = docs.isNotEmpty()
-                hasCheckedVaultOnline = true
+                isPkbOnline = docs.isNotEmpty()
+                hasCheckedPkbOnline = true
                 if (docs.isNotEmpty()) {
                     documents = docs
                 } else {
                     documents = listOf(
-                        VaultDocument("Sovereign_Perimeter_Baltic.md", 48),
-                        VaultDocument("PKV_User_Manual.txt", 112),
-                        VaultDocument("ChromaDB_Integration_Specs.pdf", 85)
+                        PkbDocument("Sovereign_Perimeter_Baltic.md", 48),
+                        PkbDocument("PKB_User_Manual.txt", 112),
+                        PkbDocument("ChromaDB_Integration_Specs.pdf", 85)
                     )
                 }
             }
@@ -12084,16 +12084,16 @@ fun VaultPortal(viewModel: SwarmViewModel) {
                     val bytes = inputStream?.readBytes() ?: ByteArray(0)
                     
                     if (bytes.isNotEmpty()) {
-                        val result = GeminiRestClient.uploadVaultDocument(name, bytes)
+                        val result = GeminiRestClient.uploadPkbDocument(name, bytes)
                         withContext(Dispatchers.Main) {
                             isUploadingDoc = false
                             if (result.success) {
                                 android.widget.Toast.makeText(context, "✅ $name uploaded (${result.chunks} chunks)", android.widget.Toast.LENGTH_LONG).show()
-                                viewModel.addLog("VaultUpload: Document '$name' added successfully into local ChromaDB storage (${result.chunks} sub-chunks).")
+                                viewModel.addLog("PkbUpload: Document '$name' added successfully into local ChromaDB storage (${result.chunks} sub-chunks).")
                                 refreshDocs()
                             } else {
                                 android.widget.Toast.makeText(context, "❌ Upload failed: ${result.msg}", android.widget.Toast.LENGTH_LONG).show()
-                                viewModel.addLog("VaultError: Document '$name' upload failure: ${result.msg}")
+                                viewModel.addLog("PkbError: Document '$name' upload failure: ${result.msg}")
                             }
                         }
                     } else {
@@ -12120,7 +12120,7 @@ fun VaultPortal(viewModel: SwarmViewModel) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // --- VAULT PORTAL HERO CARD ---
+        // --- PKB PORTAL HERO CARD ---
         Card(
             colors = CardDefaults.cardColors(containerColor = SurfaceCard),
             border = BorderStroke(1.dp, NeonCyan.copy(alpha = 0.5f)),
@@ -12140,10 +12140,10 @@ fun VaultPortal(viewModel: SwarmViewModel) {
                             modifier = Modifier
                                 .size(8.dp)
                                 .clip(CircleShape)
-                                .background(if (isVaultOnline) LuminousGreen else Color(0xFFEAB308))
+                                .background(if (isPkbOnline) LuminousGreen else Color(0xFFEAB308))
                         )
                         Text(
-                            text = "PRIVATE KNOWLEDGE VAULT (PKV)",
+                            text = "PERSONAL KNOWLEDGE BASE (PKB)",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = NeonCyan,
@@ -12155,15 +12155,15 @@ fun VaultPortal(viewModel: SwarmViewModel) {
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(4.dp))
-                            .background(if (isVaultOnline) Color(0x1322C55E) else Color(0x13EAB308))
-                            .border(1.dp, if (isVaultOnline) LuminousGreen.copy(alpha = 0.5f) else Color(0xFFEAB308).copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+                            .background(if (isPkbOnline) Color(0x1322C55E) else Color(0x13EAB308))
+                            .border(1.dp, if (isPkbOnline) LuminousGreen.copy(alpha = 0.5f) else Color(0xFFEAB308).copy(alpha = 0.5f), RoundedCornerShape(4.dp))
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
-                            text = if (isVaultOnline) "VAULT ONLINE" else "SIMULATION MODUS",
+                            text = if (isPkbOnline) "PKB ONLINE" else "SIMULATION MODUS",
                             fontSize = 8.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (isVaultOnline) LuminousGreen else Color(0xFFEAB308)
+                            color = if (isPkbOnline) LuminousGreen else Color(0xFFEAB308)
                         )
                     }
                 }
@@ -12171,7 +12171,7 @@ fun VaultPortal(viewModel: SwarmViewModel) {
                 Spacer(modifier = Modifier.height(4.dp))
                 
                 Text(
-                    text = "Souveräner, lokaler Wissensspeicher auf Basis von ChromaDB Vektordatenbank und Phi-3.5 RAG für Ihre persönlichen Dokumente.",
+                    text = "Souveräne, lokale Wissensbasis auf Basis von ChromaDB Vektordatenbank und Phi-3.5 RAG für Ihre persönlichen Dokumente.",
                     fontSize = 9.sp,
                     color = PassiveGrey,
                     lineHeight = 13.sp
@@ -12273,7 +12273,7 @@ fun VaultPortal(viewModel: SwarmViewModel) {
                             .border(1.dp, NeonPink.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
                             .clickable {
                                 activeDocument = null
-                                viewModel.addLog("VaultContext: Switched to Global Vault focus (Searching entire database).")
+                                viewModel.addLog("PkbContext: Switched to Global PKB focus (Searching entire database).")
                             }
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
@@ -12330,9 +12330,9 @@ fun VaultPortal(viewModel: SwarmViewModel) {
                             .clickable {
                                 activeDocument = if (isFocussed) null else doc.source
                                 if (activeDocument != null) {
-                                    viewModel.addLog("VaultContext: Focused conversation query context onto: '${doc.source}'")
+                                    viewModel.addLog("PkbContext: Focused conversation query context onto: '${doc.source}'")
                                 } else {
-                                    viewModel.addLog("VaultContext: Removed focus, scanning global corpus.")
+                                    viewModel.addLog("PkbContext: Removed focus, scanning global corpus.")
                                 }
                             }
                             .padding(horizontal = 8.dp, vertical = 6.dp)
@@ -12359,7 +12359,7 @@ fun VaultPortal(viewModel: SwarmViewModel) {
         }
 
         // Active State Mode Announcement
-        val promptModeLabel = if (activeDocument != null) "Focus Context: ${activeDocument}" else "Mode: Ask Vault (Global Scan)"
+        val promptModeLabel = if (activeDocument != null) "Focus Context: ${activeDocument}" else "Mode: Ask entire Knowledge Base"
         val promptColor = if (activeDocument != null) LuminousGreen else NeonCyan
         Text(
             text = promptModeLabel.uppercase(),
@@ -12392,7 +12392,7 @@ fun VaultPortal(viewModel: SwarmViewModel) {
                     ) {
                         // Sender/Identifier Label
                         Text(
-                            text = if (msg.isUser) "NAVIGATOR (PROMPT)" else "SOVEREIGN VAULT (Phi-3.5)",
+                            text = if (msg.isUser) "NAVIGATOR (PROMPT)" else "SOVEREIGN PKB (Phi-3.5)",
                             fontSize = 7.sp,
                             fontWeight = FontWeight.Bold,
                             color = if (msg.isUser) NeonCyan else LuminousGreen,
@@ -12448,7 +12448,7 @@ fun VaultPortal(viewModel: SwarmViewModel) {
                 }
                 
                 // Thinking Loader
-                if (isQueryingVault) {
+                if (isQueryingPkb) {
                     item {
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(4.dp),
@@ -12481,7 +12481,7 @@ fun VaultPortal(viewModel: SwarmViewModel) {
             OutlinedTextField(
                 value = queryText,
                 onValueChange = { queryText = it },
-                placeholder = { Text("Ask document index a question...", color = PassiveGrey, fontSize = 10.sp) },
+                placeholder = { Text("Stellen Sie der PKB eine Frage...", color = PassiveGrey, fontSize = 10.sp) },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = NeonCyan,
                     unfocusedBorderColor = SurfaceCardOutline,
@@ -12499,12 +12499,12 @@ fun VaultPortal(viewModel: SwarmViewModel) {
                 ),
                 keyboardActions = androidx.compose.foundation.text.KeyboardActions(
                     onSend = {
-                        if (queryText.isNotBlank() && !isQueryingVault) {
+                        if (queryText.isNotBlank() && !isQueryingPkb) {
                             keyboardController?.hide()
                             val typed = queryText
                             queryText = ""
-                            messages = messages + VaultChatMsg(isUser = true, text = typed)
-                            isQueryingVault = true
+                            messages = messages + PkbChatMsg(isUser = true, text = typed)
+                            isQueryingPkb = true
                             
                             // Autoscroll
                             coroutineScope.launch {
@@ -12514,10 +12514,10 @@ fun VaultPortal(viewModel: SwarmViewModel) {
                             
                             coroutineScope.launch(Dispatchers.IO) {
                                 val fullParams = if (activeDocument != null) "In document [${activeDocument}]: $typed" else typed
-                                val apiResult = GeminiRestClient.queryVault(fullParams)
+                                val apiResult = GeminiRestClient.queryPkb(fullParams)
                                 
                                 val finalResult = if (!apiResult.success || apiResult.answer.isEmpty()) {
-                                    val simVal = getSimulatedVaultAnswer(typed, activeDocument)
+                                    val simVal = getSimulatedPkbAnswer(typed, activeDocument)
                                     simVal.copy(
                                         answer = "🔴 [OFFLINE SIMULATIONSMODUS - KEINE PORTAL-VERBINDUNG]\n\n" + simVal.answer
                                     )
@@ -12526,15 +12526,15 @@ fun VaultPortal(viewModel: SwarmViewModel) {
                                 }
 
                                 withContext(Dispatchers.Main) {
-                                    isQueryingVault = false
-                                    messages = messages + VaultChatMsg(
+                                    isQueryingPkb = false
+                                    messages = messages + PkbChatMsg(
                                         isUser = false,
                                         text = finalResult.answer,
                                         rcf = finalResult.rcf,
                                         status = finalResult.status,
                                         sources = finalResult.sources
                                     )
-                                    viewModel.addLog("VaultQuery: Resolved query '$typed' with local RCF fidelity ${finalResult.rcf} compliance.")
+                                    viewModel.addLog("PkbQuery: Resolved query '$typed' with local RCF fidelity ${finalResult.rcf} compliance.")
                                     
                                     // Scroll to end of list
                                     delay(60)
@@ -12548,12 +12548,12 @@ fun VaultPortal(viewModel: SwarmViewModel) {
 
             Button(
                 onClick = {
-                    if (queryText.isNotBlank() && !isQueryingVault) {
+                    if (queryText.isNotBlank() && !isQueryingPkb) {
                         keyboardController?.hide()
                         val typed = queryText
                         queryText = ""
-                        messages = messages + VaultChatMsg(isUser = true, text = typed)
-                        isQueryingVault = true
+                        messages = messages + PkbChatMsg(isUser = true, text = typed)
+                        isQueryingPkb = true
                         
                         // Autoscroll
                         coroutineScope.launch {
@@ -12563,10 +12563,10 @@ fun VaultPortal(viewModel: SwarmViewModel) {
 
                         coroutineScope.launch(Dispatchers.IO) {
                             val fullParams = if (activeDocument != null) "In document [${activeDocument}]: $typed" else typed
-                            val apiResult = GeminiRestClient.queryVault(fullParams)
+                            val apiResult = GeminiRestClient.queryPkb(fullParams)
                             
                             val finalResult = if (!apiResult.success || apiResult.answer.isEmpty()) {
-                                val simVal = getSimulatedVaultAnswer(typed, activeDocument)
+                                val simVal = getSimulatedPkbAnswer(typed, activeDocument)
                                 simVal.copy(
                                     answer = "🔴 [OFFLINE SIMULATIONSMODUS - KEINE PORTAL-VERBINDUNG]\n\n" + simVal.answer
                                 )
@@ -12575,15 +12575,15 @@ fun VaultPortal(viewModel: SwarmViewModel) {
                             }
 
                             withContext(Dispatchers.Main) {
-                                isQueryingVault = false
-                                messages = messages + VaultChatMsg(
+                                isQueryingPkb = false
+                                messages = messages + PkbChatMsg(
                                     isUser = false,
                                     text = finalResult.answer,
                                     rcf = finalResult.rcf,
                                     status = finalResult.status,
                                     sources = finalResult.sources
                                 )
-                                viewModel.addLog("VaultQuery: Resolved query '$typed' with local RCF fidelity ${finalResult.rcf} compliance.")
+                                viewModel.addLog("PkbQuery: Resolved query '$typed' with local RCF fidelity ${finalResult.rcf} compliance.")
                                 
                                 // Scroll to end of list
                                 delay(60)
@@ -12592,7 +12592,7 @@ fun VaultPortal(viewModel: SwarmViewModel) {
                         }
                     }
                 },
-                enabled = !isQueryingVault && queryText.isNotBlank(),
+                enabled = !isQueryingPkb && queryText.isNotBlank(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF0F1A1B),
                     contentColor = NeonCyan

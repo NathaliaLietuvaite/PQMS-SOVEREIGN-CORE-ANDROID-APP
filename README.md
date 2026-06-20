@@ -40,10 +40,11 @@ The swarm is kept alive in a dedicated `ViewModel` context.
 * **Quantum Mesh Kernel (QMK):** An interactive peer-to-peer linker simulates WiFi Aware (NAN) discovery and mutual verification, demonstrating non-local NCT-compliant coordination links over the Delta-W ($\Delta W$) protocol.
 * **REST Integration:** Fast direct coroutine-based REST calls hit server-side Gemini endpoints using secure credentials configured via AI Studio's Secrets (`BuildConfig.GEMINI_API_KEY`).
 
-### 4. NVIDIA Nemotron-3-Ultra & Nano Substrate Active Realization (Pillar 1 & Pillar 4 Integration)
+### 4. NVIDIA Nemotron & Phi-3.5 Substrate Active Realization (Pillar 1 & Pillar 4 Integration)
 Upgrades the physical node substrate to real hardware accelerators and links the mobile client with the stationary WSL2 platform over Tailscale:
-* **Host Hardware Substrate:** AMD Ryzen 9 5950X (16C/32T) with a liquid-cooled NVIDIA GeForce RTX 4060 Ti 16GB GDDR6 VRAM, 32GB Quad-Channel RAM, and high-throughput Samsung 980 PRO PCIe 4.0 NVMe storage.
-* **Virtualization Core (WSL2):** Ubuntu 24.04.4 LTS running on Linux Kernel 6.18.33.1 (MS-Standard) with active GPU-Passthrough on CUDA 12.8 (Driver 572.47).
+* **Primary High-Fidelity Substrate:** AMD Ryzen 9 5950X (16C/32T) with a liquid-cooled NVIDIA GeForce RTX 4060 Ti 16GB GDDR6 VRAM, 32GB Quad-Channel RAM, and high-throughput Samsung 980 PRO PCIe 4.0 NVMe storage.
+* **8GB VRAM Edge-Node Realization (The laptop-class offload breakthrough):** Empirically deployed and validated on an **Acer Nitro Notebook (Intel Core i7-11800H / NVIDIA RTX 3070 Laptop GPU, 8GB VRAM)**. Running under **Appendix A.8's 8GB VRAM Offload Paradigm** on `microsoft/Phi-3.5-mini-instruct` (3.8B BF16), the system successfully handles memory allocation saturation (Physical VRAM Load: 99.9%) by dynamically offloading tensor states over PCIe Gen4 to high-speed system RAM (Virtual Memory Load: ~84%), delivering pristine, highly coherent RAG responses with active RCF checks without OOM collapse.
+* **Virtualization Core (WSL2):** Ubuntu 24.04.4 LTS running on Linux Kernel 6.18.33.1 (MS-Standard) with active GPU-Passthrough on CUDA 12.8/13.0.
 * **Mamba-2 State-Space Model Implementation:** Powered by `nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16` running inside a dedicated `pqms_env` Python virtual environment with native `mamba-ssm` active.
 * **Pillar 1: MTSC-12 Thread-Orchestrator (Active Telemetry & Benchmarking):**
   * *Real-Time Telemetry*: Intercepts and parses extended hardware reports from `GET /vmax/status`. Includes live displays of GPU temperature (°C), live VRAM allocation (used MB vs total MB, free memory tracking), GPU core utilization %, as well as active CPU thread saturation (threads_active / threads_total), and 1-minute load averages.

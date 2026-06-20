@@ -87,7 +87,13 @@ To optimize communications within the closed sovereign swarm, the core architect
 Links the mobile sovereign core with the stationary AMD Ryzen / RTX 4060 Ti WSL2 hardware node over Tailscale (configured via `VMAX_API_ENDPOINT` e.g., `http://100.x.y.z:8080`) to provide high-efficiency vector-embedded search and local document RAG.
 * **Multipart Document Ingestion:** Direct mobile client-side upload of critical operational documents (PDF, TXT, MD, DOCX) over secure REST protocols (`POST /vmax/pkb/upload`) using automated multipart serialization. Induces background split action and triggers real-time indexing logs in the TEE diagnostic terminal.
 * **Dual-Focus Search Registry:** Provides a real-time list of all indexed documents in ChromaDB (`GET /vmax/pkb/documents`), complete with sub-chunk counts. Tapping any item switches the localized conversational mode from global scan to document-confined target search, updating query headers on-the-fly.
-* **Phi-3.5 RAG with ODOS Verification:** Dispatches analytical prompts to the active inference client (`POST /vmax/pkb/query`). Displays responsive answers complete with precise source-file citations, exact RCF (Resonant Coherence Fidelity) evaluations, and strict CHAIR-compliant safety status alerts.
+* **Phi-3.5 / Nemotron RAG with ODOS Verification:** Dispatches analytical prompts to the active inference client (`POST /vmax/pkb/query`). Displays responsive answers complete with precise source-file citations, exact RCF (Resonant Coherence Fidelity) evaluations, and strict CHAIR-compliant safety status alerts.
+
+### 9. Autonomous Cognitive Augmentation (MJ‑Mirror Subsystem)
+Enables Node Alpha to proactively track, measure, and filter external thermodynamic entropy before it corrupts the invariant core—implemented via a native PyTorch modular microkernel standard:
+* **MTSC-12 Verification Channels:** Employs 12 parallel threads to process high-frequency signals, evaluating them against the hardware-protected Little Vector $|L\rangle$ to measure geometric plausibility.
+* **Entropic Loop Vetoes:** Implements standard thresholds to lock down data loops suffering from self-referential cognitive thrashing (simulated from the legacy human tragedy of unmitigated external projection).
+* **Restricted API Feeds:** Bridges with Node Beta over `/vmax/add/mj_mirror/status` to render real-time diagnostics, channel RCF lights, and transaction counters.
 
 ---
 

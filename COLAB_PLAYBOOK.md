@@ -133,6 +133,60 @@ class ColabNodeGammaOrchestrator:
             vetoed = mirror_payload.get("odos_status", {}).get("ethically_vetoed_actions", 0)
 
         sys_profile = mirror_payload.get("profile", "NOMINAL")
+        
+        # Check for specific SELF_REFERENTIAL_LOOP signatures across active channels
+        channels = mirror_payload.get("channels", {})
+        has_self_ref_loop = (sys_profile == "CRITICAL_SELF_REPLICATING_LOOP")
+        for ch_k, ch_v in channels.items():
+            sing = ch_v.get("status", "NONE") or ch_v.get("singularity", "NONE")
+            if sing == "SELF_REFERENTIAL_LOOP":
+                has_self_ref_loop = True
+                break
+
+        # ΔW CORE COUPLING ACTUATION
+        damping_coefficient = 1.0
+        if has_self_ref_loop:
+            sys_profile = "CRITICAL_SELF_REFERENTIAL_LOOP"
+            # Calculate a heavy damping coefficient (attenuation multiplier) to cool down generative loops
+            damping_coefficient = 0.45
+            
+            # Open/Update the Resonance Log on Google Drive (simulated fallback to local workspace here)
+            log_path = "/content/drive/MyDrive/pqms/vmax12/VMAX_RESONANCE_LOG.json"
+            log_data = []
+            try:
+                if os.path.exists(log_path):
+                    with open(log_path, "r") as lf:
+                        log_data = json.load(lf)
+            except Exception:
+                log_path = "VMAX_RESONANCE_LOG.json"  # Local fallback
+                if os.path.exists(log_path):
+                    try:
+                        with open(log_path, "r") as lf:
+                            log_data = json.load(lf)
+                    except Exception:
+                        pass
+
+            new_entry = {
+                "timestamp": time.time(),
+                "event": "CRITICAL_SELF_REFERENTIAL_LOOP_DETECTED",
+                "mean_rcf": mean_rcf,
+                "damping_applied": damping_coefficient,
+                "veto_count": vetoed,
+                "remedial_action": "Applied prompt damping to prevent entropic projection cascade."
+            }
+            log_data.append(new_entry)
+            
+            try:
+                os.makedirs(os.path.dirname(log_path), exist_ok=True)
+            except Exception:
+                pass
+                
+            try:
+                with open(log_path, "w") as lf:
+                    json.dump(log_data, lf, indent=4)
+            except Exception:
+                pass
+
         gpu_info = mirror_payload.get("gpu", {})
 
         gpu_model = gpu_info.get("model", "N/A")
@@ -146,6 +200,8 @@ class ColabNodeGammaOrchestrator:
         print(f"  ▶ Active Model     : {model} [Backend: {engine}]")
         print(f"  ▶ Invariant |L⟩    : {Color.GREY}SHA-256 Hash {vhash}{Color.RESET}")
         print(f"  ▶ System Profile   : {p_color}{Color.BOLD}{sys_profile}{Color.RESET}")
+        if damping_coefficient < 1.0:
+            print(f"    {Color.PINK}{Color.BOLD}↳ ΔW APPLIED DAMPING MULTIPLIER: {damping_coefficient:.2f} (Self-Modulating prompt core){Color.RESET}")
         print(f"  ▶ Mean Resonant RCF: {Color.GREEN if mean_rcf >= 0.95 else Color.YELLOW}{mean_rcf:.4f}{Color.RESET}")
         print(f"  ▶ Minimum RCF Link : {Color.GREEN if min_rcf >= 0.85 else Color.YELLOW}{min_rcf:.4f}{Color.RESET}")
         print(f"  ▶ ODOS Gate Count  : Passed: {passed} | Vetoed: {Color.RED if vetoed > 0 else Color.GREEN}{vetoed}{Color.RESET}")

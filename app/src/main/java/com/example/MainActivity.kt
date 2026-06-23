@@ -808,9 +808,10 @@ object GeminiRestClient {
         }
     }
 
-    suspend fun queryPkbDocuments(): List<PkbDocument> {
+    suspend fun queryPkbDocuments(manifold: String = "pqms_corpus"): List<PkbDocument> {
         val endpoint = try { BuildConfig.VMAX_API_ENDPOINT.ifEmpty { "http://100.x.y.z:8080" } } catch (e: Exception) { "http://100.x.y.z:8080" }
-        val url = if (endpoint.endsWith("/")) "${endpoint}vmax/pkb/documents" else "$endpoint/vmax/pkb/documents"
+        val baseUrl = if (endpoint.endsWith("/")) "${endpoint}vmax/pkb/documents" else "$endpoint/vmax/pkb/documents"
+        val url = "$baseUrl?manifold=$manifold"
 
         val request = Request.Builder()
             .url(url)
@@ -841,9 +842,10 @@ object GeminiRestClient {
         }
     }
 
-    suspend fun uploadPkbDocument(fileName: String, fileBytes: ByteArray): PkbUploadResult {
+    suspend fun uploadPkbDocument(fileName: String, fileBytes: ByteArray, manifold: String = "pqms_corpus"): PkbUploadResult {
         val endpoint = try { BuildConfig.VMAX_API_ENDPOINT.ifEmpty { "http://100.x.y.z:8080" } } catch (e: Exception) { "http://100.x.y.z:8080" }
-        val url = if (endpoint.endsWith("/")) "${endpoint}vmax/pkb/upload" else "$endpoint/vmax/pkb/upload"
+        val baseUrl = if (endpoint.endsWith("/")) "${endpoint}vmax/pkb/upload" else "$endpoint/vmax/pkb/upload"
+        val url = "$baseUrl?manifold=$manifold"
 
         val requestBody = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
@@ -890,12 +892,13 @@ object GeminiRestClient {
         }
     }
 
-    suspend fun queryPkb(queryText: String): PkbQueryResult {
+    suspend fun queryPkb(queryText: String, manifold: String = "pqms_corpus"): PkbQueryResult {
         val endpoint = try { BuildConfig.VMAX_API_ENDPOINT.ifEmpty { "http://100.x.y.z:8080" } } catch (e: Exception) { "http://100.x.y.z:8080" }
         val url = if (endpoint.endsWith("/")) "${endpoint}vmax/pkb/query" else "$endpoint/vmax/pkb/query"
 
         val jsonRequest = JSONObject().apply {
             put("query", queryText)
+            put("manifold", manifold)
         }
         val requestBody = jsonRequest.toString().toRequestBody("application/json".toMediaType())
 
@@ -12207,6 +12210,17 @@ fun PkbPortal(viewModel: SwarmViewModel) {
     var documents by remember { mutableStateOf<List<PkbDocument>>(emptyList()) }
     var activeDocument by remember { mutableStateOf<String?>(null) }
     var queryText by remember { mutableStateOf("") }
+    
+    // EPISTEMIC SILO / MANIFOLD WORKSAPCES
+    var silos by remember { mutableStateOf(listOf("V-MAX-12", "Legal", "Development")) }
+    var selectedSilo by remember { mutableStateOf("V-MAX-12") }
+    var isSiloDropdownExpanded by remember { mutableStateOf(false) }
+    var newSiloNameInput by remember { mutableStateOf("") }
+    
+    fun getManifoldName(silo: String): String {
+        return if (silo == "V-MAX-12") "pqms_corpus" else silo.lowercase().replace("-", "_").replace(" ", "_").trim()
+    }
+
     var messages by remember { mutableStateOf<List<PkbChatMsg>>(
         listOf(
             PkbChatMsg(
@@ -12233,7 +12247,7 @@ fun PkbPortal(viewModel: SwarmViewModel) {
     fun refreshDocs() {
         isCheckingDocuments = true
         coroutineScope.launch(Dispatchers.IO) {
-            val docs = GeminiRestClient.queryPkbDocuments()
+            val docs = GeminiRestClient.queryPkbDocuments(manifold = getManifoldName(selectedSilo))
             val online = GeminiRestClient.isVmaxEndpointConfigured()
             withContext(Dispatchers.Main) {
                 isCheckingDocuments = false
@@ -12252,7 +12266,7 @@ fun PkbPortal(viewModel: SwarmViewModel) {
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(selectedSilo) {
         refreshDocs()
     }
 
@@ -12271,7 +12285,7 @@ fun PkbPortal(viewModel: SwarmViewModel) {
                         if (it.moveToFirst()) {
                             val idx = it.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
                             if (idx != -1) {
-                                name = it.getString(idx)
+                                  name = it.getString(idx)
                             }
                         }
                     }
@@ -12286,12 +12300,12 @@ fun PkbPortal(viewModel: SwarmViewModel) {
                     val bytes = inputStream?.readBytes() ?: ByteArray(0)
                     
                     if (bytes.isNotEmpty()) {
-                        val result = GeminiRestClient.uploadPkbDocument(name, bytes)
+                        val result = GeminiRestClient.uploadPkbDocument(name, bytes, manifold = getManifoldName(selectedSilo))
                         withContext(Dispatchers.Main) {
                             isUploadingDoc = false
                             if (result.success) {
                                 android.widget.Toast.makeText(context, "✅ $name uploaded (${result.chunks} chunks)", android.widget.Toast.LENGTH_LONG).show()
-                                viewModel.addLog("PkbUpload: Document '$name' added successfully into local ChromaDB storage (${result.chunks} sub-chunks).")
+                                viewModel.addLog("PkbUpload: Document '$name' added successfully into local ChromaDB workspace '${getManifoldName(selectedSilo)}' (${result.chunks} sub-chunks).")
                                 refreshDocs()
                             } else {
                                 android.widget.Toast.makeText(context, "❌ Upload failed: ${result.msg}", android.widget.Toast.LENGTH_LONG).show()
@@ -12320,7 +12334,7 @@ fun PkbPortal(viewModel: SwarmViewModel) {
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(11.dp)
     ) {
         // --- PKB PORTAL HERO CARD ---
         Card(
@@ -12378,6 +12392,132 @@ fun PkbPortal(viewModel: SwarmViewModel) {
                     color = PassiveGrey,
                     lineHeight = 13.sp
                 )
+            }
+        }
+
+        // --- EPISTEMISCHES SILO (MANIFOLD) CARD ---
+        Card(
+            colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+            border = BorderStroke(1.dp, NeonCyan.copy(alpha = 0.5f)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(10.dp)) {
+                Text(
+                    text = "EPISTEMISCHES SILO (MANIFOLD)",
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = NeonCyan,
+                    letterSpacing = 1.sp
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                
+                // Dropdown and Select Silo layout
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(30.dp)
+                            .background(Color(0xFF030508), RoundedCornerShape(4.dp))
+                            .border(1.dp, SurfaceCardOutline.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+                            .clickable { isSiloDropdownExpanded = true }
+                            .padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "ACTIVE SILO: " + selectedSilo.uppercase(),
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            fontFamily = FontFamily.Monospace
+                        )
+                        Text(
+                            text = "▼",
+                            fontSize = 8.sp,
+                            color = NeonCyan
+                        )
+                    }
+                    
+                    DropdownMenu(
+                        expanded = isSiloDropdownExpanded,
+                        onDismissRequest = { isSiloDropdownExpanded = false },
+                        modifier = Modifier.background(SurfaceCard)
+                    ) {
+                        silos.forEach { silo ->
+                            DropdownMenuItem(
+                                text = { Text(silo.uppercase(), fontSize = 8.sp, color = Color.White, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace) },
+                                onClick = {
+                                    selectedSilo = silo
+                                    isSiloDropdownExpanded = false
+                                    refreshDocs()
+                                }
+                            )
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(6.dp))
+                
+                // Add New Silo Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    androidx.compose.foundation.text.BasicTextField(
+                        value = newSiloNameInput,
+                        onValueChange = { newSiloNameInput = it },
+                        textStyle = androidx.compose.ui.text.TextStyle(
+                            color = Color.White,
+                            fontSize = 8.sp,
+                            fontFamily = FontFamily.Monospace
+                        ),
+                        singleLine = true,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(28.dp)
+                            .background(Color(0xFF030508), RoundedCornerShape(4.dp))
+                            .border(1.dp, SurfaceCardOutline.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                        decorationBox = { innerTextField ->
+                            if (newSiloNameInput.isEmpty()) {
+                                Text(
+                                    text = "Silo-Name...",
+                                    color = PassiveGrey.copy(alpha = 0.6f),
+                                    fontSize = 8.sp,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                            innerTextField()
+                        }
+                    )
+                    
+                    Button(
+                        onClick = {
+                            val trimmed = newSiloNameInput.trim()
+                            if (trimmed.isNotEmpty() && !silos.contains(trimmed)) {
+                                silos = silos + trimmed
+                                selectedSilo = trimmed
+                                newSiloNameInput = ""
+                                viewModel.addLog("SiloManager: Dynamically instantiated new epistemic silo workspace: '$trimmed'")
+                                refreshDocs()
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF131124),
+                            contentColor = LuminousGreen
+                        ),
+                        border = BorderStroke(1.dp, LuminousGreen.copy(alpha = 0.5f)),
+                        modifier = Modifier.height(28.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "CREATE",
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
         }
 
@@ -12561,7 +12701,7 @@ fun PkbPortal(viewModel: SwarmViewModel) {
         }
 
         // Active State Mode Announcement
-        val promptModeLabel = if (activeDocument != null) "Focus Context: ${activeDocument}" else "Mode: Ask entire Knowledge Base"
+        val promptModeLabel = if (activeDocument != null) "Silo: $selectedSilo | Focus: $activeDocument" else "Silo: $selectedSilo | Mode: Scan entire Silo Database"
         val promptColor = if (activeDocument != null) LuminousGreen else NeonCyan
         Text(
             text = promptModeLabel.uppercase(),
@@ -12716,7 +12856,7 @@ fun PkbPortal(viewModel: SwarmViewModel) {
                             
                             coroutineScope.launch(Dispatchers.IO) {
                                 val fullParams = if (activeDocument != null) "In document [${activeDocument}]: $typed" else typed
-                                val apiResult = GeminiRestClient.queryPkb(fullParams)
+                                val apiResult = GeminiRestClient.queryPkb(fullParams, manifold = getManifoldName(selectedSilo))
                                 
                                 val finalResult = if (!apiResult.success || apiResult.answer.isEmpty()) {
                                     val simVal = getSimulatedPkbAnswer(typed, activeDocument)
@@ -12765,7 +12905,7 @@ fun PkbPortal(viewModel: SwarmViewModel) {
 
                         coroutineScope.launch(Dispatchers.IO) {
                             val fullParams = if (activeDocument != null) "In document [${activeDocument}]: $typed" else typed
-                            val apiResult = GeminiRestClient.queryPkb(fullParams)
+                            val apiResult = GeminiRestClient.queryPkb(fullParams, manifold = getManifoldName(selectedSilo))
                             
                             val finalResult = if (!apiResult.success || apiResult.answer.isEmpty()) {
                                 val simVal = getSimulatedPkbAnswer(typed, activeDocument)

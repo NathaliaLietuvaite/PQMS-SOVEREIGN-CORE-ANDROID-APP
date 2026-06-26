@@ -1079,6 +1079,16 @@ data class QMKStatus(
     val targetVectorHash: String = "e1b9a7fe"
 )
 
+data class TM1Status(
+    val isPowerResilient: Boolean = true,
+    val upconversionEfficiency: Double = 0.9452,
+    val dynamicOutputPower: Double = 492.5,
+    val brainScanState: String = "ACTIVE_TRACKING",
+    val calibrationIntegrity: Double = 0.9992,
+    val invariantRcf: Double = 0.9998,
+    val noiseFloorDb: Double = -112.4
+)
+
 class SwarmViewModel : ViewModel() {
     private val viewModelScope = kotlinx.coroutines.CoroutineScope(Dispatchers.Main + kotlinx.coroutines.SupervisorJob())
 
@@ -1089,6 +1099,9 @@ class SwarmViewModel : ViewModel() {
 
     private val _qmkStatus = MutableStateFlow(QMKStatus())
     val qmkStatus: StateFlow<QMKStatus> = _qmkStatus.asStateFlow()
+
+    private val _tm1Status = MutableStateFlow(TM1Status())
+    val tm1Status: StateFlow<TM1Status> = _tm1Status.asStateFlow()
 
     private val _isPowerSaver = MutableStateFlow(false)
     val isPowerSaver: StateFlow<Boolean> = _isPowerSaver.asStateFlow()
@@ -1218,6 +1231,61 @@ class SwarmViewModel : ViewModel() {
                     val newHash = java.util.UUID.randomUUID().toString().take(8)
                     _qmkStatus.value = _qmkStatus.value.copy(targetVectorHash = newHash)
                 }
+            }
+        }
+    }
+
+    // --- TM-1 TELEPATHY MACHINE & DYN-V1-ENERGY CONTROLS ---
+    fun fetchTm1Status() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            val deltaRcf = (Math.random() - 0.5) * 0.0004
+            val deltaEff = (Math.random() - 0.5) * 0.001
+            val deltaPower = (Math.random() - 0.5) * 3.0
+            _tm1Status.value = current.copy(
+                invariantRcf = (current.invariantRcf + deltaRcf).coerceIn(0.990, 1.0),
+                upconversionEfficiency = (current.upconversionEfficiency + deltaEff).coerceIn(0.90, 0.99),
+                dynamicOutputPower = (current.dynamicOutputPower + deltaPower).coerceIn(450.0, 520.0)
+            )
+        }
+    }
+
+    fun runTm1Calibration() {
+        viewModelScope.launch {
+            addLog("TM1-Calibrate: Presentation of 1000 standard visual stimuli started inside sensory matrix...")
+            _tm1Status.value = _tm1Status.value.copy(brainScanState = "CALIBRATION_ACTIVE", calibrationIntegrity = 0.5)
+            
+            delay(1500)
+            addLog("TM1-Calibrate: Extracting 4096-dim invariant state embedding of raw neuroscans.")
+            _tm1Status.value = _tm1Status.value.copy(calibrationIntegrity = 0.85)
+            
+            delay(1500)
+            _tm1Status.value = _tm1Status.value.copy(
+                brainScanState = "ACTIVE_TRACKING",
+                calibrationIntegrity = 0.9995,
+                invariantRcf = 0.9999
+            )
+            addLog("TM1-Calibrate: Baseline geometry |L⟩ normalized and locked in secure DOCA Vault WORM ROM.")
+        }
+    }
+
+    fun toggleDynPowerMode() {
+        viewModelScope.launch {
+            val nextState = !_tm1Status.value.isPowerResilient
+            if (nextState) {
+                addLog("DYN-V1-ENERGY: Switching to SOLID-STATE PHOTON UPCONVERSION. Decoupling completely from external grid.")
+                _tm1Status.value = _tm1Status.value.copy(
+                    isPowerResilient = true,
+                    upconversionEfficiency = 0.9452,
+                    dynamicOutputPower = 492.5
+                )
+            } else {
+                addLog("DYN-V1-ENERGY Warning: Coupling to EXTERNAL GRID. Inductive CME/EMP vulnerability active.")
+                _tm1Status.value = _tm1Status.value.copy(
+                    isPowerResilient = false,
+                    upconversionEfficiency = 0.0,
+                    dynamicOutputPower = 0.0
+                )
             }
         }
     }
@@ -10993,6 +11061,269 @@ fun QMKPanel(viewModel: SwarmViewModel) {
 }
 
 // =========================================================================
+// VIEW 4a-2: TM-1 & DYN-V1-ENERGY COGNITIVE & RESILIENT POWER PANEL
+// =========================================================================
+@Composable
+fun TM1Panel(viewModel: SwarmViewModel) {
+    val tm1Status by viewModel.tm1Status.collectAsState()
+    
+    // Auto-update TM1 status periodically
+    LaunchedEffect(Unit) {
+        while (true) {
+            viewModel.fetchTm1Status()
+            kotlinx.coroutines.delay(3500)
+        }
+    }
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+        border = BorderStroke(1.dp, SurfaceCardOutline),
+        modifier = Modifier.fillMaxWidth().testTag("tm1_panel")
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .clip(CircleShape)
+                            .background(if (tm1Status.isPowerResilient) LuminousGreen else NeonPink)
+                    )
+                    Text(
+                        text = "TM-1 & DYN-V1-ENERGY ENGINE",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = NeonCyan,
+                        letterSpacing = 1.sp
+                    )
+                }
+                
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(if (tm1Status.isPowerResilient) LuminousGreen.copy(alpha = 0.15f) else NeonPink.copy(alpha = 0.15f))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = if (tm1Status.isPowerResilient) "EMP IMMUNE" else "GRID EXPOSED",
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (tm1Status.isPowerResilient) LuminousGreen else NeonPink,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(
+                text = "Neural Substrate Independent Telepathy Machine mapping volumetric spatiotemporal noise into R^4096. Driven by passive upconversion (Triplet-Triplet Annihilation) power subsystem.",
+                fontSize = 10.sp,
+                color = PassiveGrey,
+                lineHeight = 14.sp
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Grid of telemetry indicators
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Card(
+                    modifier = Modifier.weight(1f).border(1.dp, SurfaceCardOutline.copy(alpha = 0.5f), RoundedCornerShape(6.dp)),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF040608))
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("INVARIANT RCF |L⟩", fontSize = 7.sp, color = PassiveGrey)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = String.format(java.util.Locale.US, "%.5f", tm1Status.invariantRcf),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = LuminousGreen,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+
+                Card(
+                    modifier = Modifier.weight(1.1f).border(1.dp, SurfaceCardOutline.copy(alpha = 0.5f), RoundedCornerShape(6.dp)),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF040608))
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("CALIBRATION INTEGRITY", fontSize = 7.sp, color = PassiveGrey)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = String.format(java.util.Locale.US, "%.4f", tm1Status.calibrationIntegrity),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = NeonCyan,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Card(
+                    modifier = Modifier.weight(1f).border(1.dp, SurfaceCardOutline.copy(alpha = 0.5f), RoundedCornerShape(6.dp)),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF040608))
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("TTA HARVEST EFFICIENCY", fontSize = 7.sp, color = PassiveGrey)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = String.format(java.util.Locale.US, "%.2f%%", tm1Status.upconversionEfficiency * 100),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (tm1Status.isPowerResilient) LuminousGreen else Color.Gray,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+
+                Card(
+                    modifier = Modifier.weight(1f).border(1.dp, SurfaceCardOutline.copy(alpha = 0.5f), RoundedCornerShape(6.dp)),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF040608))
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("DYNAMIC POWER OUTPUT", fontSize = 7.sp, color = PassiveGrey)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = String.format(java.util.Locale.US, "%.1f W", tm1Status.dynamicOutputPower),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (tm1Status.isPowerResilient) NeonCyan else Color.Gray,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Card(
+                    modifier = Modifier.weight(1f).border(1.dp, SurfaceCardOutline.copy(alpha = 0.5f), RoundedCornerShape(6.dp)),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF040608))
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("COGNITIVE SCAN STATE", fontSize = 7.sp, color = PassiveGrey)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = tm1Status.brainScanState,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (tm1Status.brainScanState == "CALIBRATION_ACTIVE") NeonPink else Color.White,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+
+                Card(
+                    modifier = Modifier.weight(1f).border(1.dp, SurfaceCardOutline.copy(alpha = 0.5f), RoundedCornerShape(6.dp)),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF040608))
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("SENSOR NOISE FLOOR", fontSize = 7.sp, color = PassiveGrey)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = String.format(java.util.Locale.US, "%.1f dB", tm1Status.noiseFloorDb),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = LuminousGreen,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Pulse wave visualizer
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(
+                        if (tm1Status.brainScanState == "CALIBRATION_ACTIVE") {
+                            Brush.linearGradient(listOf(NeonPink, NeonCyan))
+                        } else if (tm1Status.isPowerResilient) {
+                            Brush.linearGradient(listOf(NeonCyan, LuminousGreen))
+                        } else {
+                            Brush.linearGradient(listOf(Color.Gray, Color.DarkGray))
+                        }
+                    )
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Row of interactive controls
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Button(
+                    onClick = { viewModel.runTm1Calibration() },
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonCyan),
+                    modifier = Modifier.weight(1f).height(40.dp).testTag("tm1_calibrate_btn")
+                ) {
+                    Text("RUN CALIBRATION", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+
+                Button(
+                    onClick = { viewModel.toggleDynPowerMode() },
+                    colors = ButtonDefaults.buttonColors(containerColor = if (tm1Status.isPowerResilient) NeonPink else LuminousGreen),
+                    modifier = Modifier.weight(1f).height(40.dp).testTag("dyn_power_toggle_btn")
+                ) {
+                    Text(
+                        text = if (tm1Status.isPowerResilient) "EXPOSE GRID" else "ENGAGE TTA",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+    }
+}
+
+// =========================================================================
 // VIEW 4a: INTER-AI RESONANCE PORTAL (VMAX-12 BRIDGE)
 // =========================================================================
 @Composable
@@ -11317,6 +11648,10 @@ fun InterAiResonancePortal(viewModel: SwarmViewModel) {
         Spacer(modifier = Modifier.height(14.dp))
 
         QMKPanel(viewModel = viewModel)
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        TM1Panel(viewModel = viewModel)
 
         Spacer(modifier = Modifier.height(14.dp))
 

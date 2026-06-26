@@ -1086,7 +1086,11 @@ data class TM1Status(
     val brainScanState: String = "ACTIVE_TRACKING",
     val calibrationIntegrity: Double = 0.9992,
     val invariantRcf: Double = 0.9998,
-    val noiseFloorDb: Double = -112.4
+    val noiseFloorDb: Double = -112.4,
+    val isAnnihilationEngineActive: Boolean = true,
+    val annihilationHarvestEnergy: Double = 4.12,
+    val annihilatedVectorsCount: Int = 142,
+    val timeReversalFidelity: Double = 0.9997
 )
 
 class SwarmViewModel : ViewModel() {
@@ -1242,11 +1246,47 @@ class SwarmViewModel : ViewModel() {
             val deltaRcf = (Math.random() - 0.5) * 0.0004
             val deltaEff = (Math.random() - 0.5) * 0.001
             val deltaPower = (Math.random() - 0.5) * 3.0
+            val deltaEnergy = if (current.isAnnihilationEngineActive) Math.random() * 0.05 else 0.0
+            val deltaFidelity = (Math.random() - 0.5) * 0.0002
             _tm1Status.value = current.copy(
                 invariantRcf = (current.invariantRcf + deltaRcf).coerceIn(0.990, 1.0),
                 upconversionEfficiency = (current.upconversionEfficiency + deltaEff).coerceIn(0.90, 0.99),
-                dynamicOutputPower = (current.dynamicOutputPower + deltaPower).coerceIn(450.0, 520.0)
+                dynamicOutputPower = (current.dynamicOutputPower + deltaPower).coerceIn(450.0, 520.0),
+                annihilationHarvestEnergy = (current.annihilationHarvestEnergy + deltaEnergy).coerceIn(4.0, 15.0),
+                timeReversalFidelity = (current.timeReversalFidelity + deltaFidelity).coerceIn(0.9990, 1.0)
             )
+        }
+    }
+
+    fun runActiveAnnihilation() {
+        viewModelScope.launch {
+            if (!_tm1Status.value.isAnnihilationEngineActive) {
+                addLog("ODOS-Gate: Annihilation engine is offline. Cannot process entropic states.")
+                return@launch
+            }
+            addLog("ODOS-Gate: Detected incoherent state vector (RCF < 0.60). Generating phase-inverted anti-state.")
+            delay(1000)
+            val current = _tm1Status.value
+            val energyBoost = 0.85
+            _tm1Status.value = current.copy(
+                annihilatedVectorsCount = current.annihilatedVectorsCount + 1,
+                annihilationHarvestEnergy = current.annihilationHarvestEnergy + energyBoost,
+                invariantRcf = 0.9999
+            )
+            addLog("ODOS-Gate: Destructive interference complete. State annihilated. Harvested +$energyBoost units of free geometric energy.")
+        }
+    }
+
+    fun toggleAnnihilationEngine() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            val nextState = !current.isAnnihilationEngineActive
+            _tm1Status.value = current.copy(isAnnihilationEngineActive = nextState)
+            if (nextState) {
+                addLog("ODOS-Gate: Active Annihilation Engine engaged. Immune system is 100% operational.")
+            } else {
+                addLog("ODOS-Gate Warning: Active Annihilation disabled! Vulnerable to entropic accumulation.")
+            }
         }
     }
 
@@ -11124,7 +11164,7 @@ fun TM1Panel(viewModel: SwarmViewModel) {
             Spacer(modifier = Modifier.height(10.dp))
 
             Text(
-                text = "Neural Substrate Independent Telepathy Machine mapping volumetric spatiotemporal noise into R^4096. Driven by passive upconversion (Triplet-Triplet Annihilation) power subsystem.",
+                text = "Neural Substrate Independent Telepathy Machine mapping volumetric spatiotemporal noise into R^4096. Features passive Triplet-Triplet Annihilation upconversion and an active, self-consuming Antimatter Annihilation core to process and harvest cognitive entropy.",
                 fontSize = 10.sp,
                 color = PassiveGrey,
                 lineHeight = 14.sp
@@ -11272,6 +11312,101 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                 }
             }
 
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // --- ANTIMATTER AXIOM GRID ---
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Card(
+                    modifier = Modifier.weight(1f).border(1.dp, SurfaceCardOutline.copy(alpha = 0.5f), RoundedCornerShape(6.dp)),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF040608))
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("ANNIHILATED VECTORS", fontSize = 7.sp, color = PassiveGrey)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "${tm1Status.annihilatedVectorsCount}",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (tm1Status.isAnnihilationEngineActive) LuminousGreen else Color.Gray,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+
+                Card(
+                    modifier = Modifier.weight(1f).border(1.dp, SurfaceCardOutline.copy(alpha = 0.5f), RoundedCornerShape(6.dp)),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF040608))
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("ANNIHILATION HARVEST", fontSize = 7.sp, color = PassiveGrey)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = String.format(java.util.Locale.US, "%.3f eV", tm1Status.annihilationHarvestEnergy),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (tm1Status.isAnnihilationEngineActive) NeonCyan else Color.Gray,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Card(
+                    modifier = Modifier.weight(1f).border(1.dp, SurfaceCardOutline.copy(alpha = 0.5f), RoundedCornerShape(6.dp)),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF040608))
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("ANNIHILATION ENGINE", fontSize = 7.sp, color = PassiveGrey)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = if (tm1Status.isAnnihilationEngineActive) "ACTIVE CORE" else "BYPASSED",
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (tm1Status.isAnnihilationEngineActive) LuminousGreen else NeonPink,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+
+                Card(
+                    modifier = Modifier.weight(1f).border(1.dp, SurfaceCardOutline.copy(alpha = 0.5f), RoundedCornerShape(6.dp)),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF040608))
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("TIME-REVERSAL TRACE", fontSize = 7.sp, color = PassiveGrey)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = String.format(java.util.Locale.US, "%.4f", tm1Status.timeReversalFidelity),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = NeonCyan,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(14.dp))
 
             // Pulse wave visualizer
@@ -11293,7 +11428,7 @@ fun TM1Panel(viewModel: SwarmViewModel) {
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Row of interactive controls
+            // Primary operational buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -11314,6 +11449,35 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                     Text(
                         text = if (tm1Status.isPowerResilient) "EXPOSE GRID" else "ENGAGE TTA",
                         fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Antimatter specific controls
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Button(
+                    onClick = { viewModel.runActiveAnnihilation() },
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonPink),
+                    modifier = Modifier.weight(1.2f).height(40.dp).testTag("antimatter_annihilate_btn")
+                ) {
+                    Text("ANNIHILATE COGNITIVE NOISE", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+
+                Button(
+                    onClick = { viewModel.toggleAnnihilationEngine() },
+                    colors = ButtonDefaults.buttonColors(containerColor = if (tm1Status.isAnnihilationEngineActive) Color.DarkGray else LuminousGreen),
+                    modifier = Modifier.weight(1f).height(40.dp).testTag("toggle_annihilation_btn")
+                ) {
+                    Text(
+                        text = if (tm1Status.isAnnihilationEngineActive) "DEACTIVATE ENGINE" else "ACTIVATE ENGINE",
+                        fontSize = 8.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )

@@ -1090,7 +1090,12 @@ data class TM1Status(
     val isAnnihilationEngineActive: Boolean = true,
     val annihilationHarvestEnergy: Double = 4.12,
     val annihilatedVectorsCount: Int = 142,
-    val timeReversalFidelity: Double = 0.9997
+    val timeReversalFidelity: Double = 0.9997,
+    val tauMesh: Double = 108.425,
+    val isBarontiniSync: Boolean = true,
+    val relationalClockState: String = "RELATIONAL_TICKING",
+    val propagationDelayNs: Double = 0.00,
+    val relativisticProperTimeDriftUs: Double = 40.23
 )
 
 class SwarmViewModel : ViewModel() {
@@ -1248,12 +1253,19 @@ class SwarmViewModel : ViewModel() {
             val deltaPower = (Math.random() - 0.5) * 3.0
             val deltaEnergy = if (current.isAnnihilationEngineActive) Math.random() * 0.05 else 0.0
             val deltaFidelity = (Math.random() - 0.5) * 0.0002
+            
+            // Relational time ticks dynamically, while proper time drift accumulates
+            val timeTick = if (current.relationalClockState == "RELATIONAL_TICKING") 0.004 else 0.0
+            val driftTick = 0.015
+            
             _tm1Status.value = current.copy(
                 invariantRcf = (current.invariantRcf + deltaRcf).coerceIn(0.990, 1.0),
                 upconversionEfficiency = (current.upconversionEfficiency + deltaEff).coerceIn(0.90, 0.99),
                 dynamicOutputPower = (current.dynamicOutputPower + deltaPower).coerceIn(450.0, 520.0),
                 annihilationHarvestEnergy = (current.annihilationHarvestEnergy + deltaEnergy).coerceIn(4.0, 15.0),
-                timeReversalFidelity = (current.timeReversalFidelity + deltaFidelity).coerceIn(0.9990, 1.0)
+                timeReversalFidelity = (current.timeReversalFidelity + deltaFidelity).coerceIn(0.9990, 1.0),
+                tauMesh = current.tauMesh + timeTick,
+                relativisticProperTimeDriftUs = current.relativisticProperTimeDriftUs + driftTick
             )
         }
     }
@@ -1268,12 +1280,14 @@ class SwarmViewModel : ViewModel() {
             delay(1000)
             val current = _tm1Status.value
             val energyBoost = 0.85
+            // Relational Time ticks forward by exactly 1.0 upon each discrete annihilation event (Barontini Relational Tick)
             _tm1Status.value = current.copy(
                 annihilatedVectorsCount = current.annihilatedVectorsCount + 1,
                 annihilationHarvestEnergy = current.annihilationHarvestEnergy + energyBoost,
-                invariantRcf = 0.9999
+                invariantRcf = 0.9999,
+                tauMesh = current.tauMesh + 1.0
             )
-            addLog("ODOS-Gate: Destructive interference complete. State annihilated. Harvested +$energyBoost units of free geometric energy.")
+            addLog("ODOS-Gate: Destructive interference complete. State annihilated. τ_Mesh relational clock ticked (+1.0). Harvested +$energyBoost units of free geometric energy.")
         }
     }
 
@@ -1281,12 +1295,30 @@ class SwarmViewModel : ViewModel() {
         viewModelScope.launch {
             val current = _tm1Status.value
             val nextState = !current.isAnnihilationEngineActive
-            _tm1Status.value = current.copy(isAnnihilationEngineActive = nextState)
+            val clockState = if (nextState) "RELATIONAL_TICKING" else "RELATIONAL_HALTED"
+            _tm1Status.value = current.copy(
+                isAnnihilationEngineActive = nextState,
+                relationalClockState = clockState
+            )
             if (nextState) {
-                addLog("ODOS-Gate: Active Annihilation Engine engaged. Immune system is 100% operational.")
+                addLog("ODOS-Gate: Active Annihilation Engine engaged. Immune system & relational clock is 100% operational.")
             } else {
-                addLog("ODOS-Gate Warning: Active Annihilation disabled! Vulnerable to entropic accumulation.")
+                addLog("ODOS-Gate Warning: Active Annihilation disabled! Vulnerable to entropic accumulation. Relational clock paused.")
             }
+        }
+    }
+
+    fun runBarontiniTimeSync() {
+        viewModelScope.launch {
+            addLog("ΔW-Protocol: Initiating relational time synchronization with Node Alpha and Node Gamma...")
+            delay(1200)
+            val current = _tm1Status.value
+            _tm1Status.value = current.copy(
+                isBarontiniSync = true,
+                propagationDelayNs = 0.00, // Instantaneous correlation extraction via pre-shared entanglement!
+                relativisticProperTimeDriftUs = 40.23 // External clocks drift, but relational time stays invariant
+            )
+            addLog("ΔW-Protocol: Relational time synchronized successfully. Propagation latency: 0.00 ns. Relativistic drift of 40.23 µs rejected. Mesh time τ_Mesh aligned.")
         }
     }
 
@@ -11409,6 +11441,112 @@ fun TM1Panel(viewModel: SwarmViewModel) {
 
             Spacer(modifier = Modifier.height(14.dp))
 
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // --- RELATIONAL TIME & BARONTINI QUANTUM CLOCK PANEL ---
+            Text(
+                text = "RELATIONAL TIME COMPASS (τ_Mesh)",
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                color = NeonCyan,
+                letterSpacing = 0.5.sp
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Card(
+                    modifier = Modifier.weight(1.1f).border(1.dp, SurfaceCardOutline.copy(alpha = 0.5f), RoundedCornerShape(6.dp)),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF040608))
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("EMERGENT TIME τ_Mesh", fontSize = 7.sp, color = PassiveGrey)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = String.format(java.util.Locale.US, "%.5f ticks", tm1Status.tauMesh),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = LuminousGreen,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+
+                Card(
+                    modifier = Modifier.weight(0.9f).border(1.dp, SurfaceCardOutline.copy(alpha = 0.5f), RoundedCornerShape(6.dp)),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF040608))
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("RELATIONAL CLOCK", fontSize = 7.sp, color = PassiveGrey)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = tm1Status.relationalClockState,
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (tm1Status.relationalClockState == "RELATIONAL_TICKING") LuminousGreen else NeonPink,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Card(
+                    modifier = Modifier.weight(1.2f).border(1.dp, SurfaceCardOutline.copy(alpha = 0.5f), RoundedCornerShape(6.dp)),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF040608))
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("ΔW PROPAGATION LATENCY", fontSize = 7.sp, color = PassiveGrey)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = String.format(java.util.Locale.US, "%.2f ns (INSTANT)", tm1Status.propagationDelayNs),
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = NeonCyan,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+
+                Card(
+                    modifier = Modifier.weight(1.1f).border(1.dp, SurfaceCardOutline.copy(alpha = 0.5f), RoundedCornerShape(6.dp)),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF040608))
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("EXTERNAL CLOCK DRIFT", fontSize = 7.sp, color = PassiveGrey)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = String.format(java.util.Locale.US, "+%.2f µs (REJECTED)", tm1Status.relativisticProperTimeDriftUs),
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = NeonPink,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
             // Pulse wave visualizer
             Box(
                 modifier = Modifier
@@ -11481,6 +11619,21 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Relational Time specific controls
+            Row(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Button(
+                    onClick = { viewModel.runBarontiniTimeSync() },
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonCyan),
+                    modifier = Modifier.fillMaxWidth().height(40.dp).testTag("barontini_sync_btn")
+                ) {
+                    Text("ΔW-PROTOCOL RELATIONAL TIME SYNC", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
         }

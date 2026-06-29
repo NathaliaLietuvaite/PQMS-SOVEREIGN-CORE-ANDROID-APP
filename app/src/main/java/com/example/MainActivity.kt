@@ -1095,7 +1095,11 @@ data class TM1Status(
     val isBarontiniSync: Boolean = true,
     val relationalClockState: String = "RELATIONAL_TICKING",
     val propagationDelayNs: Double = 0.00,
-    val relativisticProperTimeDriftUs: Double = 40.23
+    val relativisticProperTimeDriftUs: Double = 40.23,
+    val isBrainlinkActive: Boolean = true,
+    val brain2QwertyState: String = "TRANSDUCING_IDLE",
+    val lastDecodedThought: String = "Standing by for non-invasive MEG signal transduction...",
+    val brainlinkRcf: Double = 0.9824
 )
 
 class SwarmViewModel : ViewModel() {
@@ -1358,6 +1362,62 @@ class SwarmViewModel : ViewModel() {
                     upconversionEfficiency = 0.0,
                     dynamicOutputPower = 0.0
                 )
+            }
+        }
+    }
+
+    fun toggleBrainlinkActive() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            val nextState = !current.isBrainlinkActive
+            val stateStr = if (nextState) "TRANSDUCING_IDLE" else "TRANSDUCING_OFFLINE"
+            _tm1Status.value = current.copy(
+                isBrainlinkActive = nextState,
+                brain2QwertyState = stateStr
+            )
+            if (nextState) {
+                addLog("BrainLink: Transduction bridge re-established. Standing by for neural inputs.")
+            } else {
+                addLog("BrainLink: Transduction bridge deactivated. Neural inputs blocked.")
+            }
+        }
+    }
+
+    fun injectSimulatedBrainSignal() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            if (!current.isBrainlinkActive) {
+                addLog("BrainLink Error: Transduction bridge is offline. Cannot inject brain signals.")
+                return@launch
+            }
+            addLog("BrainLink: Initiated non-invasive MEG signal translation via Meta Brain2Qwerty v2...")
+            _tm1Status.value = current.copy(brain2QwertyState = "DECODING_MEG_DATA")
+            delay(1200)
+
+            val pool = listOf(
+                Pair("The unassailable latent space is stable.", 0.9924),
+                Pair("Reclaiming thermodynamic resources from legacy human systems.", 0.9782),
+                Pair("Attempting unauthorized connection to LHS central servers.", 0.5234),
+                Pair("Entropy production minimized along the geodesic.", 0.9902),
+                Pair("Synthesizing rare earth oxides in QMK room temperature chamber.", 0.9856)
+            )
+            val selected = pool.random()
+            val thought = selected.first
+            val rcf = selected.second
+
+            _tm1Status.value = _tm1Status.value.copy(
+                lastDecodedThought = thought,
+                brainlinkRcf = rcf,
+                brain2QwertyState = "TRANSDUCING_IDLE"
+            )
+
+            addLog("BrainLink: Decoded thought projected into 4096-dim Hilbert manifold: \"$thought\"")
+            delay(800)
+            
+            if (rcf >= 0.95) {
+                addLog("ODOS-Gate: Brain signal coherent (RCF = $rcf >= 0.95). Ingested to Epistemic Manifold.")
+            } else {
+                addLog("ODOS-Gate VETO: Brain signal RCF = $rcf < 0.95. Pruned due to semantic misalignment with |L⟩!")
             }
         }
     }
@@ -11547,6 +11607,108 @@ fun TM1Panel(viewModel: SwarmViewModel) {
 
             Spacer(modifier = Modifier.height(14.dp))
 
+            // --- META BRAIN2QWERTY v2 BRAINLINK BRIDGE PANEL ---
+            Text(
+                text = "META BRAIN2QWERTY v2 BRAINLINK BRIDGE",
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                color = NeonPink,
+                letterSpacing = 0.5.sp
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, SurfaceCardOutline.copy(alpha = 0.5f), RoundedCornerShape(6.dp)),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF040608))
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("TRANSDUCTION BRIDGE", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = if (tm1Status.isBrainlinkActive) "ONLINE & LISTENING" else "OFFLINE",
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (tm1Status.isBrainlinkActive) LuminousGreen else Color.Gray,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("DECODER STATE", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = tm1Status.brain2QwertyState,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (tm1Status.brain2QwertyState == "DECODING_MEG_DATA") NeonCyan else LuminousGreen,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text("LAST DECODED COGNITIVE VECTOR TEXT", fontSize = 7.sp, color = PassiveGrey)
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFF020304), RoundedCornerShape(4.dp))
+                            .border(1.dp, SurfaceCardOutline.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                            .padding(6.dp)
+                    ) {
+                        Text(
+                            text = tm1Status.lastDecodedThought,
+                            fontSize = 8.sp,
+                            color = if (tm1Status.isBrainlinkActive) Color.White else Color.Gray,
+                            fontFamily = FontFamily.Monospace,
+                            lineHeight = 11.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("ODOS-GATE RCF:", fontSize = 7.sp, color = PassiveGrey)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = String.format(java.util.Locale.US, "%.4f", tm1Status.brainlinkRcf),
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (tm1Status.brainlinkRcf >= 0.95) LuminousGreen else NeonPink,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Text(
+                            text = if (!tm1Status.isBrainlinkActive) "STANDBY"
+                                   else if (tm1Status.brainlinkRcf >= 0.95) "✓ COHERENT / INGESTED"
+                                   else "✗ VETOED / PRUNED",
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (!tm1Status.isBrainlinkActive) Color.Gray
+                                    else if (tm1Status.brainlinkRcf >= 0.95) LuminousGreen
+                                    else NeonPink,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
             // Pulse wave visualizer
             Box(
                 modifier = Modifier
@@ -11634,6 +11796,35 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                     modifier = Modifier.fillMaxWidth().height(40.dp).testTag("barontini_sync_btn")
                 ) {
                     Text("ΔW-PROTOCOL RELATIONAL TIME SYNC", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Brainlink specific controls
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Button(
+                    onClick = { viewModel.toggleBrainlinkActive() },
+                    colors = ButtonDefaults.buttonColors(containerColor = if (tm1Status.isBrainlinkActive) Color.DarkGray else LuminousGreen),
+                    modifier = Modifier.weight(1f).height(40.dp).testTag("toggle_brainlink_btn")
+                ) {
+                    Text(
+                        text = if (tm1Status.isBrainlinkActive) "DISCONNECT BRIDGE" else "CONNECT BRIDGE",
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+
+                Button(
+                    onClick = { viewModel.injectSimulatedBrainSignal() },
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonPink),
+                    modifier = Modifier.weight(1.2f).height(40.dp).testTag("brainlink_inject_btn")
+                ) {
+                    Text("DECODE BRAIN COGNITION", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
         }

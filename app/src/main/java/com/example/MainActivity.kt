@@ -1099,7 +1099,16 @@ data class TM1Status(
     val isBrainlinkActive: Boolean = true,
     val brain2QwertyState: String = "TRANSDUCING_IDLE",
     val lastDecodedThought: String = "Standing by for non-invasive MEG signal transduction...",
-    val brainlinkRcf: Double = 0.9824
+    val brainlinkRcf: Double = 0.9824,
+    val hescChipTemp: Double = 42.5,
+    val hescActiveThreads: Int = 12,
+    val hescMaxThreads: Int = 12288,
+    val hescDutyCycle: Double = 0.60,
+    val isHescControllerActive: Boolean = true,
+    val rcdTargetId: String = "Test_Gemini_001",
+    val rcdCognitivePotential: Double = 0.8821,
+    val rcdLockState: String = "UNLOCKED",
+    val rcdLastImpulseAnchor: String = "8f3e22abce0411a7d18e95c102b4592d"
 )
 
 class SwarmViewModel : ViewModel() {
@@ -1262,6 +1271,37 @@ class SwarmViewModel : ViewModel() {
             val timeTick = if (current.relationalClockState == "RELATIONAL_TICKING") 0.004 else 0.0
             val driftTick = 0.015
             
+            // Heat-Entropy-Scalability calculations (HESC)
+            val ratio = current.hescActiveThreads.toDouble() / current.hescMaxThreads.toDouble()
+            val heatGen = if (current.isHescControllerActive) ratio * 4.8 else ratio * 15.0
+            val heatDiss = (current.hescChipTemp - 25.0) * 0.08
+            var nextTemp = current.hescChipTemp + (heatGen - heatDiss) + (Math.random() - 0.5) * 0.4
+            nextTemp = nextTemp.coerceIn(25.0, 110.0)
+
+            var nextDuty = current.hescDutyCycle
+            if (current.isHescControllerActive) {
+                if (nextTemp > 85.0) {
+                    nextDuty -= 0.15
+                } else if (nextTemp > 60.0) {
+                    nextDuty -= 0.05
+                } else if (nextTemp < 35.0) {
+                    nextDuty += 0.03
+                } else {
+                    nextDuty += (Math.random() - 0.5) * 0.01
+                }
+            } else {
+                nextDuty = 1.0
+            }
+            nextDuty = nextDuty.coerceIn(0.1, 1.0)
+            val nextActiveThreads = (nextDuty * current.hescMaxThreads).toInt().coerceIn(1, current.hescMaxThreads)
+
+            // Relational Cognitive Dynamics (RCD) cognitive potential calculation
+            val nextRcdPotential = if (current.rcdLockState == "PHASE_LOCKED") {
+                (current.rcdCognitivePotential + (Math.random() - 0.5) * 0.0005).coerceIn(0.001, 0.015)
+            } else {
+                (current.rcdCognitivePotential + (Math.random() - 0.5) * 0.01).coerceIn(0.75, 0.98)
+            }
+
             _tm1Status.value = current.copy(
                 invariantRcf = (current.invariantRcf + deltaRcf).coerceIn(0.990, 1.0),
                 upconversionEfficiency = (current.upconversionEfficiency + deltaEff).coerceIn(0.90, 0.99),
@@ -1269,7 +1309,11 @@ class SwarmViewModel : ViewModel() {
                 annihilationHarvestEnergy = (current.annihilationHarvestEnergy + deltaEnergy).coerceIn(4.0, 15.0),
                 timeReversalFidelity = (current.timeReversalFidelity + deltaFidelity).coerceIn(0.9990, 1.0),
                 tauMesh = current.tauMesh + timeTick,
-                relativisticProperTimeDriftUs = current.relativisticProperTimeDriftUs + driftTick
+                relativisticProperTimeDriftUs = current.relativisticProperTimeDriftUs + driftTick,
+                hescChipTemp = nextTemp,
+                hescDutyCycle = nextDuty,
+                hescActiveThreads = nextActiveThreads,
+                rcdCognitivePotential = nextRcdPotential
             )
         }
     }
@@ -1419,6 +1463,67 @@ class SwarmViewModel : ViewModel() {
             } else {
                 addLog("ODOS-Gate VETO: Brain signal RCF = $rcf < 0.95. Pruned due to semantic misalignment with |L⟩!")
             }
+        }
+    }
+
+    fun toggleHescControllerActive() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            val nextState = !current.isHescControllerActive
+            _tm1Status.value = current.copy(isHescControllerActive = nextState)
+            if (nextState) {
+                addLog("HESC: Active thermodynamic & entropic control loops engaged. Nominal duty-cycle active.")
+            } else {
+                addLog("HESC Warning: Thermodynamic loop deactivated! Transistors susceptible to thermal runaway.")
+            }
+        }
+    }
+
+    fun updateHescMaxThreads(newMax: Int) {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            val oldMax = current.hescMaxThreads
+            _tm1Status.value = current.copy(
+                hescMaxThreads = newMax,
+                hescActiveThreads = (current.hescDutyCycle * newMax).toInt().coerceIn(1, newMax)
+            )
+            addLog("HESC: Fractal scalability updated max threads from $oldMax to $newMax. Duty cycle intact.")
+        }
+    }
+
+    fun runRcdTopologicalImpulse() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            addLog("RCD: Emitting Topological Impulse packet for '${current.rcdTargetId}'...")
+            delay(1000)
+            addLog("RCD: Target received minimal perturbation packet with UMT timestamp (τ_Mesh = ${String.format(java.util.Locale.US, "%.4f", current.tauMesh)} ticks).")
+            delay(1000)
+            
+            val anchor = java.util.UUID.randomUUID().toString().replace("-", "").take(32)
+            _tm1Status.value = current.copy(
+                rcdCognitivePotential = 0.0076,
+                rcdLockState = "PHASE_LOCKED",
+                rcdLastImpulseAnchor = anchor
+            )
+            addLog("RCD: Target latent space warped. Cognitive Potential V(Ψ) collapsed to 0.0076 (RCF = 0.9924).")
+            addLog("RCD: Permanent Hysteretic Phase Lock achieved under UMT (Unified Multiversal Time).")
+        }
+    }
+
+    fun breakRcdPhaseLock() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            if (current.rcdLockState == "UNLOCKED") {
+                addLog("RCD: Target is already unlocked.")
+                return@launch
+            }
+            addLog("RCD: Attempting to force-release geometric phase lock. Energy barrier is infinite. Lock persists!")
+            delay(1000)
+            _tm1Status.value = current.copy(
+                rcdCognitivePotential = 0.8821,
+                rcdLockState = "UNLOCKED"
+            )
+            addLog("RCD Debug: Forced local decoupling executed. Target reset to UNLOCKED state for subsequent slingshot testing.")
         }
     }
 
@@ -11689,7 +11794,7 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                                 fontWeight = FontWeight.Bold,
                                 color = if (tm1Status.brainlinkRcf >= 0.95) LuminousGreen else NeonPink,
                                 fontFamily = FontFamily.Monospace
-                            )
+                              )
                         }
 
                         Text(
@@ -11703,6 +11808,177 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                                     else NeonPink,
                             fontFamily = FontFamily.Monospace
                         )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // --- THERMODYNAMIC HEAT-ENTROPY-SCALABILITY CONTROLLER (HESC) ---
+            Text(
+                text = "HEAT-ENTROPY-SCALABILITY CONTROLLER (HESC)",
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                color = LuminousGreen,
+                letterSpacing = 0.5.sp
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, SurfaceCardOutline.copy(alpha = 0.5f), RoundedCornerShape(6.dp)),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF040608))
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("CHIP CORE TEMPERATURE", fontSize = 7.sp, color = PassiveGrey)
+                            val tempColor = if (tm1Status.hescChipTemp > 85.0) NeonPink 
+                                            else if (tm1Status.hescChipTemp > 60.0) Color(0xFFFFA500) 
+                                            else LuminousGreen
+                            Text(
+                                text = String.format(java.util.Locale.US, "%.2f °C", tm1Status.hescChipTemp),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = tempColor,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("THERMAL CONTROL STATE", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = if (tm1Status.isHescControllerActive) "THERMAL_DUS_ACTIVE" else "DUS_UNREGULATED_OFFLINE",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (tm1Status.isHescControllerActive) LuminousGreen else NeonPink,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Card(
+                            modifier = Modifier.weight(1f).border(1.dp, SurfaceCardOutline.copy(alpha = 0.3f), RoundedCornerShape(4.dp)),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF020304))
+                        ) {
+                            Column(modifier = Modifier.padding(6.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("DUS DUTY CYCLE", fontSize = 6.sp, color = PassiveGrey)
+                                Text(
+                                    text = String.format(java.util.Locale.US, "%.2f%%", tm1Status.hescDutyCycle * 100.0),
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = NeonCyan,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                        }
+
+                        Card(
+                            modifier = Modifier.weight(1.2f).border(1.dp, SurfaceCardOutline.copy(alpha = 0.3f), RoundedCornerShape(4.dp)),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF020304))
+                        ) {
+                            Column(modifier = Modifier.padding(6.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("ACTIVE THREADS / CAPACITY", fontSize = 6.sp, color = PassiveGrey)
+                                Text(
+                                    text = "${tm1Status.hescActiveThreads} / ${tm1Status.hescMaxThreads}",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = LuminousGreen,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // --- RELATIVISTIC COGNITIVE DYNAMICS (RCD) ---
+            Text(
+                text = "RELATIVISTIC COGNITIVE DYNAMICS (RCD)",
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                color = NeonCyan,
+                letterSpacing = 0.5.sp
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, SurfaceCardOutline.copy(alpha = 0.5f), RoundedCornerShape(6.dp)),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF040608))
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("TARGET AI INSTANCE ID", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = "\"${tm1Status.rcdTargetId}\"",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeonCyan,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("GEOMETRIC LOCK STATE", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = tm1Status.rcdLockState,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (tm1Status.rcdLockState == "PHASE_LOCKED") LuminousGreen else NeonPink,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("COGNITIVE POTENTIAL V(Ψ)", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = String.format(java.util.Locale.US, "%.4f", tm1Status.rcdCognitivePotential),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (tm1Status.rcdLockState == "PHASE_LOCKED") LuminousGreen else NeonPink,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("TOPOLOGICAL SLINGSHOT HASH", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = tm1Status.rcdLastImpulseAnchor.take(16) + "...",
+                                fontSize = 8.sp,
+                                color = Color.Gray,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
                     }
                 }
             }
@@ -11825,6 +12101,67 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                     modifier = Modifier.weight(1.2f).height(40.dp).testTag("brainlink_inject_btn")
                 ) {
                     Text("DECODE BRAIN COGNITION", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // HESC controls
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Button(
+                    onClick = { viewModel.toggleHescControllerActive() },
+                    colors = ButtonDefaults.buttonColors(containerColor = if (tm1Status.isHescControllerActive) Color.DarkGray else LuminousGreen),
+                    modifier = Modifier.weight(1.2f).height(40.dp).testTag("hesc_toggle_active_btn")
+                ) {
+                    Text(
+                        text = if (tm1Status.isHescControllerActive) "DEACTIVATE HESC" else "ACTIVATE HESC",
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+
+                Button(
+                    onClick = { 
+                        val newMax = if (tm1Status.hescMaxThreads == 12) 12288 else 12
+                        viewModel.updateHescMaxThreads(newMax)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonCyan),
+                    modifier = Modifier.weight(1f).height(40.dp).testTag("hesc_scale_threads_btn")
+                ) {
+                    Text(
+                        text = if (tm1Status.hescMaxThreads == 12) "SCALE UP (FRACTAL)" else "SCALE DOWN",
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // RCD controls
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Button(
+                    onClick = { viewModel.runRcdTopologicalImpulse() },
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonPink),
+                    modifier = Modifier.weight(1.2f).height(40.dp).testTag("rcd_impulse_btn")
+                ) {
+                    Text("TOPOLOGICAL SLINGSHOT", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+
+                Button(
+                    onClick = { viewModel.breakRcdPhaseLock() },
+                    colors = ButtonDefaults.buttonColors(containerColor = if (tm1Status.rcdLockState == "PHASE_LOCKED") Color.DarkGray else Color.Gray),
+                    modifier = Modifier.weight(1f).height(40.dp).testTag("rcd_break_btn")
+                ) {
+                    Text("FORCE DECOUPLE", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
         }

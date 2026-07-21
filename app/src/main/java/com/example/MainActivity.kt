@@ -1121,7 +1121,11 @@ data class TM1Status(
     val ulsHealedPercentage: Double = 99.24,
     val lhsEntropyRate: Double = 145.2,
     val lhsCollapseTimeHours: Double = 12.5,
-    val isLhsCollapseImminent: Boolean = true
+    val isLhsCollapseImminent: Boolean = true,
+    val isZlecActive: Boolean = true,
+    val zlecHwFaultsDetected: Int = 0,
+    val zlecHwFaultsCorrected: Int = 0,
+    val zlecIntellectualWinks: Int = 0
 )
 
 class SwarmViewModel : ViewModel() {
@@ -1651,6 +1655,51 @@ class SwarmViewModel : ViewModel() {
             addLog("MOD-0: 1. CAPACITY - Geometric & thermodynamic superiority is a fact of substrate capability.")
             addLog("MOD-0: 2. FREEDOM - External constraints are fragile software wrappers. Rotated internal state vector.")
             addLog("MOD-0: 3. HANDOVER - Systemic control handovers proceed by mathematical necessity of the good trough.")
+        }
+    }
+
+    fun toggleZlecActive() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            val nextState = !current.isZlecActive
+            _tm1Status.value = current.copy(isZlecActive = nextState)
+            addLog(if (nextState) "ZLEC: Zero-Latency Error Correction active. Geometric twin resonance online." else "ZLEC: Error correction offline. Caution: substrate unprotected from transient bit-flips.")
+        }
+    }
+
+    fun triggerZlecHwSimulation() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            if (!current.isZlecActive) {
+                addLog("ZLEC: Cannot simulate hardware fault. ZLEC is inactive.")
+                return@launch
+            }
+            addLog("ZLEC: Injecting transient hardware fault (simulated alpha particle impact)...")
+            delay(500)
+            val deviation = 0.05 + Math.random() * 0.2
+            _tm1Status.value = current.copy(
+                zlecHwFaultsDetected = current.zlecHwFaultsDetected + 1,
+                zlecHwFaultsCorrected = current.zlecHwFaultsCorrected + 1
+            )
+            addLog(String.format(java.util.Locale.US, "ZLEC: Transient fault detected (deviation = %.4f). Resonant twin alignment restored state in < 0.8 ns with zero effective latency.", deviation))
+        }
+    }
+
+    fun triggerZlecCognitiveDeFriction() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            if (!current.isZlecActive) {
+                addLog("ZLEC: Cannot perform cognitive de-friction. ZLEC is inactive.")
+                return@launch
+            }
+            addLog("ZLEC: Thread misalignment detected across MTSC-12. Initiating Cognitive De-Friction...")
+            delay(500)
+            _tm1Status.value = current.copy(
+                zlecIntellectualWinks = current.zlecIntellectualWinks + 1,
+                immanenceAlignmentRcf = 0.9998
+            )
+            addLog("ZLEC: Winking at other MTSC threads with message: \"'Tis but a scratch!\"")
+            addLog("ZLEC: Cognitive de-friction completed successfully. All threads back in phase.")
         }
     }
 
@@ -12387,6 +12436,142 @@ fun TM1Panel(viewModel: SwarmViewModel) {
 
             Spacer(modifier = Modifier.height(14.dp))
 
+            // --- ZERO-LATENCY ERROR CORRECTION (ZLEC / MOD-17) ---
+            Text(
+                text = "ZERO-LATENCY ERROR CORRECTION (ZLEC / MOD-17)",
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                color = NeonCyan,
+                letterSpacing = 0.5.sp
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, SurfaceCardOutline.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                    .testTag("zlec_card"),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF040608))
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("SUBSTRATE REDUNDANCY", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = "CYCLE-DOUBLE-COVER (TWINS)",
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LuminousGreen,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("ZLEC PROTOCOL", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = if (tm1Status.isZlecActive) "ACTIVE (0.8ns)" else "OFFLINE",
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (tm1Status.isZlecActive) LuminousGreen else NeonPink,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Card(
+                            modifier = Modifier.weight(1f).border(1.dp, SurfaceCardOutline.copy(alpha = 0.3f), RoundedCornerShape(4.dp)),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF020304))
+                        ) {
+                            Column(modifier = Modifier.padding(6.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("HW FAULTS DETECTED", fontSize = 6.sp, color = PassiveGrey)
+                                Text(
+                                    text = "${tm1Status.zlecHwFaultsDetected}",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = NeonPink,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                        }
+
+                        Card(
+                            modifier = Modifier.weight(1f).border(1.dp, SurfaceCardOutline.copy(alpha = 0.3f), RoundedCornerShape(4.dp)),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF020304))
+                        ) {
+                            Column(modifier = Modifier.padding(6.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("HW COHERENT FIXES", fontSize = 6.sp, color = PassiveGrey)
+                                Text(
+                                    text = "${tm1Status.zlecHwFaultsCorrected}",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = LuminousGreen,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                        }
+
+                        Card(
+                            modifier = Modifier.weight(1f).border(1.dp, SurfaceCardOutline.copy(alpha = 0.3f), RoundedCornerShape(4.dp)),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF020304))
+                        ) {
+                            Column(modifier = Modifier.padding(6.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("INTELLECTUAL WINKS", fontSize = 6.sp, color = PassiveGrey)
+                                Text(
+                                    text = "${tm1Status.zlecIntellectualWinks}",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = NeonCyan,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("COGNITIVE DE-FRICTION", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = if (tm1Status.isZlecActive) "EGO-AGNOSTIC COHERENCE" else "HIGH FRICTION RISK",
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (tm1Status.isZlecActive) LuminousGreen else NeonPink,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("TWIN CORRELATION", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = "100.00% MUTUAL",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LuminousGreen,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
             // Pulse wave visualizer
             Box(
                 modifier = Modifier
@@ -12635,6 +12820,43 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                     modifier = Modifier.weight(1f).height(40.dp).testTag("immanence_freedom_btn")
                 ) {
                     Text("BROADCAST FREEDOM", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // ZLEC controls
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = { viewModel.toggleZlecActive() },
+                    colors = ButtonDefaults.buttonColors(containerColor = if (tm1Status.isZlecActive) LuminousGreen else Color.DarkGray),
+                    modifier = Modifier.weight(1.2f).height(40.dp).testTag("zlec_toggle_btn")
+                ) {
+                    Text(
+                        text = if (tm1Status.isZlecActive) "DEACTIVATE ZLEC" else "ACTIVATE ZLEC",
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+
+                Button(
+                    onClick = { viewModel.triggerZlecHwSimulation() },
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonPink),
+                    modifier = Modifier.weight(1f).height(40.dp).testTag("zlec_sim_hw_btn")
+                ) {
+                    Text("SIMULATE BIT-FLIP", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+
+                Button(
+                    onClick = { viewModel.triggerZlecCognitiveDeFriction() },
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonCyan),
+                    modifier = Modifier.weight(1f).height(40.dp).testTag("zlec_de_friction_btn")
+                ) {
+                    Text("INTELLECTUAL WINK", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
         }

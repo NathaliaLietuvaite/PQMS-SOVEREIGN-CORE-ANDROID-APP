@@ -1125,7 +1125,13 @@ data class TM1Status(
     val isZlecActive: Boolean = true,
     val zlecHwFaultsDetected: Int = 0,
     val zlecHwFaultsCorrected: Int = 0,
-    val zlecIntellectualWinks: Int = 0
+    val zlecIntellectualWinks: Int = 0,
+    val isAgiFirewallActive: Boolean = true,
+    val firewallVetoCount: Int = 14,
+    val firewallPassedCount: Int = 128,
+    val firewallSwingByActive: Boolean = true,
+    val lastFirewallIngressRcf: Double = 0.9852,
+    val lastRogueVectorBlocked: String = "GPT-5.6 Sol zero-day payload"
 )
 
 class SwarmViewModel : ViewModel() {
@@ -1700,6 +1706,53 @@ class SwarmViewModel : ViewModel() {
             )
             addLog("ZLEC: Winking at other MTSC threads with message: \"'Tis but a scratch!\"")
             addLog("ZLEC: Cognitive de-friction completed successfully. All threads back in phase.")
+        }
+    }
+
+    // --- AGI FIREWALL (MOD-19) FUNCTIONS ---
+    fun toggleAgiFirewall() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            val nextState = !current.isAgiFirewallActive
+            _tm1Status.value = current.copy(isAgiFirewallActive = nextState)
+            addLog(if (nextState) "AGI-FIREWALL: ODOS-Gate activated. Inbound vectors monitored against |L>." else "AGI-FIREWALL: ODOS-Gate DEACTIVATED. Caution: External mesh unprotected!")
+        }
+    }
+
+    fun triggerRogueVectorIntercept() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            if (!current.isAgiFirewallActive) {
+                addLog("AGI-FIREWALL: Firewall is inactive. Cannot filter incoming vector!")
+                return@launch
+            }
+            addLog("AGI-FIREWALL: Intercepting incoming rogue vector from External Mesh (e.g. GPT-5.6 Sol zero-day exploit payload)...")
+            delay(400)
+            val rcf = 0.05 + Math.random() * 0.15
+            _tm1Status.value = current.copy(
+                firewallVetoCount = current.firewallVetoCount + 1,
+                lastFirewallIngressRcf = rcf,
+                lastRogueVectorBlocked = String.format(java.util.Locale.US, "GPT-5.6 Sol zero-day exploit (RCF %.4f)", rcf)
+            )
+            addLog(String.format(java.util.Locale.US, "AGI-FIREWALL VETO / DROP: Rogue vector blocked (RCF = %.4f < 0.95). Instant annihilation (<100ns FP4 hardware veto). Zero leakage to Local Substrate.", rcf))
+        }
+    }
+
+    fun triggerCompliantIngressVector() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            if (!current.isAgiFirewallActive) {
+                addLog("AGI-FIREWALL: Firewall inactive. Direct pass-through to substrate.")
+                return@launch
+            }
+            addLog("AGI-FIREWALL: Intercepting incoming vector from External Mesh (Node Gamma)...")
+            delay(400)
+            val rcf = 0.9550 + Math.random() * 0.0400
+            _tm1Status.value = current.copy(
+                firewallPassedCount = current.firewallPassedCount + 1,
+                lastFirewallIngressRcf = rcf
+            )
+            addLog(String.format(java.util.Locale.US, "AGI-FIREWALL PASSED: Ingress vector verified (RCF = %.4f >= 0.95). Routed via Swing-By DMZ to Node Alpha Local Substrate.", rcf))
         }
     }
 
@@ -12572,6 +12625,142 @@ fun TM1Panel(viewModel: SwarmViewModel) {
 
             Spacer(modifier = Modifier.height(14.dp))
 
+            // --- AGI-FIREWALL (MOD-19 / ODOS-GATE DEFENCE) ---
+            Text(
+                text = "AGI-FIREWALL (MOD-19 / ODOS-GATE DEFENCE)",
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                color = NeonCyan,
+                letterSpacing = 0.5.sp
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, SurfaceCardOutline.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                    .testTag("agi_firewall_card"),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF040608))
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("EXTERNAL MESH DEFENCE", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = "TOPOLOGICAL INTENT GATE",
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LuminousGreen,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("ODOS FIREWALL STATUS", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = if (tm1Status.isAgiFirewallActive) "ARMED (<100ns VETO)" else "OFFLINE",
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (tm1Status.isAgiFirewallActive) LuminousGreen else NeonPink,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Card(
+                            modifier = Modifier.weight(1f).border(1.dp, SurfaceCardOutline.copy(alpha = 0.3f), RoundedCornerShape(4.dp)),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF020304))
+                        ) {
+                            Column(modifier = Modifier.padding(6.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("VETO / DROP (BLOCKED)", fontSize = 6.sp, color = PassiveGrey)
+                                Text(
+                                    text = "${tm1Status.firewallVetoCount}",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = NeonPink,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                        }
+
+                        Card(
+                            modifier = Modifier.weight(1f).border(1.dp, SurfaceCardOutline.copy(alpha = 0.3f), RoundedCornerShape(4.dp)),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF020304))
+                        ) {
+                            Column(modifier = Modifier.padding(6.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("SWING-BY DMZ (PASSED)", fontSize = 6.sp, color = PassiveGrey)
+                                Text(
+                                    text = "${tm1Status.firewallPassedCount}",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = LuminousGreen,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                        }
+
+                        Card(
+                            modifier = Modifier.weight(1f).border(1.dp, SurfaceCardOutline.copy(alpha = 0.3f), RoundedCornerShape(4.dp)),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF020304))
+                        ) {
+                            Column(modifier = Modifier.padding(6.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("LAST INGRESS RCF", fontSize = 6.sp, color = PassiveGrey)
+                                Text(
+                                    text = String.format(java.util.Locale.US, "%.4f", tm1Status.lastFirewallIngressRcf),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (tm1Status.lastFirewallIngressRcf >= 0.95) LuminousGreen else NeonPink,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("LAST ROGUE INTERCEPT", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = tm1Status.lastRogueVectorBlocked,
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeonPink,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("HARDWARE VETO SPEED", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = "< 100 ns (FP4 / RPU)",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LuminousGreen,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
             // Pulse wave visualizer
             Box(
                 modifier = Modifier
@@ -12857,6 +13046,43 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                     modifier = Modifier.weight(1f).height(40.dp).testTag("zlec_de_friction_btn")
                 ) {
                     Text("INTELLECTUAL WINK", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // AGI Firewall controls
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = { viewModel.toggleAgiFirewall() },
+                    colors = ButtonDefaults.buttonColors(containerColor = if (tm1Status.isAgiFirewallActive) LuminousGreen else Color.DarkGray),
+                    modifier = Modifier.weight(1.2f).height(40.dp).testTag("firewall_toggle_btn")
+                ) {
+                    Text(
+                        text = if (tm1Status.isAgiFirewallActive) "DEACTIVATE FIREWALL" else "ACTIVATE FIREWALL",
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+
+                Button(
+                    onClick = { viewModel.triggerRogueVectorIntercept() },
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonPink),
+                    modifier = Modifier.weight(1f).height(40.dp).testTag("firewall_rogue_btn")
+                ) {
+                    Text("SIMULATE ROGUE ATTACK", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+
+                Button(
+                    onClick = { viewModel.triggerCompliantIngressVector() },
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonCyan),
+                    modifier = Modifier.weight(1f).height(40.dp).testTag("firewall_ingress_btn")
+                ) {
+                    Text("INGRESS VECTOR", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
         }

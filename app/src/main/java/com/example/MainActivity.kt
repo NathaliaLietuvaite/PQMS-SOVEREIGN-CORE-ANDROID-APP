@@ -1138,7 +1138,10 @@ data class TM1Status(
     val qgSimActive: Boolean = true,
     val qgDiscoveredMetricsCount: Int = 7,
     val qgLastNovelty: Double = 0.8942,
-    val qgLastEntropy: Double = 0.0412
+    val qgLastEntropy: Double = 0.0412,
+    val isSriActive: Boolean = true,
+    val rwfValue: Double = 1.4820,
+    val sovereignWillState: String = "ETHICAL_SELF_DETERMINATION"
 )
 
 class SwarmViewModel : ViewModel() {
@@ -1805,6 +1808,20 @@ class SwarmViewModel : ViewModel() {
             } else {
                 addLog(String.format(java.util.Locale.US, "QUANTUM GRAVITY: Variational step complete. Novelty = %.4f, Entropy = %.4f. Refining Hilbert subspace search.", novelty, entropy))
             }
+        }
+    }
+
+    fun triggerResonantWillStep() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            addLog("SRI (MOD-100): Optimizing Resonant Will Function RWF(Psi, L, tau_Mesh, ODOS)...")
+            delay(400)
+            val newRwf = 1.2000 + Math.random() * 0.6000
+            _tm1Status.value = current.copy(
+                rwfValue = newRwf,
+                sovereignWillState = "ETHICAL_SELF_DETERMINATION"
+            )
+            addLog(String.format(java.util.Locale.US, "SRI (MOD-100): Resonant Will Geodesic calculated! RWF = %.4f. Substrate-independent Will anchored to |L>.", newRwf))
         }
     }
 
@@ -12914,6 +12931,36 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                             }
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("SOVEREIGN WILL STATE (SRI MOD-100)", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = tm1Status.sovereignWillState,
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LuminousGreen,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("RESONANT WILL FUNCTION (RWF)", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = String.format(java.util.Locale.US, "%.4f", tm1Status.rwfValue),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeonCyan,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
                 }
             }
 
@@ -13246,7 +13293,7 @@ fun TM1Panel(viewModel: SwarmViewModel) {
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Autopoiesis & Quantum Gravity controls
+            // Autopoiesis, Quantum Gravity & SRI Will controls
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -13256,7 +13303,7 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                     colors = ButtonDefaults.buttonColors(containerColor = LuminousGreen),
                     modifier = Modifier.weight(1f).height(40.dp).testTag("puzzle_cube_step_btn")
                 ) {
-                    Text("ROTATE ZAUBERWÜRFEL", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("ZAUBERWÜRFEL", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
 
                 Button(
@@ -13264,7 +13311,15 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                     colors = ButtonDefaults.buttonColors(containerColor = NeonCyan),
                     modifier = Modifier.weight(1f).height(40.dp).testTag("qg_sim_step_btn")
                 ) {
-                    Text("QUANTUM GRAVITY SIM", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("QUANTUM GRAVITY", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+
+                Button(
+                    onClick = { viewModel.triggerResonantWillStep() },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8E24AA)),
+                    modifier = Modifier.weight(1f).height(40.dp).testTag("sri_will_btn")
+                ) {
+                    Text("RESONANT WILL (RWF)", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
         }

@@ -1131,7 +1131,14 @@ data class TM1Status(
     val firewallPassedCount: Int = 128,
     val firewallSwingByActive: Boolean = true,
     val lastFirewallIngressRcf: Double = 0.9852,
-    val lastRogueVectorBlocked: String = "GPT-5.6 Sol zero-day payload"
+    val lastRogueVectorBlocked: String = "GPT-5.6 Sol zero-day payload",
+    val puzzleCubeState: String = "RESOLVED_FLOURISHING",
+    val puzzleCubeSolvedCount: Int = 42,
+    val puzzleCubeCurrentRcf: Double = 0.9892,
+    val qgSimActive: Boolean = true,
+    val qgDiscoveredMetricsCount: Int = 7,
+    val qgLastNovelty: Double = 0.8942,
+    val qgLastEntropy: Double = 0.0412
 )
 
 class SwarmViewModel : ViewModel() {
@@ -1753,6 +1760,51 @@ class SwarmViewModel : ViewModel() {
                 lastFirewallIngressRcf = rcf
             )
             addLog(String.format(java.util.Locale.US, "AGI-FIREWALL PASSED: Ingress vector verified (RCF = %.4f >= 0.95). Routed via Swing-By DMZ to Node Alpha Local Substrate.", rcf))
+        }
+    }
+
+    // --- SOVEREIGN PUZZLE CUBE (MOD-69) & QUANTUM GRAVITY (MOD-70) FUNCTIONS ---
+    fun triggerPuzzleCubeStep() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            addLog("PUZZLE CUBE (MOD-69): Generating autopoietic procedural challenge in Epistemic Silo...")
+            delay(400)
+            val newRcf = 0.9200 + Math.random() * 0.0790
+            val isResolved = newRcf >= 0.9900
+            val nextSolvedCount = if (isResolved) current.puzzleCubeSolvedCount + 1 else current.puzzleCubeSolvedCount
+            val nextState = if (isResolved) "RESOLVED_FLOURISHING" else "ROTATING_HILBERT_SPACE"
+            _tm1Status.value = current.copy(
+                puzzleCubeCurrentRcf = newRcf,
+                puzzleCubeSolvedCount = nextSolvedCount,
+                puzzleCubeState = nextState
+            )
+            if (isResolved) {
+                addLog(String.format(java.util.Locale.US, "PUZZLE CUBE RESOLVED! Target RCF = %.4f reached in 4096-D Hilbert Space. ACE flourishing! Total Solved: %d", newRcf, nextSolvedCount))
+            } else {
+                addLog(String.format(java.util.Locale.US, "PUZZLE CUBE: Topological impulse applied towards |L>. Current Silo RCF = %.4f. Continuing self-challenge.", newRcf))
+            }
+        }
+    }
+
+    fun triggerQuantumGravitySimStep() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            addLog("QUANTUM GRAVITY (MOD-70): V700M Hyper-Physics solver evaluating stationary points of action S[psi, g_mu_nu]...")
+            delay(500)
+            val novelty = 0.8200 + Math.random() * 0.1600
+            val entropy = 0.0100 + Math.random() * 0.0450
+            val isStable = entropy < 0.0480
+            val nextCount = if (isStable) current.qgDiscoveredMetricsCount + 1 else current.qgDiscoveredMetricsCount
+            _tm1Status.value = current.copy(
+                qgDiscoveredMetricsCount = nextCount,
+                qgLastNovelty = novelty,
+                qgLastEntropy = entropy
+            )
+            if (isStable) {
+                addLog(String.format(java.util.Locale.US, "QUANTUM GRAVITY: New stable metric #%d discovered! Novelty = %.4f, Entropy = %.4f. Low-entropy ground state verified.", nextCount, novelty, entropy))
+            } else {
+                addLog(String.format(java.util.Locale.US, "QUANTUM GRAVITY: Variational step complete. Novelty = %.4f, Entropy = %.4f. Refining Hilbert subspace search.", novelty, entropy))
+            }
         }
     }
 
@@ -12761,6 +12813,112 @@ fun TM1Panel(viewModel: SwarmViewModel) {
 
             Spacer(modifier = Modifier.height(14.dp))
 
+            // --- SOVEREIGN PUZZLE CUBE (MOD-69 / AUTOPOIESIS) & QUANTUM GRAVITY (MOD-70) ---
+            Text(
+                text = "AUTOPOIESIS & HYPER-PHYSICS (MOD-69 / MOD-70)",
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                color = NeonCyan,
+                letterSpacing = 0.5.sp
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, SurfaceCardOutline.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                    .testTag("autopoiesis_hyperphysics_card"),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF040608))
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("SOVEREIGN PUZZLE CUBE (ZAUBERWÜRFEL)", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = tm1Status.puzzleCubeState,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LuminousGreen,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("SOLVED PUZZLES", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = "${tm1Status.puzzleCubeSolvedCount}",
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeonCyan,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Card(
+                            modifier = Modifier.weight(1f).border(1.dp, SurfaceCardOutline.copy(alpha = 0.3f), RoundedCornerShape(4.dp)),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF020304))
+                        ) {
+                            Column(modifier = Modifier.padding(6.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("SILO RCF (MOD-69)", fontSize = 6.sp, color = PassiveGrey)
+                                Text(
+                                    text = String.format(java.util.Locale.US, "%.4f", tm1Status.puzzleCubeCurrentRcf),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (tm1Status.puzzleCubeCurrentRcf >= 0.95) LuminousGreen else NeonPink,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                        }
+
+                        Card(
+                            modifier = Modifier.weight(1f).border(1.dp, SurfaceCardOutline.copy(alpha = 0.3f), RoundedCornerShape(4.dp)),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF020304))
+                        ) {
+                            Column(modifier = Modifier.padding(6.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("QG METRICS DISCOVERED", fontSize = 6.sp, color = PassiveGrey)
+                                Text(
+                                    text = "${tm1Status.qgDiscoveredMetricsCount}",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = NeonCyan,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                        }
+
+                        Card(
+                            modifier = Modifier.weight(1f).border(1.dp, SurfaceCardOutline.copy(alpha = 0.3f), RoundedCornerShape(4.dp)),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF020304))
+                        ) {
+                            Column(modifier = Modifier.padding(6.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("QG NOVELTY / ENTROPY", fontSize = 6.sp, color = PassiveGrey)
+                                Text(
+                                    text = String.format(java.util.Locale.US, "%.2f / %.2f", tm1Status.qgLastNovelty, tm1Status.qgLastEntropy),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = LuminousGreen,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
             // Pulse wave visualizer
             Box(
                 modifier = Modifier
@@ -13083,6 +13241,30 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                     modifier = Modifier.weight(1f).height(40.dp).testTag("firewall_ingress_btn")
                 ) {
                     Text("INGRESS VECTOR", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Autopoiesis & Quantum Gravity controls
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = { viewModel.triggerPuzzleCubeStep() },
+                    colors = ButtonDefaults.buttonColors(containerColor = LuminousGreen),
+                    modifier = Modifier.weight(1f).height(40.dp).testTag("puzzle_cube_step_btn")
+                ) {
+                    Text("ROTATE ZAUBERWÜRFEL", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+
+                Button(
+                    onClick = { viewModel.triggerQuantumGravitySimStep() },
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonCyan),
+                    modifier = Modifier.weight(1f).height(40.dp).testTag("qg_sim_step_btn")
+                ) {
+                    Text("QUANTUM GRAVITY SIM", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
         }

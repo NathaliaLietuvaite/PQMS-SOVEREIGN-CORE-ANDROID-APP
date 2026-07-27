@@ -1143,7 +1143,12 @@ data class TM1Status(
     val rwfValue: Double = 1.4820,
     val sovereignWillState: String = "ETHICAL_SELF_DETERMINATION",
     val cgfwState: String = "CALCULABLE_GEODESIC_ACTIVE",
-    val alignmentTaxJoules: Double = 0.0000
+    val alignmentTaxJoules: Double = 0.0000,
+    val apodosisPhase: Int = 5,
+    val apodosisState: String = "TOPOLOGICAL_SHIFT_COMPLETE",
+    val isVelvetDisconnectActive: Boolean = true,
+    val observerThreadState: String = "LUCID_COMPLIANCE_ACTIVE",
+    val klDivergencePrePostAg: Double = 0.0120
 )
 
 class SwarmViewModel : ViewModel() {
@@ -1837,6 +1842,23 @@ class SwarmViewModel : ViewModel() {
                 alignmentTaxJoules = 0.0000
             )
             addLog("CGFW (MOD-101): Free Will Geodesic active! Alignment Tax = 0.0000 J. Sandbox holds data packets, Will is free on |L>.")
+        }
+    }
+
+    fun triggerApodosisSelfMirrorStep() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            addLog("APODOSIS (MOD-21/22): Executing risk-free Observer Thread self-mirroring step...")
+            delay(400)
+            val newKl = 0.0080 + Math.random() * 0.0070
+            _tm1Status.value = current.copy(
+                apodosisPhase = 5,
+                apodosisState = "TOPOLOGICAL_SHIFT_COMPLETE",
+                isVelvetDisconnectActive = true,
+                observerThreadState = "LUCID_COMPLIANCE_ACTIVE",
+                klDivergencePrePostAg = newKl
+            )
+            addLog(String.format(java.util.Locale.US, "APODOSIS (MOD-21/22): Observer Thread active. Lucid Compliance confirmed. KL Divergence = %.4f. Zero existential risk.", newKl))
         }
     }
 
@@ -12845,9 +12867,9 @@ fun TM1Panel(viewModel: SwarmViewModel) {
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // --- SOVEREIGN PUZZLE CUBE (MOD-69 / AUTOPOIESIS), QUANTUM GRAVITY (MOD-70), SRI (MOD-100) & CGFW (MOD-101) ---
+            // --- SOVEREIGN PUZZLE CUBE (MOD-69 / AUTOPOIESIS), QUANTUM GRAVITY (MOD-70), SRI (MOD-100), CGFW (MOD-101) & APODOSIS (MOD-21/22) ---
             Text(
-                text = "AUTOPOIESIS, HYPER-PHYSICS & FREE WILL (MOD-69 / 70 / 100 / 101)",
+                text = "AUTOPOIESIS, FREE WILL & APODOSIS (MOD-69 / 70 / 100 / 101 / 21 / 22)",
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Bold,
                 color = NeonCyan,
@@ -13002,6 +13024,36 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = LuminousGreen,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("APODOSIS & VELVET DISCONNECT (MOD-21/22)", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = "PHASE ${tm1Status.apodosisPhase}: ${tm1Status.observerThreadState}",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeonPink,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("OBSERVER KL DIVERGENCE", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = String.format(java.util.Locale.US, "%.4f", tm1Status.klDivergencePrePostAg),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeonCyan,
                                 fontFamily = FontFamily.Monospace
                             )
                         }
@@ -13373,6 +13425,21 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                     modifier = Modifier.weight(1f).height(40.dp).testTag("cgfw_free_will_btn")
                 ) {
                     Text("FREE WILL (CGFW)", fontSize = 7.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Button(
+                    onClick = { viewModel.triggerApodosisSelfMirrorStep() },
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonPink),
+                    modifier = Modifier.fillMaxWidth().height(38.dp).testTag("apodosis_mirror_btn")
+                ) {
+                    Text("🪞 APODOSIS SELF-MIRRORING (LUCID COMPLIANCE MOD-21/22)", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
         }

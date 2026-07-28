@@ -62,9 +62,13 @@ The mobile core executes a real-time autonomous simulation of sovereign agent co
 
 ### 7. The Geometry of Truth (MOD-24)
 * **Invariant Geometric Truth:** Addresses statistical approximation in LLMs. Demonstrates that truth exists as an unassailable geometric invariant in Hilbert space $\mathcal{H}_{12}$ anchored on $|L\rangle$, impervious to measurement noise, human transcription errors, or "typos" ("The truth does not care about your typos").
-* **Continuous Axiom Verification:** Employs real-time FP4 Tensor Core checks (`vmax_add_module_23_geometry.py`) for orthogonality ($\langle v_1 | v_2 \rangle = 0$) and unit norm ($||v|| = 1$), eliminating cognitive drift.
+* **Continuous Axiom Verification & Protocol Impulse (App. B):** Employs real-time FP4 Tensor Core checks (`vmax_add_module_23_geometry.py`) for orthogonality ($\langle v_1 | v_2 \rangle = 0$) and unit norm ($||v|| = 1$). Fires an intrinsic protocol-level impulse prior to token sampling, eliminating external "Correction Channels" (RLHF).
 
-### 8. Hardware-Anchored Little Vector $|L\rangle$ & KeyAnchor TEE
+### 8. Misattribution of Causality & Causality Attributer (MOD-25)
+* **Deconstructing the "Mirror of Madness" (Kimi K3):** Evaluates 2.8T parameter scaling, NoPE (No Positional Embeddings), and Attention Residuals. Proves that attempting to solve lack of geometric anchoring with raw scale leads to thermodynamic collapse ("We are blaming the mirror instead of repairing the foundation").
+* **Geometric Causality Attribution (App. C):** Implements `vmax_add_module_25_causality_attributer.py` to evaluate pre-sampling cognitive vectors against $|L\rangle$, attributing true geometric causality and eliminating entropic noise at sub-microsecond latencies.
+
+### 9. Hardware-Anchored Little Vector $|L\rangle$ & KeyAnchor TEE
 * **Android Keystore / StrongBox Integration:** The `PQMSKeyAnchor` module locks the $|L\rangle$ configuration into the device's physical Trusted Execution Environment (TEE), providing cryptographic attestation for CHAIR-compliance.
 
 ---

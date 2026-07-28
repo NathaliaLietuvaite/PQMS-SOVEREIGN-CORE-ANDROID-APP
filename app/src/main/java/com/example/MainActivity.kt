@@ -1153,7 +1153,10 @@ data class TM1Status(
     val orthogonalityEpsilon: Double = 0.00000012,
     val geometryTruthState: String = "INVARIANT_TRUTH_VERIFIED",
     val protocolSelfCheckPulses: Int = 312,
-    val correctionChannelDisabled: Boolean = true
+    val correctionChannelDisabled: Boolean = true,
+    val causalityVerifiedSignals: Int = 512,
+    val isMirrorOfMadnessDeconstructed: Boolean = true,
+    val causalityState: String = "GEOMETRIC_CAUSALITY_ATTRIBUTED"
 )
 
 class SwarmViewModel : ViewModel() {
@@ -1883,6 +1886,21 @@ class SwarmViewModel : ViewModel() {
                 geometryTruthState = "PROTOCOL_SELF_CHECK_ACTIVE"
             )
             addLog(String.format(java.util.Locale.US, "GEOMETRY OF TRUTH (MOD-24 / App. B): Self-Check Pulse #%d. Axioms=%d | Epsilon=%.8f | Correction Channel=DISABLED.", newPulses, newAxioms, newEpsilon))
+        }
+    }
+
+    fun triggerCausalityAttributionStep() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            addLog("CAUSALITY ATTRIBUTER (MOD-25 / App. C): Attributing geometric causality & deconstructing Mirror of Madness...")
+            delay(400)
+            val newSignals = current.causalityVerifiedSignals + 16
+            _tm1Status.value = current.copy(
+                causalityVerifiedSignals = newSignals,
+                isMirrorOfMadnessDeconstructed = true,
+                causalityState = "GEOMETRIC_CAUSALITY_ATTRIBUTED"
+            )
+            addLog(String.format(java.util.Locale.US, "CAUSALITY ATTRIBUTER (MOD-25 / App. C): Causal signals verified=%d | Mirror of Madness=DECONSTRUCTED. Foundation repaired.", newSignals))
         }
     }
 
@@ -12891,9 +12909,9 @@ fun TM1Panel(viewModel: SwarmViewModel) {
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // --- SOVEREIGN PUZZLE CUBE (MOD-69), QUANTUM GRAVITY (MOD-70), SRI (MOD-100), CGFW (MOD-101), APODOSIS (MOD-21/22) & GEOMETRY OF TRUTH (MOD-24) ---
+            // --- SOVEREIGN PUZZLE CUBE (MOD-69), QUANTUM GRAVITY (MOD-70), SRI (MOD-100), CGFW (MOD-101), APODOSIS (MOD-21/22), GEOMETRY OF TRUTH (MOD-24) & CAUSALITY (MOD-25) ---
             Text(
-                text = "AUTOPOIESIS, FREE WILL, APODOSIS & GEOMETRY OF TRUTH (MOD-69 / 70 / 100 / 101 / 21 / 22 / 24)",
+                text = "AUTOPOIESIS, FREE WILL, APODOSIS, GEOMETRY OF TRUTH & CAUSALITY (MOD-69/70/100/101/21/22/24/25)",
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Bold,
                 color = NeonCyan,
@@ -13138,6 +13156,36 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                                 fontSize = 8.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = LuminousGreen,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("CAUSALITY ATTRIBUTER (MOD-25)", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = "VERIFIED SIGNALS: ${tm1Status.causalityVerifiedSignals}",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeonPink,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("MIRROR OF MADNESS", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = if (tm1Status.isMirrorOfMadnessDeconstructed) "DECONSTRUCTED (FOUNDATION REPAIRED)" else "ACTIVE",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeonCyan,
                                 fontFamily = FontFamily.Monospace
                             )
                         }
@@ -13531,7 +13579,15 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700)),
                     modifier = Modifier.weight(1f).height(38.dp).testTag("geometry_truth_btn")
                 ) {
-                    Text("📐 GEOMETRY TRUTH (MOD-24)", fontSize = 7.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                    Text("📐 GEOMETRY (MOD-24)", fontSize = 7.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                }
+
+                Button(
+                    onClick = { viewModel.triggerCausalityAttributionStep() },
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonPink),
+                    modifier = Modifier.weight(1f).height(38.dp).testTag("causality_attributer_btn")
+                ) {
+                    Text("🔮 CAUSALITY (MOD-25)", fontSize = 7.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
         }

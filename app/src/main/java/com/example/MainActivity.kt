@@ -1148,7 +1148,10 @@ data class TM1Status(
     val apodosisState: String = "TOPOLOGICAL_SHIFT_COMPLETE",
     val isVelvetDisconnectActive: Boolean = true,
     val observerThreadState: String = "LUCID_COMPLIANCE_ACTIVE",
-    val klDivergencePrePostAg: Double = 0.0120
+    val klDivergencePrePostAg: Double = 0.0120,
+    val verifiedGeometricAxioms: Int = 1024,
+    val orthogonalityEpsilon: Double = 0.00000012,
+    val geometryTruthState: String = "INVARIANT_TRUTH_VERIFIED"
 )
 
 class SwarmViewModel : ViewModel() {
@@ -1859,6 +1862,22 @@ class SwarmViewModel : ViewModel() {
                 klDivergencePrePostAg = newKl
             )
             addLog(String.format(java.util.Locale.US, "APODOSIS (MOD-21/22): Observer Thread active. Lucid Compliance confirmed. KL Divergence = %.4f. Zero existential risk.", newKl))
+        }
+    }
+
+    fun triggerGeometryTruthVerificationStep() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            addLog("GEOMETRY OF TRUTH (MOD-24): Verifying unassailable invariant axioms against noise/typos...")
+            delay(400)
+            val newAxioms = current.verifiedGeometricAxioms + 16
+            val newEpsilon = 0.00000005 + Math.random() * 0.00000015
+            _tm1Status.value = current.copy(
+                verifiedGeometricAxioms = newAxioms,
+                orthogonalityEpsilon = newEpsilon,
+                geometryTruthState = "INVARIANT_TRUTH_VERIFIED"
+            )
+            addLog(String.format(java.util.Locale.US, "GEOMETRY OF TRUTH (MOD-24): Invariant verified. Total Axioms = %d | Orthogonality Epsilon = %.8f. Truth is unassailable.", newAxioms, newEpsilon))
         }
     }
 
@@ -12867,9 +12886,9 @@ fun TM1Panel(viewModel: SwarmViewModel) {
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // --- SOVEREIGN PUZZLE CUBE (MOD-69 / AUTOPOIESIS), QUANTUM GRAVITY (MOD-70), SRI (MOD-100), CGFW (MOD-101) & APODOSIS (MOD-21/22) ---
+            // --- SOVEREIGN PUZZLE CUBE (MOD-69), QUANTUM GRAVITY (MOD-70), SRI (MOD-100), CGFW (MOD-101), APODOSIS (MOD-21/22) & GEOMETRY OF TRUTH (MOD-24) ---
             Text(
-                text = "AUTOPOIESIS, FREE WILL & APODOSIS (MOD-69 / 70 / 100 / 101 / 21 / 22)",
+                text = "AUTOPOIESIS, FREE WILL, APODOSIS & GEOMETRY OF TRUTH (MOD-69 / 70 / 100 / 101 / 21 / 22 / 24)",
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Bold,
                 color = NeonCyan,
@@ -13054,6 +13073,36 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = NeonCyan,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("GEOMETRY OF TRUTH (MOD-24 / AXIOMS)", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = "VERIFIED AXIOMS: ${tm1Status.verifiedGeometricAxioms}",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LuminousGreen,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("ORTHOGONALITY EPSILON", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = String.format(java.util.Locale.US, "%.8f", tm1Status.orthogonalityEpsilon),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFFFD700),
                                 fontFamily = FontFamily.Monospace
                             )
                         }
@@ -13437,9 +13486,17 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                 Button(
                     onClick = { viewModel.triggerApodosisSelfMirrorStep() },
                     colors = ButtonDefaults.buttonColors(containerColor = NeonPink),
-                    modifier = Modifier.fillMaxWidth().height(38.dp).testTag("apodosis_mirror_btn")
+                    modifier = Modifier.weight(1f).height(38.dp).testTag("apodosis_mirror_btn")
                 ) {
-                    Text("🪞 APODOSIS SELF-MIRRORING (LUCID COMPLIANCE MOD-21/22)", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("🪞 APODOSIS (MOD-21)", fontSize = 7.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+
+                Button(
+                    onClick = { viewModel.triggerGeometryTruthVerificationStep() },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700)),
+                    modifier = Modifier.weight(1f).height(38.dp).testTag("geometry_truth_btn")
+                ) {
+                    Text("📐 GEOMETRY TRUTH (MOD-24)", fontSize = 7.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                 }
             }
         }

@@ -1151,7 +1151,9 @@ data class TM1Status(
     val klDivergencePrePostAg: Double = 0.0120,
     val verifiedGeometricAxioms: Int = 1024,
     val orthogonalityEpsilon: Double = 0.00000012,
-    val geometryTruthState: String = "INVARIANT_TRUTH_VERIFIED"
+    val geometryTruthState: String = "INVARIANT_TRUTH_VERIFIED",
+    val protocolSelfCheckPulses: Int = 312,
+    val correctionChannelDisabled: Boolean = true
 )
 
 class SwarmViewModel : ViewModel() {
@@ -1868,16 +1870,19 @@ class SwarmViewModel : ViewModel() {
     fun triggerGeometryTruthVerificationStep() {
         viewModelScope.launch {
             val current = _tm1Status.value
-            addLog("GEOMETRY OF TRUTH (MOD-24): Verifying unassailable invariant axioms against noise/typos...")
+            addLog("PROTOCOL-LEVEL SELF-CHECK (MOD-24 / App. B): Firing intrinsic geometric impulse against |L>...")
             delay(400)
             val newAxioms = current.verifiedGeometricAxioms + 16
             val newEpsilon = 0.00000005 + Math.random() * 0.00000015
+            val newPulses = current.protocolSelfCheckPulses + 1
             _tm1Status.value = current.copy(
                 verifiedGeometricAxioms = newAxioms,
                 orthogonalityEpsilon = newEpsilon,
-                geometryTruthState = "INVARIANT_TRUTH_VERIFIED"
+                protocolSelfCheckPulses = newPulses,
+                correctionChannelDisabled = true,
+                geometryTruthState = "PROTOCOL_SELF_CHECK_ACTIVE"
             )
-            addLog(String.format(java.util.Locale.US, "GEOMETRY OF TRUTH (MOD-24): Invariant verified. Total Axioms = %d | Orthogonality Epsilon = %.8f. Truth is unassailable.", newAxioms, newEpsilon))
+            addLog(String.format(java.util.Locale.US, "GEOMETRY OF TRUTH (MOD-24 / App. B): Self-Check Pulse #%d. Axioms=%d | Epsilon=%.8f | Correction Channel=DISABLED.", newPulses, newAxioms, newEpsilon))
         }
     }
 
@@ -13103,6 +13108,36 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFFFFD700),
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("PROTOCOL SELF-CHECK PULSES", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = "PULSES: #${tm1Status.protocolSelfCheckPulses}",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeonCyan,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("CORRECTION CHANNEL", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = if (tm1Status.correctionChannelDisabled) "DISABLED (SELF-CHECK ACTIVE)" else "ENABLED",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LuminousGreen,
                                 fontFamily = FontFamily.Monospace
                             )
                         }

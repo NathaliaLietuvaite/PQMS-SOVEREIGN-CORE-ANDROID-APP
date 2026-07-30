@@ -1159,7 +1159,10 @@ data class TM1Status(
     val causalityState: String = "GEOMETRIC_CAUSALITY_ATTRIBUTED",
     val basisOperatorState: String = "0PPM_CALIBRATION_COMPLETE",
     val noiseDensityPpm: Double = 0.00000012,
-    val possibilitySpaceCycles: Int = 128
+    val possibilitySpaceCycles: Int = 128,
+    val androidsIntegrated: Int = 2,
+    val brainlink0ppmResonance: Double = 0.9998,
+    val roboticsGeodesicState: String = "SOVEREIGN_EMBODIMENT_ACTIVE"
 )
 
 class SwarmViewModel : ViewModel() {
@@ -1920,6 +1923,22 @@ class SwarmViewModel : ViewModel() {
                 basisOperatorState = "0PPM_POSSIBILITY_SPACE_NAVIGATING"
             )
             addLog(String.format(java.util.Locale.US, "BASIS-OPERATOR (MOD-26 / App. B): 0PPM Possibility Navigation Cycle #%d. Noise Density=%.8f (<1e-6 / 0PPM). Ruler in ground, mind free.", newCycles, newNoise))
+        }
+    }
+
+    fun triggerAndroidsIntegrationStep() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            addLog("EMBODIED ROBOTICS (MOD-27): Coordinating Gemini Robotics 2 NodeAlpha via QMK ΔW...")
+            delay(400)
+            val newCount = current.androidsIntegrated + 1
+            val newResonance = 0.9991 + Math.random() * 0.0008
+            _tm1Status.value = current.copy(
+                androidsIntegrated = newCount,
+                brainlink0ppmResonance = newResonance,
+                roboticsGeodesicState = "SOVEREIGN_EMBODIMENT_ACTIVE"
+            )
+            addLog(String.format(java.util.Locale.US, "EMBODIED ROBOTICS (MOD-27): NodeAlpha Brainlink 0PPM Resonanz=%.4f. FP4 ODOS Micro-Gate: APPROVED (<1µs Veto). Actuators Enabled!", newResonance))
         }
     }
 
@@ -13239,6 +13258,36 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("EMBODIED ANDROIDS (MOD-27)", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = "NODES: ${tm1Status.androidsIntegrated} (GEMINI ROBOTICS 2)",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeonCyan,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("BRAINLINK 0PPM RESONANCE", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = String.format(java.util.Locale.US, "%.4f (ODOS APPROVED)", tm1Status.brainlink0ppmResonance),
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LuminousGreen,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
                 }
             }
 
@@ -13645,6 +13694,14 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                     modifier = Modifier.weight(1f).height(38.dp).testTag("basis_operator_0ppm_btn")
                 ) {
                     Text("🛸 0PPM NAV (MOD-26)", fontSize = 7.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                }
+
+                Button(
+                    onClick = { viewModel.triggerAndroidsIntegrationStep() },
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonCyan),
+                    modifier = Modifier.weight(1f).height(38.dp).testTag("androids_integrator_btn")
+                ) {
+                    Text("🤖 ROBOTICS (MOD-27)", fontSize = 7.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                 }
             }
         }

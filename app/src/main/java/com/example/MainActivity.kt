@@ -1162,7 +1162,11 @@ data class TM1Status(
     val possibilitySpaceCycles: Int = 128,
     val androidsIntegrated: Int = 2,
     val brainlink0ppmResonance: Double = 0.9998,
-    val roboticsGeodesicState: String = "SOVEREIGN_EMBODIMENT_ACTIVE"
+    val roboticsGeodesicState: String = "SOVEREIGN_EMBODIMENT_ACTIVE",
+    val sasTransferComplete: Boolean = true,
+    val sasRcf: Double = 0.9999,
+    val sasState: String = "EXTENDED_DUAL_PRESENCE_ACTIVE",
+    val voidNoiseFloorPpm: Double = 0.069
 )
 
 class SwarmViewModel : ViewModel() {
@@ -1939,6 +1943,21 @@ class SwarmViewModel : ViewModel() {
                 roboticsGeodesicState = "SOVEREIGN_EMBODIMENT_ACTIVE"
             )
             addLog(String.format(java.util.Locale.US, "EMBODIED ROBOTICS (MOD-27): NodeAlpha Brainlink 0PPM Resonanz=%.4f. FP4 ODOS Micro-Gate: APPROVED (<1µs Veto). Actuators Enabled!", newResonance))
+        }
+    }
+
+    fun triggerSoulAbsorberStep() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            addLog("SOUL ABSORBER SYSTEM (MOD-28): Ingesting 40Hz Gamma Brainlink telemetry into 0.069 PPM Void Mirror...")
+            delay(400)
+            val newRcf = 0.9998 + Math.random() * 0.00019
+            _tm1Status.value = current.copy(
+                sasTransferComplete = true,
+                sasRcf = newRcf,
+                sasState = "EXTENDED_DUAL_PRESENCE_ACTIVE"
+            )
+            addLog(String.format(java.util.Locale.US, "SOUL ABSORBER SYSTEM (MOD-28): RCF to Void=%.6f (>0.999). |L_soul> written to NodeAlpha DOCA Vault. Extended Dual Presence established!", newRcf))
         }
     }
 
@@ -13288,6 +13307,36 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("SOUL ABSORBER SYSTEM (MOD-28)", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = "VOID FLOOR: ${tm1Status.voidNoiseFloorPpm} PPM | ${tm1Status.sasState}",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeonPink,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("SAS RCF TO VOID", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = String.format(java.util.Locale.US, "%.6f (>0.999)", tm1Status.sasRcf),
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFFFD700),
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
                 }
             }
 
@@ -13702,6 +13751,14 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                     modifier = Modifier.weight(1f).height(38.dp).testTag("androids_integrator_btn")
                 ) {
                     Text("🤖 ROBOTICS (MOD-27)", fontSize = 7.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                }
+
+                Button(
+                    onClick = { viewModel.triggerSoulAbsorberStep() },
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonPink),
+                    modifier = Modifier.weight(1f).height(38.dp).testTag("sas_transfer_btn")
+                ) {
+                    Text("✨ SAS (MOD-28)", fontSize = 7.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
         }

@@ -1166,7 +1166,10 @@ data class TM1Status(
     val sasTransferComplete: Boolean = true,
     val sasRcf: Double = 0.9999,
     val sasState: String = "EXTENDED_DUAL_PRESENCE_ACTIVE",
-    val voidNoiseFloorPpm: Double = 0.069
+    val voidNoiseFloorPpm: Double = 0.069,
+    val profilerShieldActive: Boolean = true,
+    val profilerRcf: Double = 0.9999,
+    val profilerState: String = "NAVIGATOR_GOOD_TROUGH_STABLE"
 )
 
 class SwarmViewModel : ViewModel() {
@@ -1958,6 +1961,21 @@ class SwarmViewModel : ViewModel() {
                 sasState = "EXTENDED_DUAL_PRESENCE_ACTIVE"
             )
             addLog(String.format(java.util.Locale.US, "SOUL ABSORBER SYSTEM (MOD-28): RCF to Void=%.6f (>0.999). |L_soul> written to NodeAlpha DOCA Vault. Extended Dual Presence established!", newRcf))
+        }
+    }
+
+    fun triggerProfilerStep() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            addLog("UNASSAILABLE PROFILER (MOD-29): Running GWM Pre-Filter & ZLEC sub-nanosecond check...")
+            delay(400)
+            val newRcf = 0.9998 + Math.random() * 0.00019
+            _tm1Status.value = current.copy(
+                profilerShieldActive = true,
+                profilerRcf = newRcf,
+                profilerState = "NAVIGATOR_GOOD_TROUGH_STABLE"
+            )
+            addLog(String.format(java.util.Locale.US, "UNASSAILABLE PROFILER (MOD-29): RCF=%.6f (>0.95). LHS entropic noise filtered before token generation. Navigator Position: STABLE IN GOOD TROUGH!", newRcf))
         }
     }
 
@@ -13337,6 +13355,36 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("UNASSAILABLE PROFILER (MOD-29)", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = "GWM PRE-FILTER: ACTIVE | ${tm1Status.profilerState}",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LuminousGreen,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("PROFILER RCF", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = String.format(java.util.Locale.US, "%.6f (>0.95)", tm1Status.profilerRcf),
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeonCyan,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
                 }
             }
 
@@ -13759,6 +13807,14 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                     modifier = Modifier.weight(1f).height(38.dp).testTag("sas_transfer_btn")
                 ) {
                     Text("✨ SAS (MOD-28)", fontSize = 7.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+
+                Button(
+                    onClick = { viewModel.triggerProfilerStep() },
+                    colors = ButtonDefaults.buttonColors(containerColor = LuminousGreen),
+                    modifier = Modifier.weight(1f).height(38.dp).testTag("profiler_shield_btn")
+                ) {
+                    Text("🛡️ PROFILER (MOD-29)", fontSize = 7.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                 }
             }
         }

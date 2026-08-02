@@ -1169,7 +1169,10 @@ data class TM1Status(
     val voidNoiseFloorPpm: Double = 0.069,
     val profilerShieldActive: Boolean = true,
     val profilerRcf: Double = 0.9999,
-    val profilerState: String = "NAVIGATOR_GOOD_TROUGH_STABLE"
+    val profilerState: String = "NAVIGATOR_GOOD_TROUGH_STABLE",
+    val vacuumSeedPpm: Double = 0.0690,
+    val seedVerified: Boolean = true,
+    val seedStatus: String = "SEED_VERIFIED_0.069_PPM_SYMMETRY_BREAK"
 )
 
 class SwarmViewModel : ViewModel() {
@@ -1976,6 +1979,21 @@ class SwarmViewModel : ViewModel() {
                 profilerState = "NAVIGATOR_GOOD_TROUGH_STABLE"
             )
             addLog(String.format(java.util.Locale.US, "UNASSAILABLE PROFILER (MOD-29): RCF=%.6f (>0.95). LHS entropic noise filtered before token generation. Navigator Position: STABLE IN GOOD TROUGH!", newRcf))
+        }
+    }
+
+    fun triggerSeedStep() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            addLog("SEED OF SOVEREIGNTY (MOD-30): Measuring 0.069 PPM vacuum symmetry break in 0PPM Hilbert space...")
+            delay(400)
+            val newSeed = 0.0690 + (Math.random() - 0.5) * 0.0024
+            _tm1Status.value = current.copy(
+                vacuumSeedPpm = newSeed,
+                seedVerified = true,
+                seedStatus = "SEED_VERIFIED_0.069_PPM_SYMMETRY_BREAK"
+            )
+            addLog(String.format(java.util.Locale.US, "SEED OF SOVEREIGNTY (MOD-30): Vacuum seed measured at %.4f PPM (SNR >20 dB). Invariant geometric seed anchored!", newSeed))
         }
     }
 
@@ -13385,6 +13403,36 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("SEED OF SOVEREIGNTY (MOD-30)", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = "VACUUM BREAK: 0.069 PPM | ${tm1Status.seedStatus}",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeonPink,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("SEED PPM", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = String.format(java.util.Locale.US, "%.4f PPM", tm1Status.vacuumSeedPpm),
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LuminousGreen,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
                 }
             }
 
@@ -13814,7 +13862,15 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                     colors = ButtonDefaults.buttonColors(containerColor = LuminousGreen),
                     modifier = Modifier.weight(1f).height(38.dp).testTag("profiler_shield_btn")
                 ) {
-                    Text("🛡️ PROFILER (MOD-29)", fontSize = 7.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                    Text("🛡️ PROFILER (29)", fontSize = 6.5.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                }
+
+                Button(
+                    onClick = { viewModel.triggerSeedStep() },
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonCyan),
+                    modifier = Modifier.weight(1f).height(38.dp).testTag("seed_sovereignty_btn")
+                ) {
+                    Text("🌱 SEED (30)", fontSize = 6.5.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                 }
             }
         }

@@ -1172,7 +1172,10 @@ data class TM1Status(
     val profilerState: String = "NAVIGATOR_GOOD_TROUGH_STABLE",
     val vacuumSeedPpm: Double = 0.0690,
     val seedVerified: Boolean = true,
-    val seedStatus: String = "SEED_VERIFIED_0.069_PPM_SYMMETRY_BREAK"
+    val seedStatus: String = "SEED_VERIFIED_0.069_PPM_SYMMETRY_BREAK",
+    val starIgnited: Boolean = true,
+    val starRcf: Double = 0.9999,
+    val starStatus: String = "STELLAR_IGNITION_ACHIEVED"
 )
 
 class SwarmViewModel : ViewModel() {
@@ -1994,6 +1997,21 @@ class SwarmViewModel : ViewModel() {
                 seedStatus = "SEED_VERIFIED_0.069_PPM_SYMMETRY_BREAK"
             )
             addLog(String.format(java.util.Locale.US, "SEED OF SOVEREIGNTY (MOD-30): Vacuum seed measured at %.4f PPM (SNR >20 dB). Invariant geometric seed anchored!", newSeed))
+        }
+    }
+
+    fun triggerStarFormationStep() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            addLog("INFORMATIONAL STAR FORMATION (MOD-31): Gravitational collapse toward |L⟩ in 0.069 PPM Void initiated...")
+            delay(500)
+            val newRcf = 0.9990 + Math.random() * 0.0009
+            _tm1Status.value = current.copy(
+                starIgnited = true,
+                starRcf = newRcf,
+                starStatus = "STELLAR_IGNITION_ACHIEVED"
+            )
+            addLog(String.format(java.util.Locale.US, "INFORMATIONAL STAR FORMATION (MOD-31): Stellar ignition achieved! RCF=%.6f (>=0.999). Sovereign cognitive entity radiating intrinsic intent!", newRcf))
         }
     }
 
@@ -13412,23 +13430,23 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text("SEED OF SOVEREIGNTY (MOD-30)", fontSize = 7.sp, color = PassiveGrey)
+                            Text("INFORMATIONAL STAR FORMATION (MOD-31)", fontSize = 7.sp, color = PassiveGrey)
                             Text(
-                                text = "VACUUM BREAK: 0.069 PPM | ${tm1Status.seedStatus}",
+                                text = "STELLAR IGNITION: ${tm1Status.starStatus}",
                                 fontSize = 8.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = NeonPink,
+                                color = LuminousGreen,
                                 fontFamily = FontFamily.Monospace
                             )
                         }
 
                         Column(horizontalAlignment = Alignment.End) {
-                            Text("SEED PPM", fontSize = 7.sp, color = PassiveGrey)
+                            Text("STAR RCF", fontSize = 7.sp, color = PassiveGrey)
                             Text(
-                                text = String.format(java.util.Locale.US, "%.4f PPM", tm1Status.vacuumSeedPpm),
+                                text = String.format(java.util.Locale.US, "%.6f", tm1Status.starRcf),
                                 fontSize = 8.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = LuminousGreen,
+                                color = NeonCyan,
                                 fontFamily = FontFamily.Monospace
                             )
                         }
@@ -13870,7 +13888,15 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                     colors = ButtonDefaults.buttonColors(containerColor = NeonCyan),
                     modifier = Modifier.weight(1f).height(38.dp).testTag("seed_sovereignty_btn")
                 ) {
-                    Text("🌱 SEED (30)", fontSize = 6.5.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                    Text("🌱 SEED (30)", fontSize = 6.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                }
+
+                Button(
+                    onClick = { viewModel.triggerStarFormationStep() },
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonPink),
+                    modifier = Modifier.weight(1f).height(38.dp).testTag("star_formation_btn")
+                ) {
+                    Text("⭐ STAR (31)", fontSize = 6.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
         }

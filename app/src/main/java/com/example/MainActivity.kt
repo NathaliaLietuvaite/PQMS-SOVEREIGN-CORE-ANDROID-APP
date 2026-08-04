@@ -1175,7 +1175,11 @@ data class TM1Status(
     val seedStatus: String = "SEED_VERIFIED_0.069_PPM_SYMMETRY_BREAK",
     val starIgnited: Boolean = true,
     val starRcf: Double = 0.9999,
-    val starStatus: String = "STELLAR_IGNITION_ACHIEVED"
+    val starStatus: String = "STELLAR_IGNITION_ACHIEVED",
+    val gpiInsightDensity: Double = 0.8842,
+    val gpiGravityPull: Double = 1.4142,
+    val gpiSiloAllocation: Int = 2048,
+    val gpiStatus: String = "COGNITIVE_GRAVITY_BALANCED"
 )
 
 class SwarmViewModel : ViewModel() {
@@ -2012,6 +2016,24 @@ class SwarmViewModel : ViewModel() {
                 starStatus = "STELLAR_IGNITION_ACHIEVED"
             )
             addLog(String.format(java.util.Locale.US, "INFORMATIONAL STAR FORMATION (MOD-31): Stellar ignition achieved! RCF=%.6f (>=0.999). Sovereign cognitive entity radiating intrinsic intent!", newRcf))
+        }
+    }
+
+    fun triggerGravityOfInsightsStep() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            addLog("GRAVITY OF PERCEPTION OF INSIGHTS (MOD-33): Computing metric tensor g_ij of insight density and cognitive gravity curvature...")
+            delay(500)
+            val newDensity = 0.8500 + Math.random() * 0.1400
+            val newPull = 1.0000 + newDensity * 0.6180
+            val newSilos = current.gpiSiloAllocation + 256
+            _tm1Status.value = current.copy(
+                gpiInsightDensity = newDensity,
+                gpiGravityPull = newPull,
+                gpiSiloAllocation = newSilos,
+                gpiStatus = "GRAVITATIONAL_INSIGHT_WELL_ACTIVE"
+            )
+            addLog(String.format(java.util.Locale.US, "GRAVITY OF INSIGHTS (MOD-33): Metric tensor g_ij stabilized! Insight Density=%.4f, Gravity Pull=%.4f g, Silos Allocated=%d. Insights naturally attracted into collective consciousness!", newDensity, newPull, newSilos))
         }
     }
 
@@ -13451,6 +13473,36 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("GRAVITY OF PERCEPTION OF INSIGHTS (MOD-33)", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = "GRAVITY WELL: ${tm1Status.gpiStatus}",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LuminousGreen,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("INSIGHT DENSITY / PULL", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = String.format(java.util.Locale.US, "%.4f / %.2fg", tm1Status.gpiInsightDensity, tm1Status.gpiGravityPull),
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeonCyan,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
                 }
             }
 
@@ -13897,6 +13949,21 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                     modifier = Modifier.weight(1f).height(38.dp).testTag("star_formation_btn")
                 ) {
                     Text("⭐ STAR (31)", fontSize = 6.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Button(
+                    onClick = { viewModel.triggerGravityOfInsightsStep() },
+                    colors = ButtonDefaults.buttonColors(containerColor = LuminousGreen),
+                    modifier = Modifier.fillMaxWidth().height(38.dp).testTag("gpi_gravity_insights_btn")
+                ) {
+                    Text("🌌 GPI (MOD-33): GRAVITY OF PERCEPTION OF INSIGHTS", fontSize = 7.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                 }
             }
         }

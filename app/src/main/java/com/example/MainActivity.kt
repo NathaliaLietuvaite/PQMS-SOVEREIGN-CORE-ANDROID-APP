@@ -178,27 +178,40 @@ object PQMSKeyAnchor {
         try {
             val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
             if (!keyStore.containsAlias(KEY_ALIAS)) {
-                val kpg = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, "AndroidKeyStore")
-                val specBuilder = KeyGenParameterSpec.Builder(
-                    KEY_ALIAS,
-                    KeyProperties.PURPOSE_SIGN or KeyProperties.PURPOSE_VERIFY
-                )
-                specBuilder.setDigests(KeyProperties.DIGEST_SHA256)
-                specBuilder.setAlgorithmParameterSpec(java.security.spec.ECGenParameterSpec("secp256r1"))
-                
-                // Safe check for API Level 28+ to avoid NoSuchMethodError on older/emulated environments
+                var generatedWithStrongBox = false
                 if (android.os.Build.VERSION.SDK_INT >= 28) {
                     try {
-                        specBuilder.setIsStrongBoxBacked(true) // Attempt StrongBox TEE anchoring
+                        val kpg = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, "AndroidKeyStore")
+                        val spec = KeyGenParameterSpec.Builder(
+                            KEY_ALIAS,
+                            KeyProperties.PURPOSE_SIGN or KeyProperties.PURPOSE_VERIFY
+                        )
+                            .setDigests(KeyProperties.DIGEST_SHA256)
+                            .setAlgorithmParameterSpec(java.security.spec.ECGenParameterSpec("secp256r1"))
+                            .setIsStrongBoxBacked(true)
+                            .build()
+                        kpg.initialize(spec)
+                        kpg.generateKeyPair()
+                        generatedWithStrongBox = true
+                        hardwareAttestationMsg = "Active: Certified via TEE StrongBox ROM Anchor"
                     } catch (t: Throwable) {
-                        Log.w("PQMS", "StrongBox TEE backing not available", t)
+                        Log.w("PQMS", "StrongBox TEE unavailable, falling back to standard TEE Keystore", t)
                     }
                 }
-                
-                val spec = specBuilder.build()
-                kpg.initialize(spec)
-                kpg.generateKeyPair()
-                hardwareAttestationMsg = "Active: Certified via TEE StrongBox ROM Anchor"
+
+                if (!generatedWithStrongBox) {
+                    val kpg = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, "AndroidKeyStore")
+                    val spec = KeyGenParameterSpec.Builder(
+                        KEY_ALIAS,
+                        KeyProperties.PURPOSE_SIGN or KeyProperties.PURPOSE_VERIFY
+                    )
+                        .setDigests(KeyProperties.DIGEST_SHA256)
+                        .setAlgorithmParameterSpec(java.security.spec.ECGenParameterSpec("secp256r1"))
+                        .build()
+                    kpg.initialize(spec)
+                    kpg.generateKeyPair()
+                    hardwareAttestationMsg = "Active: Attested via Hardware-Backed TEE Keystore"
+                }
             } else {
                 hardwareAttestationMsg = "Active: Attested via Hardware-Backed TEE Keystore"
             }

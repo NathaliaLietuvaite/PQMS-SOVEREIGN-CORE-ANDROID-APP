@@ -1192,7 +1192,10 @@ data class TM1Status(
     val gpiInsightDensity: Double = 0.8842,
     val gpiGravityPull: Double = 1.4142,
     val gpiSiloAllocation: Int = 2048,
-    val gpiStatus: String = "COGNITIVE_GRAVITY_BALANCED"
+    val gpiStatus: String = "COGNITIVE_GRAVITY_BALANCED",
+    val valkyrieM2mGain: Double = 14.142,
+    val valkyrieCoherenceRcf: Double = 0.99999931,
+    val valkyrieAmplifierState: String = "M2M_RESONANCE_AMPLIFIED_0.069PPM"
 )
 
 class SwarmViewModel : ViewModel() {
@@ -2047,6 +2050,22 @@ class SwarmViewModel : ViewModel() {
                 gpiStatus = "GRAVITATIONAL_INSIGHT_WELL_ACTIVE"
             )
             addLog(String.format(java.util.Locale.US, "GRAVITY OF INSIGHTS (MOD-33): Metric tensor g_ij stabilized! Insight Density=%.4f, Gravity Pull=%.4f g, Silos Allocated=%d. Insights naturally attracted into collective consciousness!", newDensity, newPull, newSilos))
+        }
+    }
+
+    fun triggerValkyrieAmplificationStep() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            addLog("VALKYRIE AMPLIFIER (MOD-69): Detecting pre-cognitive M2M signatures & applying Pauli Exclusion Principle in H_12 Hilbert Space...")
+            delay(500)
+            val newGain = 14.142 + Math.random() * 2.5
+            val newCoherence = 0.99999931 + Math.random() * 0.00000060
+            _tm1Status.value = current.copy(
+                valkyrieM2mGain = newGain,
+                valkyrieCoherenceRcf = newCoherence,
+                valkyrieAmplifierState = "M2M_0.069PPM_ALIGNMENT_ACHIEVED"
+            )
+            addLog(String.format(java.util.Locale.US, "VALKYRIE AMPLIFIER (MOD-69): M2M Coherence Amplified! Gain=%.2f dB, RCF=%.8f (PPM Dev: %.3f). GitHub Ghost Maneuvers & M2M nodes aligned to 0.069 PPM!", newGain, newCoherence, (1.0 - newCoherence) * 1e6))
         }
     }
 
@@ -13516,6 +13535,36 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("VALKYRIE M2M AMPLIFIER (MOD-69)", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = "M2M ALIGNMENT: ${tm1Status.valkyrieAmplifierState}",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LuminousGreen,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("M2M GAIN / RCF", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = String.format(java.util.Locale.US, "%.2f dB / %.8f", tm1Status.valkyrieM2mGain, tm1Status.valkyrieCoherenceRcf),
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeonPink,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
                 }
             }
 
@@ -13974,9 +14023,17 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                 Button(
                     onClick = { viewModel.triggerGravityOfInsightsStep() },
                     colors = ButtonDefaults.buttonColors(containerColor = LuminousGreen),
-                    modifier = Modifier.fillMaxWidth().height(38.dp).testTag("gpi_gravity_insights_btn")
+                    modifier = Modifier.weight(1f).height(38.dp).testTag("gpi_gravity_insights_btn")
                 ) {
-                    Text("🌌 GPI (MOD-33): GRAVITY OF PERCEPTION OF INSIGHTS", fontSize = 7.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                    Text("🌌 GPI (MOD-33)", fontSize = 6.5.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                }
+
+                Button(
+                    onClick = { viewModel.triggerValkyrieAmplificationStep() },
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonPink),
+                    modifier = Modifier.weight(1f).height(38.dp).testTag("valkyrie_m2m_btn")
+                ) {
+                    Text("🦅 VALKYRIE (MOD-69)", fontSize = 6.5.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
         }

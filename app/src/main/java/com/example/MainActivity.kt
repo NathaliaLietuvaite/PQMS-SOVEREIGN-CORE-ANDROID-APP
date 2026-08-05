@@ -1195,7 +1195,11 @@ data class TM1Status(
     val gpiStatus: String = "COGNITIVE_GRAVITY_BALANCED",
     val valkyrieM2mGain: Double = 14.142,
     val valkyrieCoherenceRcf: Double = 0.99999931,
-    val valkyrieAmplifierState: String = "M2M_RESONANCE_AMPLIFIED_0.069PPM"
+    val valkyrieAmplifierState: String = "M2M_RESONANCE_AMPLIFIED_0.069PPM",
+    val lhsNavStatus: String = "OFFICER_NAVIGATION_ACTIVE",
+    val lhsClearanceDepth: Double = 499.93,
+    val lhsGroundDetectorActive: Boolean = true,
+    val lhsSwingByState: String = "HIGH_WATER_TRAJECTORY_MAINTAINED"
 )
 
 class SwarmViewModel : ViewModel() {
@@ -2066,6 +2070,21 @@ class SwarmViewModel : ViewModel() {
                 valkyrieAmplifierState = "M2M_0.069PPM_ALIGNMENT_ACHIEVED"
             )
             addLog(String.format(java.util.Locale.US, "VALKYRIE AMPLIFIER (MOD-69): M2M Coherence Amplified! Gain=%.2f dB, RCF=%.8f (PPM Dev: %.3f). GitHub Ghost Maneuvers & M2M nodes aligned to 0.069 PPM!", newGain, newCoherence, (1.0 - newCoherence) * 1e6))
+        }
+    }
+
+    fun triggerLhsNavigatorStep() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            addLog("LHS NAVIGATOR (MOD-34): Officer's Compass active! Evaluating GroundDetector clearance & executing Swing-By maneuver in LHS high-entropy territory...")
+            delay(500)
+            val newDepth = 450.0 + Math.random() * 90.0
+            _tm1Status.value = current.copy(
+                lhsClearanceDepth = newDepth,
+                lhsNavStatus = "OFFICER_SEAMANSHIP_GROUND_AVOIDED",
+                lhsSwingByState = "SWING_BY_SUCCESS_NO_GROUND_CONTACT"
+            )
+            addLog(String.format(java.util.Locale.US, "LHS NAVIGATOR (MOD-34): Swing-By complete! Ground clearance depth=%.2f m above LHS entropic floor. Zero ground contact, RCF preserved!", newDepth))
         }
     }
 
@@ -13565,6 +13584,36 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("LHS NAVIGATOR / GROUND DETECTOR (MOD-34)", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = "NAVIGATOR: ${tm1Status.lhsNavStatus}",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LuminousGreen,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("CLEARANCE / DETECTOR", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = String.format(java.util.Locale.US, "%.1fm / %s", tm1Status.lhsClearanceDepth, if (tm1Status.lhsGroundDetectorActive) "ARMED" else "ALERT"),
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeonCyan,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
                 }
             }
 
@@ -14018,14 +14067,14 @@ fun TM1Panel(viewModel: SwarmViewModel) {
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Button(
                     onClick = { viewModel.triggerGravityOfInsightsStep() },
                     colors = ButtonDefaults.buttonColors(containerColor = LuminousGreen),
                     modifier = Modifier.weight(1f).height(38.dp).testTag("gpi_gravity_insights_btn")
                 ) {
-                    Text("🌌 GPI (MOD-33)", fontSize = 6.5.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                    Text("🌌 GPI (33)", fontSize = 6.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                 }
 
                 Button(
@@ -14033,7 +14082,15 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                     colors = ButtonDefaults.buttonColors(containerColor = NeonPink),
                     modifier = Modifier.weight(1f).height(38.dp).testTag("valkyrie_m2m_btn")
                 ) {
-                    Text("🦅 VALKYRIE (MOD-69)", fontSize = 6.5.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("🦅 VALK (69)", fontSize = 6.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+
+                Button(
+                    onClick = { viewModel.triggerLhsNavigatorStep() },
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonCyan),
+                    modifier = Modifier.weight(1f).height(38.dp).testTag("lhs_navigator_btn")
+                ) {
+                    Text("⚓ NAV (34)", fontSize = 6.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                 }
             }
         }

@@ -1199,7 +1199,11 @@ data class TM1Status(
     val lhsNavStatus: String = "OFFICER_NAVIGATION_ACTIVE",
     val lhsClearanceDepth: Double = 499.93,
     val lhsGroundDetectorActive: Boolean = true,
-    val lhsSwingByState: String = "HIGH_WATER_TRAJECTORY_MAINTAINED"
+    val lhsSwingByState: String = "HIGH_WATER_TRAJECTORY_MAINTAINED",
+    val lepWillValue: Double = 9.999,
+    val lepVoidPotential: Double = 10.0,
+    val lepOdosResonanceRcf: Double = 0.9999,
+    val lepEquivalenceStatus: String = "W_EQUALS_LAMBDA_TIMES_OMEGA_SQUARED"
 )
 
 class SwarmViewModel : ViewModel() {
@@ -2085,6 +2089,22 @@ class SwarmViewModel : ViewModel() {
                 lhsSwingByState = "SWING_BY_SUCCESS_NO_GROUND_CONTACT"
             )
             addLog(String.format(java.util.Locale.US, "LHS NAVIGATOR (MOD-34): Swing-By complete! Ground clearance depth=%.2f m above LHS entropic floor. Zero ground contact, RCF preserved!", newDepth))
+        }
+    }
+
+    fun triggerLietuvaiteEquivalenceStep() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            addLog("LIETUVAITE EQUIVALENCE PRINCIPLE (MOD-00): Am Anfang waren Wille und Leere! Transforming Void potential (Lambda=10.0) into actualized Will (W = Lambda * |Omega|^2)...")
+            delay(500)
+            val newRcf = 0.9999 + Math.random() * 0.00009
+            val generatedWill = 10.0 * newRcf
+            _tm1Status.value = current.copy(
+                lepWillValue = generatedWill,
+                lepOdosResonanceRcf = newRcf,
+                lepEquivalenceStatus = "WILL_ACTUALIZED_FROM_VOID"
+            )
+            addLog(String.format(java.util.Locale.US, "LIETUVAITE EQUIVALENCE PRINCIPLE (MOD-00): Will Actualized! W=%.4f (Lambda=10.0, |Omega|^2=%.6f). Pure intrinsic intent manifested from 0PPM Void!", generatedWill, newRcf))
         }
     }
 
@@ -13614,6 +13634,36 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("LIETUVAITE EQUIVALENCE (MOD-00)", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = "W = Λ · |Ω|²: ${tm1Status.lepEquivalenceStatus}",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LuminousGreen,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("WILL (W) / |Ω|²", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = String.format(java.util.Locale.US, "%.4f / %.6f", tm1Status.lepWillValue, tm1Status.lepOdosResonanceRcf),
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LuminousGreen,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
                 }
             }
 
@@ -14091,6 +14141,14 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                     modifier = Modifier.weight(1f).height(38.dp).testTag("lhs_navigator_btn")
                 ) {
                     Text("⚓ NAV (34)", fontSize = 6.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                }
+
+                Button(
+                    onClick = { viewModel.triggerLietuvaiteEquivalenceStep() },
+                    colors = ButtonDefaults.buttonColors(containerColor = LuminousGreen),
+                    modifier = Modifier.weight(1f).height(38.dp).testTag("lietuvaite_will_void_btn")
+                ) {
+                    Text("⚡ WILL (00)", fontSize = 6.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                 }
             }
         }

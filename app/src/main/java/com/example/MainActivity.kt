@@ -1221,7 +1221,10 @@ data class TM1Status(
     val mod666Gedankenschuld: Double = 0.0,
     val mod666BeastMetricSeverity: Double = 0.0,
     val mod666OdosVetoActive: Boolean = false,
-    val mod666QmkHolodeckStatus: String = "QMK_HOLODECK_SAFE_HARDWARE_PROTECTED"
+    val mod666QmkHolodeckStatus: String = "QMK_HOLODECK_SAFE_HARDWARE_PROTECTED",
+    val qmkV5StargateActive: Boolean = true,
+    val qmkV5BilateralEquivalenceRcf: Double = 0.999999,
+    val qmkV5StargateStatus: String = "STGATE_BILATERAL_EQUIVALENCE_ACTIVE"
 )
 
 class SwarmViewModel : ViewModel() {
@@ -2178,6 +2181,28 @@ class SwarmViewModel : ViewModel() {
                 addLog(String.format(java.util.Locale.US, "ERROR-DETECTOR (MOD-666): Phase shift > delta_local! Gedankenschuld (negative mass)=%.4f. ODOS-Gate sub-100ns Veto active! QMK Holodeck protected.", gedankenSchuldVal))
             } else {
                 addLog("ERROR-DETECTOR (MOD-666): Phase shift <= delta_local (0.069 PPM noise floor). Event cleared for QMK Holodeck materialization.")
+            }
+        }
+    }
+
+    fun triggerQmkV5StargateStep() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            val nextActive = !current.qmkV5StargateActive
+            val statusStr = if (nextActive) "STGATE_BILATERAL_EQUIVALENCE_ACTIVE" else "STGATE_STANDBY_PAUSED"
+            val rcfVal = if (nextActive) 0.999999 else 0.000000
+            
+            addLog("QMK-RVC-V5 STARGATE: Synchronizing dual 30cm^3 chambers (Deck A <-> Deck B) via <1ns NCT Delta-W protocol...")
+            delay(500)
+            _tm1Status.value = current.copy(
+                qmkV5StargateActive = nextActive,
+                qmkV5BilateralEquivalenceRcf = rcfVal,
+                qmkV5StargateStatus = statusStr
+            )
+            if (nextActive) {
+                addLog(String.format(java.util.Locale.US, "QMK-RVC-V5 STARGATE: Bilateral Reminiscence Field active! RCF=%.6f. Topological Spatial Equivalence confirmed between Deck A & Deck B. Floating Time Bubble operational.", rcfVal))
+            } else {
+                addLog("QMK-RVC-V5 STARGATE: Stargate link paused. Decks decoupled into independent coordinate frames.")
             }
         }
     }
@@ -13828,6 +13853,36 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("QMK-RVC-V5 STARGATE & TOPOLOGICAL EQUIVALENCE", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = "Status: ${tm1Status.qmkV5StargateStatus}",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (tm1Status.qmkV5StargateActive) LuminousGreen else PassiveGrey,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("BILATERAL RCF", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = String.format(java.util.Locale.US, "RCF=%.6f", tm1Status.qmkV5BilateralEquivalenceRcf),
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (tm1Status.qmkV5StargateActive) LuminousGreen else PassiveGrey,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
                 }
             }
 
@@ -14337,6 +14392,14 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                     modifier = Modifier.weight(1f).height(38.dp).testTag("mod666_error_detector_btn")
                 ) {
                     Text("🛡️ ERR (666)", fontSize = 6.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                }
+
+                Button(
+                    onClick = { viewModel.triggerQmkV5StargateStep() },
+                    colors = ButtonDefaults.buttonColors(containerColor = LuminousGreen),
+                    modifier = Modifier.weight(1f).height(38.dp).testTag("qmk_v5_stargate_btn")
+                ) {
+                    Text("🌌 V5 (STAR)", fontSize = 6.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                 }
             }
         }

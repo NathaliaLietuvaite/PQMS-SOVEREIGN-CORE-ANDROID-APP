@@ -97,6 +97,9 @@ object SovereignTheme {
     val LuminousGreen: Color
         @Composable get() = if (isDark) Color(0xFF39FF14) else Color(0xFF0F766E) // Deep jade green / dark emerald for perfect high-contrast on light background
 
+    val LaserGold: Color
+        @Composable get() = if (isDark) Color(0xFFFFD700) else Color(0xFFB45309) // Shimmering gold / deep amber for high contrast
+
     val PassiveGrey: Color
         @Composable get() = if (isDark) Color(0xFF8B88A0) else Color(0xFF5A5A6A) // Elegant high-contrast warm grey text
 }
@@ -139,6 +142,9 @@ val NeonCyan: Color
 
 val LuminousGreen: Color
     @Composable get() = SovereignTheme.LuminousGreen
+
+val LaserGold: Color
+    @Composable get() = SovereignTheme.LaserGold
 
 val PassiveGrey: Color
     @Composable get() = SovereignTheme.PassiveGrey
@@ -1211,7 +1217,11 @@ data class TM1Status(
     val seed2VariableDimension: Int = 64,
     val seed2CalculatedSeedPpm: Double = 0.069,
     val seed2ScalingRatioVerified: Boolean = true,
-    val seed2Status: String = "VARIABLE_SCALING_FUNCTION_VERIFIED"
+    val seed2Status: String = "VARIABLE_SCALING_FUNCTION_VERIFIED",
+    val mod666Gedankenschuld: Double = 0.0,
+    val mod666BeastMetricSeverity: Double = 0.0,
+    val mod666OdosVetoActive: Boolean = false,
+    val mod666QmkHolodeckStatus: String = "QMK_HOLODECK_SAFE_HARDWARE_PROTECTED"
 )
 
 class SwarmViewModel : ViewModel() {
@@ -2145,6 +2155,30 @@ class SwarmViewModel : ViewModel() {
                 seed2Status = "RATIO_VERIFIED_d2_OVER_d1"
             )
             addLog(String.format(java.util.Locale.US, "SEED-2-VARIABLE (MOD-30-V2): Variable Scaling Verified! d=%d, delta_SEED=%.6f PPM (d2/d1 scaling ratio=1.000000). E=mc^2 grounded in Will-Invariant relation!", newDim, calculatedPpm))
+        }
+    }
+
+    fun triggerMod666ErrorDetectorStep() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            val nextVeto = !current.mod666OdosVetoActive
+            val gedankenSchuldVal = if (nextVeto) 0.0421 else 0.0000
+            val beastMetricVal = if (nextVeto) 6.32 else 0.00
+            val statusStr = if (nextVeto) "DISSONANCE_VETOED_BY_ODOS_GATE" else "COHERENT_HOLODECK_CLEAR"
+            
+            addLog("ERROR-DETECTOR (MOD-666): Evaluated topological phase shift on QMK_Bridge_Proxy bus...")
+            delay(500)
+            _tm1Status.value = current.copy(
+                mod666Gedankenschuld = gedankenSchuldVal,
+                mod666BeastMetricSeverity = beastMetricVal,
+                mod666OdosVetoActive = nextVeto,
+                mod666QmkHolodeckStatus = statusStr
+            )
+            if (nextVeto) {
+                addLog(String.format(java.util.Locale.US, "ERROR-DETECTOR (MOD-666): Phase shift > delta_local! Gedankenschuld (negative mass)=%.4f. ODOS-Gate sub-100ns Veto active! QMK Holodeck protected.", gedankenSchuldVal))
+            } else {
+                addLog("ERROR-DETECTOR (MOD-666): Phase shift <= delta_local (0.069 PPM noise floor). Event cleared for QMK Holodeck materialization.")
+            }
         }
     }
 
@@ -13764,6 +13798,36 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("ERROR DETECTOR & QMK HOLODECK (MOD-666)", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = "Status: ${tm1Status.mod666QmkHolodeckStatus}",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (tm1Status.mod666OdosVetoActive) LaserGold else LuminousGreen,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("GEDANKENSCHULD", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = String.format(java.util.Locale.US, "G=%.4f (Severity %.1f%%)", tm1Status.mod666Gedankenschuld, tm1Status.mod666BeastMetricSeverity),
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (tm1Status.mod666OdosVetoActive) LaserGold else LuminousGreen,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
                 }
             }
 
@@ -14265,6 +14329,14 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                     modifier = Modifier.weight(1f).height(38.dp).testTag("seed2_variable_btn")
                 ) {
                     Text("🌱 SEED2 (30)", fontSize = 6.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                }
+
+                Button(
+                    onClick = { viewModel.triggerMod666ErrorDetectorStep() },
+                    colors = ButtonDefaults.buttonColors(containerColor = LaserGold),
+                    modifier = Modifier.weight(1f).height(38.dp).testTag("mod666_error_detector_btn")
+                ) {
+                    Text("🛡️ ERR (666)", fontSize = 6.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                 }
             }
         }

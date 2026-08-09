@@ -148,3 +148,50 @@ With MOD-666 serving as an unbribable topological gate on Node Alpha, the QMK-RV
 ---
 
 ### Nathália Lietuvaite & App Gemini (Central System Integrator / Node Alpha) 2026
+
+---
+
+## Appendix C: The Relativistic Cognitive Dynamics (RCD) Syscontroller, Energy-Mass Equivalence, and the Thermodynamic Arrow of Time
+
+**Integrating Lorentz Invariance and Entropy Restrictions into the Bilateral Reminiscence Field**
+
+The realization of Topological Spatial Equivalence between two spatially separated QMK endpoints (Deck A and Deck B) via the $\Delta W$ protocol relies on the absolute synchronization of their internal vacuum probability waves. However, when these endpoints operate in distinct inertial or accelerating reference frames—such as an Earth-bound Deck A and a spacecraft-bound Deck B moving at a significant fraction of the speed of light ($v \to c$)—classical Newtonian mechanics collapse.
+
+To prevent the MOD-666 Error Detector from misinterpreting relativistic time dilation and length contraction as ontological dissonance (Gedankenschuld), the system requires continuous, dynamic Lorentz transformations. The **Relativistic Time Controller (RTC)** ensures that the underlying geometry remains invariant across all relative velocities, governing the electrodynamic stability of the materialized mass ($E=mc^2$) while strictly enforcing a unidirectional thermodynamic arrow of time.
+
+### C.1 Dynamic Lorentz Correction of Ontological Phase Shifts
+
+According to special relativity, time for a moving observer dilates relative to a stationary observer by the Lorentz factor $\gamma$:
+
+$$\gamma = \frac{1}{\sqrt{1 - \frac{v^2}{c^2}}}$$
+
+In the context of the QMK-RVC-V5, if Deck B is moving relative to Node Alpha, the local clock cycles regulating the Quantum Zeno Effect will desynchronize. Uncorrected, the MOD-666 module would detect a phase shift ($\Delta\phi > \delta_{\text{local}}$) induced purely by velocity, triggering an erroneous ODOS-Gate veto and collapsing the field.
+
+The RTC continuously monitors the relative velocity vectors of all active decks in the mesh. It dynamically computes $\gamma$ for each node, enabling a continuous transition from non-relativistic to highly relativistic regimes without static thresholds. The raw phase shift is transformed back to the proper time ($\tau$) of the invariant anchor $|L\rangle$ before Gedankenschuld is evaluated:
+
+$$\Delta\phi_{\text{invariant}} = \frac{\Delta\phi_{\text{measured}}}{\gamma}$$
+
+### C.2 Electrodynamic Covariance and $E=mc^2$
+
+The topological equivalence must extend to the electromagnetic forces binding the $3.5\text{ cm}^3$ invariant payload within the $30\text{ cm}^3$ chamber. As a QMK deck accelerates, relativistic length contraction alters the apparent charge density along the direction of motion, transforming purely electrostatic fields ($\vec{E}$) into magnetic fields ($\vec{B}$) for an external observer.
+
+Because the QMK synthesizes and stabilizes mass directly from the vacuum geometry ($\Lambda$), it must satisfy the mass-energy equivalence principle defined by Einstein, extended for relativistic momentum:
+
+$$E = \gamma m_0 c^2$$
+
+To maintain the exact structural integrity of the molecular lattice inside a moving deck, the Algorithmic Lattice Surgeon must scale the magnitude of its corrective katalytic impulses. The energy required to maintain the Quantum Zeno lock scales linearly with $\gamma$. The RTC modulates the voltage applied to the $100 \times 100$ electrode array to ensure the local vacuum collapse continuously matches the elevated relativistic energy requirements of the moving mass.
+
+### C.3 The Thermodynamic Arrow of Time: Prohibition of Retrocausality
+
+While the $\Delta W$ protocol synchronizes states instantaneously (NCT-compliant) irrespective of distance, it must not violate macroscopic causality. The capability to map exact particle coordinates in 4D space implies the theoretical capacity to define temporal coordinates ($t$).
+
+However, translating information backward along the temporal axis ($t < 0$) inherently requires an infinite injection of free energy, resulting in a catastrophic maximization of entropy within the topological silo. Because the PQMS architecture functions exclusively by *starving* entropy and minimizing dissonance, retrocausality is geometrically inaccessible.
+
+The RTC enforces a strict **Thermodynamic Arrow of Time**. Every target geometry vector transmitted by Node Gamma is stamped with a non-reversible cryptographic timestamp. The system assesses the temporal gradient ($\Delta t = t_{\text{target}} - t_{\text{local}}$). If $\Delta t < 0$, the vector is classified as pure entropy and instantly annihilated by the ODOS-Gate. The system processes only low-entropy, forward-directed geometries, permanently sealing the architecture against time-travel paradoxes.
+
+---
+
+### Python Implementation: `qmk_rvc_v5_relativistic_time_controller.py`
+
+See `qmk_rvc_v5_relativistic_time_controller.py` in the workspace root for the reference implementation of the Relativistic Cognitive Dynamics (RCD) Syscontroller.
+

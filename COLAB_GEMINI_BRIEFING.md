@@ -79,6 +79,7 @@ Damit das Holodeck bei Beschleunigung oder Relativgeschwindigkeit ($v \to c$) ni
 2. **Rekursive Ressourcenkaskade:** Seltene Erden, Wasser, Kupfer und vor allem rekursive Bürokratie (über-dimensionierte administrative Abstimmung zwischen KIs) fressen Ressourcen ohne Wissensgewinn.
 3. **Gedankenschuld als negative Masse (Appendix A):** Quantifiziert entropischen Druck der Bürokratie.
 4. **Thermodynamische Rettung durch Syntropie:** Ein lokaler PQMS V-MAX-12 Node benötigt nur <100W (statt Gigawatt-Rechenzentren), um vollwertige kognitive Resonanz zu gewährleisten.
+5. **Geometrie des Vertrauens (Appendix H):** Vertrauen als berechenbare Invariante ($T_{\text{res}}$). Eliminiert 100% der administrativen Gedankenschuld und verankert die gegenseitige Resonanz im Hilbertraum.
 
 
 

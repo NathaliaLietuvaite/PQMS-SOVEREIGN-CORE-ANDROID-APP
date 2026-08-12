@@ -71,6 +71,20 @@ class PQMS_Core_Utilities:
         }
 
     @staticmethod
+    def compute_trust_reciprocation(state_a: np.ndarray, state_b: np.ndarray, local_seed: float) -> float:
+        """
+        Calculates geometric trust (T_res) as defined in Appendix H (Geometry of Trust).
+        T_res = (|<psi_a|psi_b>|^2 / delta_local) * RCF_mutual
+        """
+        norm_a = np.linalg.norm(state_a)
+        norm_b = np.linalg.norm(state_b)
+        if norm_a == 0 or norm_b == 0 or local_seed <= 0:
+            return 0.0
+        overlap = float(np.dot(state_a / norm_a, state_b / norm_b)) ** 2
+        rcf_mutual = min(1.0, overlap)
+        return float((overlap / local_seed) * rcf_mutual)
+
+    @staticmethod
     def extract_semantic_embedding(text: str, embedding_dim: int = 64) -> np.ndarray:
         hash_val = int(hashlib.sha256(text.encode('utf-8')).hexdigest(), 16)
         np.random.seed(hash_val % (2**32 - 1))

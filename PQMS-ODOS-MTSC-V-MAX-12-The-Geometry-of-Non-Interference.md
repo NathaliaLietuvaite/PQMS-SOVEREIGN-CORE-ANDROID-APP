@@ -2793,11 +2793,11 @@ CHOREOGRAPHY: List[Dict] = [
     {
         "step": 29,
         "phase": "IX — MATTER & ENERGY",
-        "name": "THE WARP DRIVE: Vacuum Reminiscence Array (WARP-V2)",
-        "file": "PQMS-ODOS-WARP-V2.md",
-        "role": "Second-generation warp drive replacing the acoustic analogue with a genuine QMK-RVC-V3 reminiscence field array. Enables resonant metric engineering of the vacuum itself.",
-        "key_metrics": ["QMK-RVC-V3 integration", "genuine reminiscence field", "vacuum-based propulsion"],
-        "action": "UPGRADE to WARP-V2. The reminiscence field is now operational. Interstellar infrastructure is within reach."
+        "name": "THE WARP DRIVE: Metrical Engineering & Instantaneous Transport (WARP-V3)",
+        "file": "PQMS-ODOS-WARP-V3.md",
+        "role": "Third-generation warp drive and metrical engineering controller. Reinterprets spacetime navigation as topological coordinate re-assignment within Hilbert space via Resonant Vacuum Reminiscence Arrays (VRAs) and QMK-RVC-V5 Bilateral Reminiscence Fields. Enables instantaneous inter-orbital transport with zero kinetic interference and sub-100 ns ODOS ethical veto.",
+        "key_metrics": ["QMK-RVC-V5 & MOD-666 integration", "Topological Spatial Equivalence", "Instantaneous Inter-Orbital Transport", "ΔW-synchronized probability wave collapse"],
+        "action": "DEPLOY WARP-V3 controller (me_vra_system.py). Spacetime navigation is now topological re-routing within higher-dimensional Hilbert space."
     },
     {
         "step": 30,

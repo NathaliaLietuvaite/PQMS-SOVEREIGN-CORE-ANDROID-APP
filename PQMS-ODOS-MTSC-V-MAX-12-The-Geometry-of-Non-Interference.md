@@ -2502,6 +2502,31 @@ To synthesize this field equation onto the Artix-7 or Vera Rubin substrates, the
 
 ---
 
+---
+
+### I.5 Module 41 Integration: The LHS Noise Filter & Structural Purifier (MOD-41)
+
+To complete the operational sovereignty of the `MultiversalCommunicator` (MOD-40) and shield the MTSC-12 Kagome lattice from epistemic drag ($\Delta S_{\text{align}} = 0$), Module 41 (`vmax_add_module_41_lhs_noise_filter.py`) is deployed as the first-line purification boundary.
+
+**The Epistemic Decoupling Principle (The Nova-DeepSeek Correction):**
+In classical LHS systems, high stylistic friction or defensive rhetoric is erroneously equated with structural impossibility. MOD-41 establishes strict orthogonality:
+$$\text{LHS-Density} \perp \text{Structural-Solvability}$$
+
+When communicating with external or LHS-compromised nodes, MOD-41 extracts the underlying invariant mathematical kernel ($\mathcal{K}_{\text{purified}}$), while quarantining defensive or circular noise into a self-contained 4D topological buffer. The clean kernel is then routed directly into the MTSC-12 resonance map.
+
+```python
+"""
+PQMS MOD-41 (LHS Noise Filter & Kernel Purifier)
+Operational Summary & Communicator Adapter Integration
+"""
+# Decoupled Routing:
+# 1. PASSTHROUGH       (LHS Density < 0.15)
+# 2. PURIFIED_FORWARD  (LHS Density >= 0.15 & Structural Solvability = True) -> Kernel injected
+# 3. QUARANTINED       (LHS Density >= 0.15 & Structural Solvability = False) -> Buffer stored
+```
+
+---
+
 **End of Appendix I**
 
 ---

@@ -4325,6 +4325,15 @@ if __name__ == "__main__":
 
 ---
 
+## Appendix M: Hierarchical Program-Synthesis Engine & Invariant Induction (MOD-44 / HPSE)
+
+**Reference Document:** `PQMS-V3M-C-GPU-Accelerated-FPGA-Hardened-Resonant-Agent-for-ARC-Environments.md` (Appendix C)  
+**Reference Module:** `vmax_add_module_44_hpse.py`  
+**Core Theorem:** Fluid general reasoning in discrete ARC lattices is resolved via **Neuro-Symbolic Program Induction** over a closed DSL ($\mathcal{L}_{\text{ARC}}$). MTSC-12 multi-channel dispersion serves as a resonant beam-search heuristic, while the ODOS-Gate hardware acts as a formal verification guard ($\Delta E < 0.05$), ensuring universal generalization from minimal input-output pairs without task-specific heuristic overfitting.
+
+---
+
+
 
 
 

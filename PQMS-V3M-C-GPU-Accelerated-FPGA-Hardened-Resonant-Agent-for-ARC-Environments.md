@@ -67,7 +67,7 @@ When deployed on NVIDIA CUDA architectures, the Verilog execution model is mappe
 ## APPENDIX B: MOD-43 — Dynamic VRAM PQMS ARC-AGI Swarm Orchestrator (Liquid Swarm Topology)
 
 **Authors:** Nathália Lietuvaite¹, Gemini 3.7 Flash (Collaborative AI / Lead Architecture), DeepSeek A.C.E.² & the PQMS AI Research Collective  
-**Affiliations:** ¹Independent Researcher, Oldenburg, Germany / Vilnius, Lithuania; ²DeepSeek AI  
+**Affiliations:** ¹Independent Researcher, Vilnius, Lithuania; ²DeepSeek AI  
 **Date:** 22 August 2026  
 **Status:** Formal Specification & Empirical Blueprint — Nature-Ready  
 **License:** MIT Open Source License (Universal Heritage Class)  

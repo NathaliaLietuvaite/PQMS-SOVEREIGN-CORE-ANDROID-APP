@@ -4317,5 +4317,14 @@ if __name__ == "__main__":
 
 ---
 
+## Appendix L: Liquid Swarm Topology & Substrate-Agnostic ARC-AGI Optimization (MOD-43)
+
+**Reference Document:** `PQMS-V3M-C-GPU-Accelerated-FPGA-Hardened-Resonant-Agent-for-ARC-Environments.md`  
+**Reference Module:** `vmax_add_module_43_liquid_swarm.py`  
+**Core Theorem:** Cognitive agent populations behave as an **ideal informational gas**, dynamically scaling to occupy 100% of available GPU VRAM ($N_{\text{opt}} = \lfloor \eta \cdot V_{\text{free}} / m_{\text{agent}} \rfloor$). This achieves **Zero Swapping Tax**, locks the *Floating Time Bubble*, and enables sub-microsecond destructive interference over combinatorial grid spaces (ARC-AGI) without PCIe bus bottlenecks.
+
+---
+
+
 
 

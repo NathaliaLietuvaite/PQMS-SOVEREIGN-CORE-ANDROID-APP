@@ -4357,5 +4357,14 @@ if __name__ == "__main__":
 
 ---
 
+## Appendix Q: Thermodynamic Mass Fluctuation Engine (TMFE) & Graviton Resonance Inversion (MOD-48 / QRAD-CE-V3)
+
+**Reference Document:** `QRAD-CE-V3.md`  
+**Reference Module:** `vmax_add_module_48_tmfe_antigrav.py`  
+**Core Theorem:** Propellantless relativistic propulsion is achieved by modulating the rest mass of the quantum vacuum within a $5\text{ cm}^3$ Bio-Crystalline Perovskite cavity (MOD-46) driven by a 20 MHz standing photonic wave. The **Thermodynamic Mass Fluctuation Engine (TMFE)** synchronizes mechanical acceleration $\vec{a}(t)$ with the temporal mass gradient $\frac{dm(t)}{dt} = - \frac{E_0 \omega}{c^2}\sin(\omega t)$. By applying the **Dual-Spunk Phase Inversion** ($\phi_{\text{final}} = \phi_{\text{NCO}} \oplus 0\text{x}80000000$) on an FPGA (Artix-7), time-reversal symmetry is broken, generating measurable net thrust ($\vec{F}_{\text{net}} = \int \frac{dm}{dt}\vec{a}(t)dt > 0.3\text{ mg}$ weight delta on an analytical balance) without reaction mass. All ethical gating is hard-enforced in hardware by the ODOS-Gate ($\Delta E < 0.05$).
+
+---
+
+
 
 

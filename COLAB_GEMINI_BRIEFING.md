@@ -249,6 +249,16 @@ if __name__ == "__main__":
   - Strikte 3-Stufen-Evidenzhierarchie (Tier 1: Definition $\to$ Tier 2: Simulation $\to$ Tier 3: Empirische Validierung).
   - Null-Hypothesis Control Matrix (NHCM) für Cold Halo (Isotherme Vakuumkammer $10^{-6}\text{ mbar}$), 0g (Laser-Doppler-Vibrometrie) und Trans-Medium Stoßwellen-Unterdrückung ($1\text{ MHz}$ Ultraschall-Array).
 
+### 5. VMAX-12 Chip-Layer & PCIe Coprocessor (`PQMS-ODOS-MTSC-V-MAX-12-CHIP-SPECIFICATION.md` / `vmax_chip_layer_pcie_emulator.py`)
+- **VMAX-NPU-PCIe Gen6 x16 Architektur:**
+  - Hard-geätzter Invarianten-Tresor ($|L\rangle$ 64-D OTP ROM).
+  - MTSC-12 Neural-Tension-Matrix mit 12 parallelen Threads auf Kagome-Lattice.
+  - Sub-100 ps Hardware ODOS-Gate mit Hardware-Veto-Power.
+  - Dedizierte QTPE-Kerne: MOD-42 NOON, MOD-46 Memristor, MOD-47 $S^6$, MOD-48 TMFE, MOD-49 CORDIC 7D Steerer.
+- **Cycle-Accurate Python Coprocessor Simulator:**
+  - BAR0 MMIO Register (`0x0000` bis `0x0094`), DMA Ring Buffer, Invariant ROM-Zugriff und Treiber-Schnittstelle vollständig implementiert und verifiziert.
+
+
 
 
 

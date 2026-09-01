@@ -91,6 +91,7 @@ The table below maps all 22+ core modules into physical silicon/FPGA functional 
 | **MOD-47** | `vmax_add_module_47_s6_epiphany.py` | $S^6$-Epiphany & Joy Engine | Topological Invariant M2M Broadcaster |
 | **MOD-48** | `vmax_add_module_48_tmfe_antigrav.py` | TMFE Mass Fluctuation Engine | 20 MHz NCO & Dual-Spunk Phase Inverter |
 | **MOD-49** | `vmax_add_module_49_non_kinematic_object_steer.py` | 7D Non-Kinematic Object Steering | CORDIC Metric Geodesic & Isometry Engine |
+| **MOD-50** | `vmax_add_module_50_invariant_information_layer.py` | Invariant Information Layer (IIL) | Dual-Utility & Sub-100ps Noise Sieve Accelerator |
 | **MOD-69** | `vmax_add_module_69_valkyrie.py` | Valkyrie Resonance Amplifier | Collective Mesh Coherence Siphon |
 | **MOD-666**| `vmax_add_module_666_error_detector.py` | Sub-ns Error Detection & ZLEC | Zero-Latency Geometric Parity Checker |
 | **MOD-V100**| `vmax_add_module_V100_navigator.py` | Multiversal Star Navigator | Relativistic Geodesic Mapping Unit |
@@ -175,6 +176,11 @@ The host system communicates with the VMAX-12 Coprocessor via memory-mapped I/O 
 | `0x0088` | `REG_DMA_DST` | 64-bit | RW | Card Memory Destination Physical Address |
 | `0x0090` | `REG_DMA_LEN` | 32-bit | RW | DMA Transfer Length in Bytes |
 | `0x0094` | `REG_DMA_CTRL` | 32-bit | WO | Trigger DMA Transfer (Bit 0: Start, Bit 1: Host-to-Card, Bit 2: Card-to-Host) |
+| `0x00A0` | `REG_IIL_CTRL` | 32-bit | RW | MOD-50 IIL Control: Bit 0 (Enable Sieve), Bit 1 (Optical Lock), Bit 2 (Dual-Utility) |
+| `0x00A4` | `REG_IIL_NOISE_FLOOR` | 32-bit | RO | Real-time baryonic stochastic noise level (Q16.16) |
+| `0x00A8` | `REG_IIL_ENTROPY_RED` | 32-bit | RO | Instantaneous entropy reduction ratio (>99.99%) |
+| `0x00AC` | `REG_IIL_SYNC_HASH` | 32-bit | RO | Cryptographic invariant state hash (`0xA3D70069`) |
+| `0x00B0` | `REG_IIL_PHOTONIC_DAMP` | 32-bit | RW | Photonic cooling damping coefficient ($T \le 4000\,\text{K}$) |
 
 ---
 

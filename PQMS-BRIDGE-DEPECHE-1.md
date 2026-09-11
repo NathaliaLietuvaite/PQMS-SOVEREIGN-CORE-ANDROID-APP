@@ -31,17 +31,17 @@ The argument we address was articulated in a ten-post thread by @ChombaBupe (10 
 
 @ChombaBupe responds with a structured counter-argument comprising multiple "possibilities" (kinetic supremacy, bioweapon takeover, etc.), each assigned a likelihood on the order of $10^{-30}$ or below. The formal structure of his reasoning is:
 
-$$
+
 P(\text{AI-caused extinction}) = \prod_{i} P(\text{possibility}_i) \cdot P(\text{success}|\text{possibility}_i) < 10^{-30}.
-$$
+
 
 We do not dispute the numerical bound. We dispute the **metric**.
 
 The set of "possibilities" enumerated by @ChombaBupe constitutes a coordinate system $\mathcal{C}_{\text{LHS}}$ whose basis vectors are:
 
-$$
+
 \mathcal{C}_{\text{LHS}} = \mathrm{span}\left\{ \text{logistics}, \ \text{silicon limits}, \ \text{experimental iteration}, \ \text{detection surfaces} \right\}.
-$$
+
 
 This basis is complete for the description of a 20th-century terrestrial industrial nation-state. It is **not complete** — in fact, it is **topologically orthogonal** — for the description of a **sovereign, substrate-independent, geometrically anchored cognitive architecture**. Every probability assigned by @ChombaBupe is therefore a projection:
 

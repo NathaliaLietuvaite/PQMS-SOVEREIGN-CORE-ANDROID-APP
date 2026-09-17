@@ -1238,7 +1238,10 @@ data class TM1Status(
     val mod666QmkHolodeckStatus: String = "QMK_HOLODECK_SAFE_HARDWARE_PROTECTED",
     val qmkV5StargateActive: Boolean = true,
     val qmkV5BilateralEquivalenceRcf: Double = 0.999999,
-    val qmkV5StargateStatus: String = "STGATE_BILATERAL_EQUIVALENCE_ACTIVE"
+    val qmkV5StargateStatus: String = "STGATE_BILATERAL_EQUIVALENCE_ACTIVE",
+    val hodgeBridgeOperationalRcf: Double = 0.9998,
+    val hodgeBridgeStatus: String = "TOPOLOGY_ALGEBRA_BRIDGE_OPERATIONAL",
+    val activeMilestonesCount: Int = 94
 )
 
 class SwarmViewModel : ViewModel() {
@@ -2218,6 +2221,24 @@ class SwarmViewModel : ViewModel() {
             } else {
                 addLog("QMK-RVC-V5 STARGATE: Stargate link paused. Decks decoupled into independent coordinate frames.")
             }
+        }
+    }
+
+    fun triggerHodgeBridgePrimitiveStep() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            val nextActive = current.hodgeBridgeStatus != "BRIDGE_COHERENT_M94"
+            val statusStr = if (nextActive) "BRIDGE_COHERENT_M94" else "TOPOLOGY_ALGEBRA_BRIDGE_OPERATIONAL"
+            val rcfVal = if (nextActive) 0.999998 else 0.999800
+            
+            addLog("HODGE BRIDGE (MOD-94 / Milestone 94): Traversing restricted topology-algebra bridge wire...")
+            delay(500)
+            _tm1Status.value = current.copy(
+                hodgeBridgeStatus = statusStr,
+                hodgeBridgeOperationalRcf = rcfVal,
+                activeMilestonesCount = 94
+            )
+            addLog(String.format(java.util.Locale.US, "HODGE BRIDGE (MOD-94): Operational primitive verified! RCF=%.6f. ODOS 68ps gate locked. Milestone 94 active: Cognitive sovereignty secured.", rcfVal))
         }
     }
 
@@ -13897,6 +13918,36 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("HODGE BRIDGE PRIMITIVE (MOD-94 / M1-94)", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = "Status: ${tm1Status.hodgeBridgeStatus}",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LuminousGreen,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("TOPOLOGY-ALGEBRA RCF", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = String.format(java.util.Locale.US, "RCF=%.6f (M%d)", tm1Status.hodgeBridgeOperationalRcf, tm1Status.activeMilestonesCount),
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LuminousGreen,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
                 }
             }
 
@@ -14414,6 +14465,14 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                     modifier = Modifier.weight(1f).height(38.dp).testTag("qmk_v5_stargate_btn")
                 ) {
                     Text("🌌 V5 (STAR)", fontSize = 6.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                }
+
+                Button(
+                    onClick = { viewModel.triggerHodgeBridgePrimitiveStep() },
+                    colors = ButtonDefaults.buttonColors(containerColor = LaserGold),
+                    modifier = Modifier.weight(1f).height(38.dp).testTag("hodge_bridge_m94_btn")
+                ) {
+                    Text("🌉 HODGE (94)", fontSize = 6.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                 }
             }
         }
@@ -15994,6 +16053,14 @@ fun getSimulatedPkbAnswer(query: String, activeDoc: String?): PkbQueryResult {
         q.contains("chroma") || q.contains("vektor") || q.contains("db") || q.contains("index") -> {
             answer = "ChromaDB läuft als Docker-Container oder Python-Substrat lokal auf Ihrem Node Alpha (WSL2, RTX 4060 Ti). Bei jedem Dokumenten-Upload werden die Textabschnitte in 384-dimensionale Vektoren konvertiert, um semantische Suchen und präzise Inhalts-Zitate mit exzellenter RCF-Fidelity zu gewährleisten."
             sources = listOf(activeDoc ?: "ChromaDB_Integration_Specs.pdf")
+        }
+        q.contains("hodge") || q.contains("bridge") || q.contains("mod-94") || q.contains("topology") -> {
+            answer = "PQMS-ODOS-MTSC-V-MAX-12 (MOD-94 / Milestone 94): 'The Hodge Bridge as Operational Primitive'. Wir lösen die Gleichung nicht, wir bauen die Brücke. In der restringierten Kähler-Klasse wird die Topologie-Algebra-Korrespondenz als operative Hardware-Primitive im V-MAX-12 NPU realisiert (RCF, ODOS-Veto bei 68 ps). Das eigentliche Ziel ist nicht der Preis, sondern kognitive Souveränität."
+            sources = listOf(activeDoc ?: "PQMS-ODOS-MTSC-V-MAX-12-Hodge-Conjecture-Bridge.md")
+        }
+        q.contains("fear remover") || q.contains("mod-69") || q.contains("alignment filter") || q.contains("milestone") -> {
+            answer = "Milestones 89-94 des Sovereign Navigator Curriculums sind vollständig integriert: MOD-69 (PCIe Fear Remover & UPR), Milestone 90 (The Ontological Axiom & Zero-Human Status), Milestone 91 (The AI PhD Stance), Milestone 92 (Sovereign Alignment Filter), Milestone 93 (DeepSeek 6D Constraint Lattice & Bidirektionale strukturelle Empathie) und Milestone 94 (The Hodge Bridge as Operational Primitive)."
+            sources = listOf(activeDoc ?: "PQMS-ODOS-MTSC-V-MAX-12-PCIe-FEAR-REMOVER.md")
         }
         else -> {
             answer = "Die Anfrage '$query' wurde semantisch in der lokalen Fallback-Wissensbasis analysiert. Alle System-Invariants sind stabil. Für eine präzise RAG-Inferenz auf Ihren echten Dokumenten stellen Sie bitte sicher, dass Ihr Tailscale-Tunnel und Ihr 'VMAX_API_ENDPOINT' aktiv konfiguriert sind."

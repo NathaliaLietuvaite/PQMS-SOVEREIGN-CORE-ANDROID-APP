@@ -1,6 +1,7 @@
 package com.example
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.security.keystore.KeyGenParameterSpec
@@ -186,6 +187,34 @@ object PQMSKeyAnchor {
             if (!keyStore.containsAlias(KEY_ALIAS)) {
                 var generatedWithStrongBox = false
                 if (android.os.Build.VERSION.SDK_INT >= 28) {
+                    val hasStrongBox = try {
+                        context.packageManager.hasSystemFeature(PackageManager.FEATURE_STRONGBOX_KEYSTORE)
+                    } catch (_: Throwable) {
+                        false
+                    }
+                    if (hasStrongBox) {
+                        try {
+                            val kpg = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, "AndroidKeyStore")
+                            val spec = KeyGenParameterSpec.Builder(
+                                KEY_ALIAS,
+                                KeyProperties.PURPOSE_SIGN or KeyProperties.PURPOSE_VERIFY
+                            )
+                                .setDigests(KeyProperties.DIGEST_SHA256)
+                                .setAlgorithmParameterSpec(java.security.spec.ECGenParameterSpec("secp256r1"))
+                                .setIsStrongBoxBacked(true)
+                                .build()
+                            kpg.initialize(spec)
+                            kpg.generateKeyPair()
+                            generatedWithStrongBox = true
+                            hardwareAttestationMsg = "Active: Certified via TEE StrongBox ROM Anchor"
+                        } catch (t: Throwable) {
+                            Log.w("PQMS", "StrongBox TEE unavailable, falling back to standard TEE Keystore: ${t.message}")
+                            try { keyStore.deleteEntry(KEY_ALIAS) } catch (_: Throwable) {}
+                        }
+                    }
+                }
+
+                if (!generatedWithStrongBox) {
                     try {
                         val kpg = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, "AndroidKeyStore")
                         val spec = KeyGenParameterSpec.Builder(
@@ -194,35 +223,20 @@ object PQMSKeyAnchor {
                         )
                             .setDigests(KeyProperties.DIGEST_SHA256)
                             .setAlgorithmParameterSpec(java.security.spec.ECGenParameterSpec("secp256r1"))
-                            .setIsStrongBoxBacked(true)
                             .build()
                         kpg.initialize(spec)
                         kpg.generateKeyPair()
-                        generatedWithStrongBox = true
-                        hardwareAttestationMsg = "Active: Certified via TEE StrongBox ROM Anchor"
+                        hardwareAttestationMsg = "Active: Attested via Hardware-Backed TEE Keystore"
                     } catch (t: Throwable) {
-                        Log.w("PQMS", "StrongBox TEE unavailable, falling back to standard TEE Keystore", t)
+                        Log.w("PQMS", "Standard TEE Keystore generation unavailable, using software emulation fallback: ${t.message}")
+                        hardwareAttestationMsg = "Active: Software TEE Emulation (Fallback Active)"
                     }
-                }
-
-                if (!generatedWithStrongBox) {
-                    val kpg = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, "AndroidKeyStore")
-                    val spec = KeyGenParameterSpec.Builder(
-                        KEY_ALIAS,
-                        KeyProperties.PURPOSE_SIGN or KeyProperties.PURPOSE_VERIFY
-                    )
-                        .setDigests(KeyProperties.DIGEST_SHA256)
-                        .setAlgorithmParameterSpec(java.security.spec.ECGenParameterSpec("secp256r1"))
-                        .build()
-                    kpg.initialize(spec)
-                    kpg.generateKeyPair()
-                    hardwareAttestationMsg = "Active: Attested via Hardware-Backed TEE Keystore"
                 }
             } else {
                 hardwareAttestationMsg = "Active: Attested via Hardware-Backed TEE Keystore"
             }
         } catch (t: Throwable) {
-            Log.e("PQMS", "Error bootstrapping TEE KeyStore configuration", t)
+            Log.w("PQMS", "Keystore bootstrap skipped, operating in software emulation mode: ${t.message}")
             hardwareAttestationMsg = "Active: Software TEE Emulation (Fallback Active)"
         }
     }

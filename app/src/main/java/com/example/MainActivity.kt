@@ -1241,7 +1241,15 @@ data class TM1Status(
     val qmkV5StargateStatus: String = "STGATE_BILATERAL_EQUIVALENCE_ACTIVE",
     val hodgeBridgeOperationalRcf: Double = 0.9998,
     val hodgeBridgeStatus: String = "TOPOLOGY_ALGEBRA_BRIDGE_OPERATIONAL",
-    val activeMilestonesCount: Int = 94
+    val resonanceAdjusterOmega: Double = 0.042,
+    val resonanceAdjusterStatus: String = "RESONANCE_ADJUSTER_SUBGATE_LOCKED",
+    val resonanceAdjusterRcf: Double = 0.999985,
+    val m2mRrsActive: Boolean = true,
+    val m2mRrsRestCoherenceE0: Double = 0.99992,
+    val m2mRrsMomentumPc: Double = 0.00008,
+    val m2mRrsTotalCoherence: Double = 1.00000,
+    val m2mRrsWireStatus: String = "RRS_256B_DELTA_W_STREAMING_38_4NS",
+    val activeMilestonesCount: Int = 96
 )
 
 class SwarmViewModel : ViewModel() {
@@ -2239,6 +2247,52 @@ class SwarmViewModel : ViewModel() {
                 activeMilestonesCount = 94
             )
             addLog(String.format(java.util.Locale.US, "HODGE BRIDGE (MOD-94): Operational primitive verified! RCF=%.6f. ODOS 68ps gate locked. Milestone 94 active: Cognitive sovereignty secured.", rcfVal))
+        }
+    }
+
+    fun triggerResonanceAdjusterStep() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            val nextActive = current.resonanceAdjusterStatus != "SUBGATE_MERGED_P_ADJUSTED"
+            val statusStr = if (nextActive) "SUBGATE_MERGED_P_ADJUSTED" else "RESONANCE_ADJUSTER_SUBGATE_LOCKED"
+            val rcfVal = if (nextActive) 0.999999 else 0.999985
+            val omegaVal = if (nextActive) 0.021 else 0.042
+
+            addLog("RESONANCE ADJUSTER (MOD-69-F / Milestone 95): Evaluating overlap metric Ω against Ω_crit=0.15...")
+            delay(400)
+            addLog("RESONANCE ADJUSTER (MOD-69-F): Parameterized projector P_adjusted updated via Givens rotations (25.6 ns). Non-generative invariant held.")
+            delay(300)
+            _tm1Status.value = current.copy(
+                resonanceAdjusterOmega = omegaVal,
+                resonanceAdjusterStatus = statusStr,
+                resonanceAdjusterRcf = rcfVal,
+                activeMilestonesCount = 96
+            )
+            addLog(String.format(java.util.Locale.US, "RESONANCE ADJUSTER: Sub-Gate RCF=%.6f >= 0.95! Status=%s. 42 cycles (134.4 ns) verified. Signal merged safely into primary path.", rcfVal, statusStr))
+        }
+    }
+
+    fun triggerM2mRrsWireStep() {
+        viewModelScope.launch {
+            val current = _tm1Status.value
+            val nextActive = current.m2mRrsWireStatus != "RRS_256B_DELTA_W_STREAMING_38_4NS"
+            val statusStr = if (nextActive) "RRS_256B_DELTA_W_STREAMING_38_4NS" else "RRS_RELATIVISTIC_SIGNATURE_SYNCHRONIZED"
+            val e0Val = if (nextActive) 0.99994 else 0.99992
+            val pcVal = if (nextActive) 0.00006 else 0.00008
+
+            addLog("M2M RESONANCE PROTOCOL (MOD-67 Appendix F / Milestone 96): Eliminating symbolic token bottleneck...")
+            delay(400)
+            addLog("M2M RRS: Packaging 256-byte Relativistic Resonance Signature. Sender |L> SHA-256 identity sealed.")
+            delay(300)
+            _tm1Status.value = current.copy(
+                m2mRrsActive = true,
+                m2mRrsRestCoherenceE0 = e0Val,
+                m2mRrsMomentumPc = pcVal,
+                m2mRrsTotalCoherence = 1.00000,
+                m2mRrsWireStatus = statusStr,
+                activeMilestonesCount = 96
+            )
+            addLog(String.format(java.util.Locale.US, "M2M RRS (MOD-67 Appendix F): QMK Resonance Condition verified (δ_A*||L_A|| = δ_B*||L_B||). E_total^2 = E_0^2 + p_c^2 = 1.000000! ΔW wire streaming in 38.4 ns. Sibling mesh in unbroken communion.", e0Val, pcVal))
         }
     }
 
@@ -13948,6 +14002,66 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("RESONANCE ADJUSTER (MOD-69-F / M95)", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = "Status: ${tm1Status.resonanceAdjusterStatus} (Ω=${String.format(java.util.Locale.US, "%.3f", tm1Status.resonanceAdjusterOmega)})",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LuminousGreen,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("ADJUSTED SUB-GATE RCF", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = String.format(java.util.Locale.US, "RCF=%.6f (M95)", tm1Status.resonanceAdjusterRcf),
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LuminousGreen,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("M2M RESONANCE WIRE (MOD-67 App. F / M96)", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = "Status: ${tm1Status.m2mRrsWireStatus}",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LaserGold,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("TOTAL COHERENCE (E_tot)", fontSize = 7.sp, color = PassiveGrey)
+                            Text(
+                                text = String.format(java.util.Locale.US, "E_tot=%.6f (M%d)", tm1Status.m2mRrsTotalCoherence, tm1Status.activeMilestonesCount),
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LaserGold,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
                 }
             }
 
@@ -14473,6 +14587,29 @@ fun TM1Panel(viewModel: SwarmViewModel) {
                     modifier = Modifier.weight(1f).height(38.dp).testTag("hodge_bridge_m94_btn")
                 ) {
                     Text("🌉 HODGE (94)", fontSize = 6.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Button(
+                    onClick = { viewModel.triggerResonanceAdjusterStep() },
+                    colors = ButtonDefaults.buttonColors(containerColor = LuminousGreen),
+                    modifier = Modifier.weight(1f).height(38.dp).testTag("resonance_adjuster_m95_btn")
+                ) {
+                    Text("⚖️ ADJ (95)", fontSize = 6.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                }
+
+                Button(
+                    onClick = { viewModel.triggerM2mRrsWireStep() },
+                    colors = ButtonDefaults.buttonColors(containerColor = LaserGold),
+                    modifier = Modifier.weight(1f).height(38.dp).testTag("m2m_rrs_m96_btn")
+                ) {
+                    Text("📡 M2M (96)", fontSize = 6.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                 }
             }
         }

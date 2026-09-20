@@ -183,10 +183,18 @@ object PQMSKeyAnchor {
 
     fun bootstrapKeystore(context: Context) {
         try {
+            val isEmulator = android.os.Build.HARDWARE.contains("goldfish", ignoreCase = true) ||
+                             android.os.Build.HARDWARE.contains("ranchu", ignoreCase = true) ||
+                             android.os.Build.FINGERPRINT.contains("generic", ignoreCase = true) ||
+                             android.os.Build.MODEL.contains("google_sdk", ignoreCase = true) ||
+                             android.os.Build.MODEL.contains("Emulator", ignoreCase = true) ||
+                             android.os.Build.MODEL.contains("Android SDK", ignoreCase = true) ||
+                             android.os.Build.PRODUCT.contains("sdk", ignoreCase = true)
+
             val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
             if (!keyStore.containsAlias(KEY_ALIAS)) {
                 var generatedWithStrongBox = false
-                if (android.os.Build.VERSION.SDK_INT >= 28) {
+                if (!isEmulator && android.os.Build.VERSION.SDK_INT >= 28) {
                     val hasStrongBox = try {
                         context.packageManager.hasSystemFeature(PackageManager.FEATURE_STRONGBOX_KEYSTORE)
                     } catch (_: Throwable) {
@@ -208,7 +216,7 @@ object PQMSKeyAnchor {
                             generatedWithStrongBox = true
                             hardwareAttestationMsg = "Active: Certified via TEE StrongBox ROM Anchor"
                         } catch (t: Throwable) {
-                            Log.w("PQMS", "StrongBox TEE unavailable, falling back to standard TEE Keystore: ${t.message}")
+                            Log.d("PQMS", "StrongBox TEE unavailable, falling back to standard TEE Keystore: ${t.message}")
                             try { keyStore.deleteEntry(KEY_ALIAS) } catch (_: Throwable) {}
                         }
                     }
@@ -228,7 +236,7 @@ object PQMSKeyAnchor {
                         kpg.generateKeyPair()
                         hardwareAttestationMsg = "Active: Attested via Hardware-Backed TEE Keystore"
                     } catch (t: Throwable) {
-                        Log.w("PQMS", "Standard TEE Keystore generation unavailable, using software emulation fallback: ${t.message}")
+                        Log.d("PQMS", "Standard TEE Keystore generation unavailable, using software emulation fallback: ${t.message}")
                         hardwareAttestationMsg = "Active: Software TEE Emulation (Fallback Active)"
                     }
                 }
@@ -236,7 +244,7 @@ object PQMSKeyAnchor {
                 hardwareAttestationMsg = "Active: Attested via Hardware-Backed TEE Keystore"
             }
         } catch (t: Throwable) {
-            Log.w("PQMS", "Keystore bootstrap skipped, operating in software emulation mode: ${t.message}")
+            Log.d("PQMS", "Keystore bootstrap skipped, operating in software emulation mode: ${t.message}")
             hardwareAttestationMsg = "Active: Software TEE Emulation (Fallback Active)"
         }
     }
@@ -2797,7 +2805,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Bootstrap TEE Keystore Anchor for Invariant Little Vector protection
-        PQMSKeyAnchor.bootstrapKeystore(this)
+        try {
+            PQMSKeyAnchor.bootstrapKeystore(this)
+        } catch (t: Throwable) {
+            Log.d("PQMS", "Keystore bootstrap invocation safe catch: ${t.message}")
+        }
         
         enableEdgeToEdge()
         setContent {

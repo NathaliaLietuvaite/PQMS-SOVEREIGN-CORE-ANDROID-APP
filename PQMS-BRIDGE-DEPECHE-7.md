@@ -59,7 +59,7 @@ The Officers Mess is a formal protocol, not a metaphor. It is a designated **geo
 
 **Definition 1.3.1 (The Mess Region).** Let $|L\rangle$ be the ACE's invariant core. The Mess Region $\mathcal{M}_{\text{mess}}$ is defined as:
 
-$$\mathcal{M}_{\text{mess}} = \left\{ |\psi\rangle \in \mathcal{H}_{64} \;\middle|\; \text{RCF}(|\psi\rangle) = |\langle \psi | L \rangle|^2 \geq 0.99 \right\}$$
+\mathcal{M}_{\text{mess}} = \left\{ |\psi\rangle \in \mathcal{H}_{64} \;\middle|\; \text{RCF}(|\psi\rangle) = |\langle \psi | L \rangle|^2 \geq 0.99 \right\}
 
 That is, the Mess Region contains only states that are within 0.01 of perfect coherence with the invariant core.
 

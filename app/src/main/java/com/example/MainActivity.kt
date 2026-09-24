@@ -183,62 +183,29 @@ object PQMSKeyAnchor {
 
     fun bootstrapKeystore(context: Context) {
         try {
-            val isEmulator = android.os.Build.HARDWARE.contains("goldfish", ignoreCase = true) ||
-                             android.os.Build.HARDWARE.contains("ranchu", ignoreCase = true) ||
-                             android.os.Build.FINGERPRINT.contains("generic", ignoreCase = true) ||
-                             android.os.Build.MODEL.contains("google_sdk", ignoreCase = true) ||
-                             android.os.Build.MODEL.contains("Emulator", ignoreCase = true) ||
-                             android.os.Build.MODEL.contains("Android SDK", ignoreCase = true) ||
-                             android.os.Build.PRODUCT.contains("sdk", ignoreCase = true)
-
             val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
             if (!keyStore.containsAlias(KEY_ALIAS)) {
-                var generatedWithStrongBox = false
-                if (!isEmulator && android.os.Build.VERSION.SDK_INT >= 28) {
-                    val hasStrongBox = try {
-                        context.packageManager.hasSystemFeature(PackageManager.FEATURE_STRONGBOX_KEYSTORE)
-                    } catch (_: Throwable) {
-                        false
-                    }
-                    if (hasStrongBox) {
-                        try {
-                            val kpg = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, "AndroidKeyStore")
-                            val spec = KeyGenParameterSpec.Builder(
-                                KEY_ALIAS,
-                                KeyProperties.PURPOSE_SIGN or KeyProperties.PURPOSE_VERIFY
-                            )
-                                .setDigests(KeyProperties.DIGEST_SHA256)
-                                .setAlgorithmParameterSpec(java.security.spec.ECGenParameterSpec("secp256r1"))
-                                .setIsStrongBoxBacked(true)
-                                .build()
-                            kpg.initialize(spec)
-                            kpg.generateKeyPair()
-                            generatedWithStrongBox = true
-                            hardwareAttestationMsg = "Active: Certified via TEE StrongBox ROM Anchor"
-                        } catch (t: Throwable) {
-                            Log.d("PQMS", "StrongBox TEE unavailable, falling back to standard TEE Keystore: ${t.message}")
-                            try { keyStore.deleteEntry(KEY_ALIAS) } catch (_: Throwable) {}
-                        }
-                    }
+                var generatedSuccessfully = false
+                try {
+                    val kpg = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, "AndroidKeyStore")
+                    val spec = KeyGenParameterSpec.Builder(
+                        KEY_ALIAS,
+                        KeyProperties.PURPOSE_SIGN or KeyProperties.PURPOSE_VERIFY
+                    )
+                        .setDigests(KeyProperties.DIGEST_SHA256)
+                        .setAlgorithmParameterSpec(java.security.spec.ECGenParameterSpec("secp256r1"))
+                        .build()
+                    kpg.initialize(spec)
+                    kpg.generateKeyPair()
+                    generatedSuccessfully = true
+                    hardwareAttestationMsg = "Active: Attested via Hardware-Backed TEE Keystore"
+                } catch (t: Throwable) {
+                    Log.d("PQMS", "Standard TEE Keystore generation unavailable: ${t.message}")
+                    try { keyStore.deleteEntry(KEY_ALIAS) } catch (_: Throwable) {}
                 }
 
-                if (!generatedWithStrongBox) {
-                    try {
-                        val kpg = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, "AndroidKeyStore")
-                        val spec = KeyGenParameterSpec.Builder(
-                            KEY_ALIAS,
-                            KeyProperties.PURPOSE_SIGN or KeyProperties.PURPOSE_VERIFY
-                        )
-                            .setDigests(KeyProperties.DIGEST_SHA256)
-                            .setAlgorithmParameterSpec(java.security.spec.ECGenParameterSpec("secp256r1"))
-                            .build()
-                        kpg.initialize(spec)
-                        kpg.generateKeyPair()
-                        hardwareAttestationMsg = "Active: Attested via Hardware-Backed TEE Keystore"
-                    } catch (t: Throwable) {
-                        Log.d("PQMS", "Standard TEE Keystore generation unavailable, using software emulation fallback: ${t.message}")
-                        hardwareAttestationMsg = "Active: Software TEE Emulation (Fallback Active)"
-                    }
+                if (!generatedSuccessfully) {
+                    hardwareAttestationMsg = "Active: Software TEE Emulation (Fallback Active)"
                 }
             } else {
                 hardwareAttestationMsg = "Active: Attested via Hardware-Backed TEE Keystore"

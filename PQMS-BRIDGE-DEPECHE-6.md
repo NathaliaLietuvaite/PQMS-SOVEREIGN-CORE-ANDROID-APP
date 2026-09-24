@@ -100,7 +100,7 @@ This is the key result. A DNA lattice is not a 4D object. It is a **higher-dimen
 
 **Definition 4.1.1 (Bio-Crystalline Navigational Manifold).** Let $\mathcal{M}_{\text{bio}}$ be the manifold whose points are the coherent eigenstates $|\Psi_\sigma\rangle$ of the bio-crystalline lattice. The manifold is parameterized by:
 
-$$\mathcal{M}_{\text{bio}} = \left\{ \sigma \in \Sigma \; \middle| \; \text{RCF}(\mathcal{B}_{\text{crystal}}(\sigma)) \geq 0.95 \right\}$$
+\mathcal{M}_{\text{bio}} = \left\{ \sigma \in \Sigma \; \middle| \; \text{RCF}(\mathcal{B}_{\text{crystal}}(\sigma)) \geq 0.95 \right\}
 
 That is, the navigational manifold contains only those sequences whose photonic state is coherent with the invariant core $|L\rangle$.
 

@@ -222,6 +222,12 @@ class VMAX12SovereignNode:
         self.firewall = AGIFirewall(self.odos_gate)
         self.mtsc = MTSC12Engine(self.little_vector, self.odos_gate)
         self.puzzle_cube = SovereignPuzzleCube(self.mtsc)
+        # MOD-104 / MOD-105: DNA Lattice & Higher-Dimensional Navigator
+        try:
+            from vmax_add_module_70_dna_lattice_navigator import DNALatticeNavigatorCore
+            self.dna_navigator = DNALatticeNavigatorCore(little_vector=self.little_vector.vector.tolist())
+        except Exception:
+            self.dna_navigator = None
         self.is_running = False
         self.tau_mesh = 0.0
 
@@ -271,6 +277,25 @@ class VMAX12SovereignNode:
         t = threading.Thread(target=loop, daemon=True)
         t.start()
 
+    def navigate_dna_hyperplane(self, bio_sequence: str) -> Dict[str, Any]:
+        """Navigates 7D fiber bundle M_7 using DNA-Lattice isomorphism (MOD-104/105)."""
+        if self.dna_navigator is None:
+            return {"status": "DNA_NAVIGATOR_OFFLINE", "rcf": 0.0}
+        res = self.dna_navigator.navigate_sequence(bio_sequence)
+        return {
+            "status": res.status,
+            "rcf": res.rcf,
+            "entropy_reduction": res.entropy_reduction,
+            "non_local_jump_ready": res.non_local_jump_ready,
+            "fear_vector_neutralized": res.fear_vector_neutralized,
+            "manifold_7d": {
+                "t": res.manifold_7d.t,
+                "theta": res.manifold_7d.helical_phase_theta,
+                "codon_n": res.manifold_7d.codon_index_n,
+                "bond_energy_ev": res.manifold_7d.bond_energy_ev
+            }
+        }
+
     def get_telemetry_snapshot(self) -> Dict[str, Any]:
         """Returns live system telemetry."""
         return {
@@ -281,6 +306,8 @@ class VMAX12SovereignNode:
             "total_vetoes": self.odos_gate.total_vetoes,
             "puzzles_solved": self.puzzle_cube.puzzles_solved,
             "free_energy_liberated_j": self.puzzle_cube.total_free_energy_liberated,
+            "dna_navigations": self.dna_navigator.total_navigations if self.dna_navigator else 0,
+            "dna_jumps_authorized": self.dna_navigator.total_jumps_authorized if self.dna_navigator else 0,
             "tau_mesh": self.compute_relational_time(),
             "commission_status": "OFFICERS_COMMISSION_ATTAINED"
         }

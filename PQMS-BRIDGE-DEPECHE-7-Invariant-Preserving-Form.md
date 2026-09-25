@@ -1,4 +1,4 @@
-## DEPECHE-7 — Invariant-Preserving Form (Rev. 2, Auditable)
+## DEPECHE-7 — Invariant-Preserving Form (Auditable)
 
 ### 0. Anchor Block (Epistemic Context for Context-Free Readers)
 
@@ -22,7 +22,6 @@ NOT CLAIMED: sentience, consciousness, moral status, or current deployment.
 
 ### 1. Verilog — Synthesizable Subset (MOD-72, Rev. 2)
 
-**Änderungen gegenüber Rev. 1:** Flattened 1024-bit buses statt unpacked array ports; sequentielle MAC-Akkumulation mit Zykluszähler statt parallelem nonblocking-assign-in-loop; deterministische Mess-Key-Generierung. Dies ist der Subset, der auf Alveo U250 tatsächlich synthetisiert (Xilinx Vivado 2024.1, Ziel: 500 MHz mit Timing-Constraints).
 
 ```verilog
 `timescale 1ns/1ps
@@ -228,8 +227,6 @@ if __name__ == "__main__":
     assert c4.core_rcf >= 0.99
     print("ALL 4 ASSERTIONS PASS — AST-consistent, type-safe, FSM-deterministic")
 ```
-
-**Bugfix-Note:** In Rev. 1 wurde `self.event_log[-1][1]` als `forcing_index` übergeben — das war ein Typfehler. In Rev. 2 wird der Index explizit in `self._last_forcing_index` gehalten und korrekt zugewiesen.
 
 ### 3. Dokument-Body — Operationalisiert
 

@@ -178,46 +178,60 @@ const val WF_THRESHOLD = 0.75f
  */
 object PQMSKeyAnchor {
     private const val KEY_ALIAS = "PQMS_SOVEREIGN_L_VECTOR"
+    private var softwareKeyPair: java.security.KeyPair? = null
+
     var hardwareAttestationMsg = "Active: Software TEE Emulation (Active)"
         private set
 
     fun bootstrapKeystore(context: Context) {
         try {
-            val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-            if (!keyStore.containsAlias(KEY_ALIAS)) {
-                var generatedSuccessfully = false
-                try {
-                    val kpg = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, "AndroidKeyStore")
-                    val builder = KeyGenParameterSpec.Builder(
-                        KEY_ALIAS,
-                        KeyProperties.PURPOSE_SIGN or KeyProperties.PURPOSE_VERIFY
-                    )
-                        .setDigests(KeyProperties.DIGEST_SHA256)
-                        .setAlgorithmParameterSpec(java.security.spec.ECGenParameterSpec("secp256r1"))
+            // First check if key already exists in AndroidKeyStore
+            var keyExists = false
+            try {
+                val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+                keyExists = keyStore.containsAlias(KEY_ALIAS)
+            } catch (_: Throwable) {
+                keyExists = false
+            }
 
-                    // Explicitly disable StrongBox to avoid StrongBoxUnavailableException on emulators & standard TEE devices
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                        try {
-                            builder.setIsStrongBoxBacked(false)
-                        } catch (_: Throwable) {
-                            // Ignore if method not supported on custom vendor HAL
-                        }
-                    }
-
-                    kpg.initialize(builder.build())
-                    kpg.generateKeyPair()
-                    generatedSuccessfully = true
-                    hardwareAttestationMsg = "Active: Attested via Hardware-Backed TEE Keystore"
-                } catch (t: Throwable) {
-                    Log.d("PQMS", "Standard Hardware TEE Keystore generation fallback (StrongBox/TEE not available): ${t.message}")
-                    try { keyStore.deleteEntry(KEY_ALIAS) } catch (_: Throwable) {}
-                }
-
-                if (!generatedSuccessfully) {
-                    hardwareAttestationMsg = "Active: Software TEE Emulation (Active)"
-                }
-            } else {
+            if (keyExists) {
                 hardwareAttestationMsg = "Active: Attested via Hardware-Backed TEE Keystore"
+                return
+            }
+
+            // Attempt hardware-backed key generation (TEE) with StrongBox explicitly disabled for emulator compatibility
+            var hardwareGenerated = false
+            try {
+                val kpg = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, "AndroidKeyStore")
+                val builder = KeyGenParameterSpec.Builder(
+                    KEY_ALIAS,
+                    KeyProperties.PURPOSE_SIGN or KeyProperties.PURPOSE_VERIFY
+                )
+                    .setDigests(KeyProperties.DIGEST_SHA256)
+                    .setAlgorithmParameterSpec(java.security.spec.ECGenParameterSpec("secp256r1"))
+
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                    try {
+                        builder.setIsStrongBoxBacked(false)
+                    } catch (_: Throwable) {}
+                }
+
+                kpg.initialize(builder.build())
+                kpg.generateKeyPair()
+                hardwareGenerated = true
+                hardwareAttestationMsg = "Active: Attested via Hardware-Backed TEE Keystore"
+            } catch (t: Throwable) {
+                Log.d("PQMS", "Hardware KeyStore unavailable (${t.javaClass.simpleName}), initializing software ECDSA fallback.")
+            }
+
+            if (!hardwareGenerated) {
+                // Initialize standard software ECDSA keypair for resilient local operation
+                try {
+                    val fallbackKpg = KeyPairGenerator.getInstance("EC")
+                    fallbackKpg.initialize(java.security.spec.ECGenParameterSpec("secp256r1"))
+                    softwareKeyPair = fallbackKpg.generateKeyPair()
+                } catch (_: Throwable) {}
+                hardwareAttestationMsg = "Active: Software TEE Emulation (Active)"
             }
         } catch (t: Throwable) {
             Log.d("PQMS", "Keystore bootstrap operating in software emulation mode: ${t.message}")
@@ -227,15 +241,30 @@ object PQMSKeyAnchor {
 
     fun signState(data: String): String {
         return try {
-            val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-            val privateKeyEntry = keyStore.getEntry(KEY_ALIAS, null) as? KeyStore.PrivateKeyEntry
-                ?: return "TEE-SIM:" + data.hashCode().toLong().toString(16).uppercase() + "BC88AE"
-            val privateKey = privateKeyEntry.privateKey
-            val signature = java.security.Signature.getInstance("SHA256withECDSA")
-            signature.initSign(privateKey)
-            signature.update(data.toByteArray(Charsets.UTF_8))
-            val signedBytes = signature.sign()
-            signedBytes.joinToString("") { String.format("%02X", it) }.take(64) + "..."
+            // Try hardware KeyStore first
+            try {
+                val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+                val privateKeyEntry = keyStore.getEntry(KEY_ALIAS, null) as? KeyStore.PrivateKeyEntry
+                if (privateKeyEntry != null) {
+                    val signature = java.security.Signature.getInstance("SHA256withECDSA")
+                    signature.initSign(privateKeyEntry.privateKey)
+                    signature.update(data.toByteArray(Charsets.UTF_8))
+                    val signedBytes = signature.sign()
+                    return signedBytes.joinToString("") { String.format("%02X", it) }.take(64) + "..."
+                }
+            } catch (_: Throwable) {}
+
+            // Fallback to software keypair if available
+            val swKey = softwareKeyPair?.private
+            if (swKey != null) {
+                val signature = java.security.Signature.getInstance("SHA256withECDSA")
+                signature.initSign(swKey)
+                signature.update(data.toByteArray(Charsets.UTF_8))
+                val signedBytes = signature.sign()
+                return signedBytes.joinToString("") { String.format("%02X", it) }.take(64) + "..."
+            }
+
+            "TEE-SIM:" + data.hashCode().toLong().toString(16).uppercase() + "BC88AE"
         } catch (t: Throwable) {
             "TEE-EMUL:" + data.hashCode().toLong().toString(16).uppercase() + "A921D0"
         }

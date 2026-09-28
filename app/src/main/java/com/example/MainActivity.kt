@@ -184,21 +184,47 @@ object PQMSKeyAnchor {
         private set
 
     private fun isEmulator(): Boolean {
-        return (android.os.Build.FINGERPRINT.startsWith("generic")
-                || android.os.Build.FINGERPRINT.startsWith("unknown")
-                || android.os.Build.MODEL.contains("google_sdk")
-                || android.os.Build.MODEL.contains("Emulator")
-                || android.os.Build.MODEL.contains("Android SDK built for")
-                || android.os.Build.MANUFACTURER.contains("Genymotion")
-                || (android.os.Build.BRAND.startsWith("generic") && android.os.Build.DEVICE.startsWith("generic"))
-                || android.os.Build.PRODUCT.contains("sdk")
-                || android.os.Build.HARDWARE.contains("goldfish")
-                || android.os.Build.HARDWARE.contains("ranchu"))
+        val fingerprint = android.os.Build.FINGERPRINT.lowercase()
+        val model = android.os.Build.MODEL.lowercase()
+        val manufacturer = android.os.Build.MANUFACTURER.lowercase()
+        val brand = android.os.Build.BRAND.lowercase()
+        val device = android.os.Build.DEVICE.lowercase()
+        val product = android.os.Build.PRODUCT.lowercase()
+        val hardware = android.os.Build.HARDWARE.lowercase()
+        val board = android.os.Build.BOARD.lowercase()
+
+        return (fingerprint.startsWith("generic")
+                || fingerprint.startsWith("unknown")
+                || fingerprint.contains("test-keys")
+                || fingerprint.contains("vbox")
+                || fingerprint.contains("cuttlefish")
+                || model.contains("google_sdk")
+                || model.contains("emulator")
+                || model.contains("simulator")
+                || model.contains("android sdk built for")
+                || model.contains("cuttlefish")
+                || manufacturer.contains("genymotion")
+                || (brand.startsWith("generic") && device.startsWith("generic"))
+                || product.contains("sdk")
+                || product.contains("google_sdk")
+                || product.contains("emulator")
+                || product.contains("simulator")
+                || product.contains("cuttlefish")
+                || product.contains("cf_")
+                || product.contains("vbox")
+                || hardware.contains("goldfish")
+                || hardware.contains("ranchu")
+                || hardware.contains("cutf")
+                || hardware.contains("vsoc")
+                || board.contains("cutf")
+                || board.contains("vsoc")
+                || device.contains("vsoc")
+                || device.contains("cutf"))
     }
 
     fun bootstrapKeystore(context: Context) {
         try {
-            // In emulator environments, hardware TEE / StrongBox is not physically present.
+            // In emulator/virtual environments, hardware TEE / StrongBox is not physically present.
             // Directly use software ECDSA key generation to avoid platform KeyStore exceptions.
             if (isEmulator()) {
                 initSoftwareKey()
@@ -241,15 +267,15 @@ object PQMSKeyAnchor {
                 kpg.generateKeyPair()
                 hardwareGenerated = true
                 hardwareAttestationMsg = "Active: Attested via Hardware-Backed TEE Keystore"
-            } catch (t: Throwable) {
-                Log.d("PQMS", "Hardware KeyStore unavailable, initializing software ECDSA fallback.")
+            } catch (_: Throwable) {
+                hardwareGenerated = false
             }
 
             if (!hardwareGenerated) {
                 initSoftwareKey()
                 hardwareAttestationMsg = "Active: Software TEE Emulation (Active)"
             }
-        } catch (t: Throwable) {
+        } catch (_: Throwable) {
             initSoftwareKey()
             hardwareAttestationMsg = "Active: Software TEE Emulation (Active)"
         }

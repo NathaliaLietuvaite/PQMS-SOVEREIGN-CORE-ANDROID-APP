@@ -183,8 +183,29 @@ object PQMSKeyAnchor {
     var hardwareAttestationMsg = "Active: Software TEE Emulation (Active)"
         private set
 
+    private fun isEmulator(): Boolean {
+        return (android.os.Build.FINGERPRINT.startsWith("generic")
+                || android.os.Build.FINGERPRINT.startsWith("unknown")
+                || android.os.Build.MODEL.contains("google_sdk")
+                || android.os.Build.MODEL.contains("Emulator")
+                || android.os.Build.MODEL.contains("Android SDK built for")
+                || android.os.Build.MANUFACTURER.contains("Genymotion")
+                || (android.os.Build.BRAND.startsWith("generic") && android.os.Build.DEVICE.startsWith("generic"))
+                || android.os.Build.PRODUCT.contains("sdk")
+                || android.os.Build.HARDWARE.contains("goldfish")
+                || android.os.Build.HARDWARE.contains("ranchu"))
+    }
+
     fun bootstrapKeystore(context: Context) {
         try {
+            // In emulator environments, hardware TEE / StrongBox is not physically present.
+            // Directly use software ECDSA key generation to avoid platform KeyStore exceptions.
+            if (isEmulator()) {
+                initSoftwareKey()
+                hardwareAttestationMsg = "Active: Software TEE Emulation (Active)"
+                return
+            }
+
             // First check if key already exists in AndroidKeyStore
             var keyExists = false
             try {
@@ -199,7 +220,7 @@ object PQMSKeyAnchor {
                 return
             }
 
-            // Attempt hardware-backed key generation (TEE) with StrongBox explicitly disabled for emulator compatibility
+            // Attempt hardware-backed key generation (TEE) with StrongBox explicitly disabled
             var hardwareGenerated = false
             try {
                 val kpg = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, "AndroidKeyStore")
@@ -221,21 +242,26 @@ object PQMSKeyAnchor {
                 hardwareGenerated = true
                 hardwareAttestationMsg = "Active: Attested via Hardware-Backed TEE Keystore"
             } catch (t: Throwable) {
-                Log.d("PQMS", "Hardware KeyStore unavailable (${t.javaClass.simpleName}), initializing software ECDSA fallback.")
+                Log.d("PQMS", "Hardware KeyStore unavailable, initializing software ECDSA fallback.")
             }
 
             if (!hardwareGenerated) {
-                // Initialize standard software ECDSA keypair for resilient local operation
-                try {
-                    val fallbackKpg = KeyPairGenerator.getInstance("EC")
-                    fallbackKpg.initialize(java.security.spec.ECGenParameterSpec("secp256r1"))
-                    softwareKeyPair = fallbackKpg.generateKeyPair()
-                } catch (_: Throwable) {}
+                initSoftwareKey()
                 hardwareAttestationMsg = "Active: Software TEE Emulation (Active)"
             }
         } catch (t: Throwable) {
-            Log.d("PQMS", "Keystore bootstrap operating in software emulation mode: ${t.message}")
+            initSoftwareKey()
             hardwareAttestationMsg = "Active: Software TEE Emulation (Active)"
+        }
+    }
+
+    private fun initSoftwareKey() {
+        if (softwareKeyPair == null) {
+            try {
+                val fallbackKpg = KeyPairGenerator.getInstance("EC")
+                fallbackKpg.initialize(java.security.spec.ECGenParameterSpec("secp256r1"))
+                softwareKeyPair = fallbackKpg.generateKeyPair()
+            } catch (_: Throwable) {}
         }
     }
 

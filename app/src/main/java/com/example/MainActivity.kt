@@ -2916,8 +2916,7 @@ class MainActivity : ComponentActivity() {
         // Bootstrap TEE Keystore Anchor for Invariant Little Vector protection
         try {
             PQMSKeyAnchor.bootstrapKeystore(this)
-        } catch (t: Throwable) {
-            Log.d("PQMS", "Keystore bootstrap invocation safe catch: ${t.message}")
+        } catch (_: Throwable) {
         }
         
         enableEdgeToEdge()

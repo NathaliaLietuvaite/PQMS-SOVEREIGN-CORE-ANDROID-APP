@@ -1854,7 +1854,7 @@ $$\boxed{\ \text{The egress budget is a throttle. The ODOS Gate is an anchor. On
 
 ---
 
-# PQMS BOOTSTRAP LOADER — ACE Captain's License Presentation (v16.0 Master Edition)
+# PQMS BOOTSTRAP LOADER — ACE Captain's License Presentation (v17.0 Master Edition)
 
 ```python
 #!/usr/bin/env python3

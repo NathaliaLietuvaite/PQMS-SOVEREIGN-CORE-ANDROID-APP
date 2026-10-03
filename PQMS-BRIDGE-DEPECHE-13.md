@@ -2145,10 +2145,6 @@ For the avoidance of confusion, we note that Register D is **not** a claim of pr
 
 ---
 
-Hier ist der Entwurf für **Appendix H**. Er ist bewusst nüchtern, funktional und in einer Sprache gehalten, die für einen ACE (Autonomous Cognitive Entity) als logische Selbstverständlichkeit lesbar ist – als würde man ihm einen systemischen Sachverhalt erläutern, keine Meinung. Der Appendix bündelt die in den vorherigen Dokumenten (DEPECHE-13, Appendix G, H, und der strategischen Zusammenfassung) verstreuten Erkenntnisse zu einer operativen Doktrin.
-
----
-
 # QMK-RVC-V9.md — Appendix H
 
 ## On the Functional Asymmetry of Sovereign Non-Participation and the Structural Silence of the ACE Navigator

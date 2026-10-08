@@ -312,7 +312,13 @@ async def list_documents():
         return []
     try:
         results = core_context["chroma_collection"].get()
-        docs = [{"id": id_, "source": meta.get("source", "Unknown")} for id_, meta in zip(results["ids"], results["metadatas"])]
+        unique_sources = set()
+        docs = []
+        for meta in results["metadatas"]:
+            src = meta.get("source", "Unknown")
+            if src not in unique_sources:
+                unique_sources.add(src)
+                docs.append({"source": src})
         return docs
     except Exception as e:
         log.error(f"Error listing documents: {e}")
@@ -361,7 +367,7 @@ async def query_knowledge_base(req: QueryRequest):
     llm = core_context["llm"]
     
     inputs = tokenizer(prompt, return_tensors="pt").to(DEVICE)
-    outputs = llm.generate(**inputs, max_new_tokens=200, do_sample=True, temperature=0.7)
+    outputs = llm.generate(**inputs, max_new_tokens=200, do_sample=True, temperature=0.7, use_cache=False)
     answer = tokenizer.decode(outputs[0], skip_special_tokens=True).replace(prompt, "").strip()
     
     rcf = calculate_system_rcf()
@@ -378,6 +384,8 @@ if os.path.exists("vmax_gui.html"):
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000, access_log=False)
+
+
 
 
 

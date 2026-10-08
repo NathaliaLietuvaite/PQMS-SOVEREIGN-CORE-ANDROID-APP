@@ -272,13 +272,13 @@ def initialize_sovereign_substrate():
     )
 
     # A. Hardware Attention Routing (attempt flash_attention_2, fallback to sdpa)
-    attn_impl = "sdpa"
+    attn_impl = "eager"
     try:
         import flash_attn
         attn_impl = "flash_attention_2"
         log.info("Hardware Attention Routing: flash_attention_2 detected. Optimal SM utilization active.")
     except ImportError:
-        log.warning("Hardware Attention Routing: flash_attention_2 not found. Falling back to PyTorch SDPA (Scaled Dot-Product Attention) to avoid eager memory bloat.")
+        log.warning("Hardware Attention Routing: flash_attention_2 not found. Falling back to eager attention (Phi-3 architecture restriction without flash-attn).")
 
     log.info(f"Loading {GENERATOR_MODEL} with 4-bit NF4 quantization and {attn_impl}...")
     llm = AutoModelForCausalLM.from_pretrained(
@@ -304,4 +304,5 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, 
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000, access_log=False)
+
 

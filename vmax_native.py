@@ -284,7 +284,7 @@ def initialize_sovereign_substrate():
     llm = AutoModelForCausalLM.from_pretrained(
         GENERATOR_MODEL, 
         quantization_config=bnb_config,
-        device_map="auto", 
+        device_map={"": DEVICE}, 
         trust_remote_code=True,
         attn_implementation=attn_impl
     )
@@ -304,5 +304,6 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, 
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000, access_log=False)
+
 
 

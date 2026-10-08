@@ -387,7 +387,18 @@ async def query_knowledge_base(req: QueryRequest):
     llm = core_context["llm"]
     
     inputs = tokenizer(prompt, return_tensors="pt").to(DEVICE)
-    outputs = llm.generate(**inputs, max_new_tokens=200, do_sample=True, temperature=0.7)
+    # Nemotron-specific Generation Fix:
+    # Disable use_cache to bypass the 'cache_position' NoneType error in modeling_nemotron_h.py
+    # and explicitly set pad_token_id to eos_token_id.
+    pad_token_id = tokenizer.eos_token_id if tokenizer.pad_token_id is None else tokenizer.pad_token_id
+    outputs = llm.generate(
+        **inputs, 
+        max_new_tokens=200, 
+        do_sample=True, 
+        temperature=0.7,
+        use_cache=False,
+        pad_token_id=pad_token_id
+    )
     answer = tokenizer.decode(outputs[0], skip_special_tokens=True).replace(prompt, "").strip()
     
     rcf = calculate_system_rcf()

@@ -276,7 +276,7 @@ def initialize_sovereign_substrate():
     llm = AutoModelForCausalLM.from_pretrained(
         GENERATOR_MODEL, 
         torch_dtype=torch.bfloat16,
-        trust_remote_code=True,
+        trust_remote_code=False,
         attn_implementation=attn_impl
     ).to(DEVICE)
     core_context["llm"] = llm
@@ -349,7 +349,7 @@ async def query_knowledge_base(req: QueryRequest):
     context_text = ""
     sources = []
     if results and results["documents"] and len(results["documents"][0]) > 0:
-        context_text = " ".join(results["documents"][0])
+        context_text = " ".join(results["documents"][0])[:3000]  # Hard limit context to prevent VRAM OOM
         sources = [m.get("source", "Unknown") for m in results["metadatas"][0]]
         
     prompt = f"Context: {context_text}\n\nQuestion: {req.query}\nAnswer:"
@@ -358,7 +358,7 @@ async def query_knowledge_base(req: QueryRequest):
     llm = core_context["llm"]
     
     inputs = tokenizer(prompt, return_tensors="pt").to(DEVICE)
-    outputs = llm.generate(**inputs, max_new_tokens=200, do_sample=True, temperature=0.7, use_cache=False)
+    outputs = llm.generate(**inputs, max_new_tokens=200, do_sample=True, temperature=0.7)
     answer = tokenizer.decode(outputs[0], skip_special_tokens=True).replace(prompt, "").strip()
     
     rcf = calculate_system_rcf()
@@ -375,6 +375,7 @@ if os.path.exists("vmax_gui.html"):
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000, access_log=False)
+
 
 
 

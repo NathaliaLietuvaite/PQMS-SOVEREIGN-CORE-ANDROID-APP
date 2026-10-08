@@ -37,7 +37,7 @@ import torch
 import torch.nn as nn
 import chromadb
 from sentence_transformers import SentenceTransformer
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 from fastapi import FastAPI, File, UploadFile, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -217,7 +217,45 @@ def initialize_sovereign_substrate():
         loss.backward()
         optimizer.step()
         
+    embedder = SentenceTransformer(EMBED_MODEL, device=DEVICE)
+    core_context["embedder"] = embedder
+    
+    chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
+    core_context["chroma_client"] = chroma_client
+    core_context["chroma_collection"] = chroma_client.get_or_create_collection("pqms_corpus")
+    
+    tokenizer = AutoTokenizer.from_pretrained(GENERATOR_MODEL, trust_remote_code=True)
+    core_context["tokenizer"] = tokenizer
+        
+    # --- B.4.1 VRAM Optimization (bitsandbytes 4-bit NF4) & Flash-Attention Fallback ---
+    # B.4.1: Quantization config
+    bnb_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_compute_dtype=torch.bfloat16,
+        bnb_4bit_quant_type="nf4",
+        bnb_4bit_use_double_quant=True
+    )
+
+    # A. Hardware Attention Routing (attempt flash_attention_2, fallback to sdpa)
+    attn_impl = "sdpa"
+    try:
+        import flash_attn
+        attn_impl = "flash_attention_2"
+        log.info("Hardware Attention Routing: flash_attention_2 detected. Optimal SM utilization active.")
+    except ImportError:
+        log.warning("Hardware Attention Routing: flash_attention_2 not found. Falling back to PyTorch SDPA (Scaled Dot-Product Attention) to avoid eager memory bloat.")
+
+    log.info(f"Loading {GENERATOR_MODEL} with 4-bit NF4 quantization and {attn_impl}...")
+    llm = AutoModelForCausalLM.from_pretrained(
+        GENERATOR_MODEL, 
+        quantization_config=bnb_config,
+        device_map="auto", 
+        trust_remote_code=True,
+        attn_implementation=attn_impl
+    )
+    core_context["llm"] = llm
     core_context["app"] = app
+
     threading.Thread(target=_hot_plug_daemon, daemon=True).start()
     log.info("Core Engine bereit. Warte auf Hot-Plug Module...")
 

@@ -72,6 +72,41 @@ def get_gpu_telemetry():
 compute_telemetry = get_gpu_telemetry()
 log.info(f"Compute Core instantiated on: {compute_telemetry['model']} ({compute_telemetry['vram_gb']}GB VRAM)")
 
+class ThreadSafeChromaCollection:
+    def __init__(self, collection, lock):
+        self._collection = collection
+        self._lock = lock
+        
+    def add(self, *args, **kwargs):
+        with self._lock: return self._collection.add(*args, **kwargs)
+    def delete(self, *args, **kwargs):
+        with self._lock: return self._collection.delete(*args, **kwargs)
+    def get(self, *args, **kwargs):
+        with self._lock: return self._collection.get(*args, **kwargs)
+    def query(self, *args, **kwargs):
+        with self._lock: return self._collection.query(*args, **kwargs)
+    def __getattr__(self, name):
+        return getattr(self._collection, name)
+
+class ThreadSafeChromaClient:
+    def __init__(self, client):
+        self._client = client
+        self._lock = threading.Lock()
+        self._collections = {}
+        
+    def get_or_create_collection(self, name, *args, **kwargs):
+        with self._lock:
+            col = self._client.get_or_create_collection(name, *args, **kwargs)
+            if name not in self._collections:
+                self._collections[name] = ThreadSafeChromaCollection(col, self._lock)
+            return self._collections[name]
+            
+    def list_collections(self):
+        with self._lock: return self._client.list_collections()
+        
+    def __getattr__(self, name):
+        return getattr(self._client, name)
+
 class LittleVector(nn.Module):
     def __init__(self, dim=DIM):
         super().__init__()
@@ -269,3 +304,4 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, 
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000, access_log=False)
+

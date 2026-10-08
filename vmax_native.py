@@ -262,32 +262,23 @@ def initialize_sovereign_substrate():
     tokenizer = AutoTokenizer.from_pretrained(GENERATOR_MODEL, trust_remote_code=True)
     core_context["tokenizer"] = tokenizer
         
-    # --- B.4.1 VRAM Optimization (bitsandbytes 4-bit NF4) & Flash-Attention Fallback ---
-    # B.4.1: Quantization config
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_compute_dtype=torch.bfloat16,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_use_double_quant=True
-    )
-
-    # A. Hardware Attention Routing (attempt flash_attention_2, fallback to sdpa)
-    attn_impl = "eager"
+    # --- Native VRAM Allocation (16GB Substrate) ---
+    attn_impl = "sdpa"
     try:
         import flash_attn
         attn_impl = "flash_attention_2"
-        log.info("Hardware Attention Routing: flash_attention_2 detected. Optimal SM utilization active.")
+        log.info("Hardware Attention Routing: flash_attention_2 detected.")
     except ImportError:
-        log.warning("Hardware Attention Routing: flash_attention_2 not found. Falling back to eager attention (Phi-3 architecture restriction without flash-attn).")
+        attn_impl = "eager"
+        log.warning("Hardware Attention Routing: flash_attention_2 not found. Falling back to eager.")
 
-    log.info(f"Loading {GENERATOR_MODEL} with 4-bit NF4 quantization and {attn_impl}...")
+    log.info(f"Loading {GENERATOR_MODEL} natively in bfloat16 on {DEVICE} with {attn_impl}...")
     llm = AutoModelForCausalLM.from_pretrained(
         GENERATOR_MODEL, 
-        quantization_config=bnb_config,
-        device_map="auto", 
+        torch_dtype=torch.bfloat16,
         trust_remote_code=True,
         attn_implementation=attn_impl
-    )
+    ).to(DEVICE)
     core_context["llm"] = llm
     core_context["app"] = app
 
@@ -384,6 +375,8 @@ if os.path.exists("vmax_gui.html"):
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000, access_log=False)
+
+
 
 
 

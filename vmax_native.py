@@ -322,9 +322,19 @@ async def upload_document(file: UploadFile = File(...)):
     content = await file.read()
     text = content.decode("utf-8", errors="ignore")
     
-    # Simple chunking
-    chunk_size = 500
-    chunks = [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
+    # V-MAX-12 Semantic Chunking (Paragraph-aware)
+    paragraphs = text.replace('\r', '').split('\n')
+    chunks = []
+    current_chunk = ""
+    for p in paragraphs:
+        if not p.strip(): continue
+        if len(current_chunk) + len(p) > 600:
+            if current_chunk: chunks.append(current_chunk.strip())
+            current_chunk = p + "\n"
+        else:
+            current_chunk += p + "\n"
+    if current_chunk.strip():
+        chunks.append(current_chunk.strip())
     embeddings = core_context["embedder"].encode(chunks).tolist()
     
     ids = [f"{file.filename}_{i}" for i in range(len(chunks))]
@@ -344,13 +354,32 @@ async def query_knowledge_base(req: QueryRequest):
         raise HTTPException(status_code=500, detail="Sovereign Core not ready")
         
     query_emb = core_context["embedder"].encode([req.query]).tolist()
-    results = core_context["chroma_collection"].query(query_embeddings=query_emb, n_results=3)
+    # V-MAX-12 Efficient Context Packer
+    results = core_context["chroma_collection"].query(query_embeddings=query_emb, n_results=6)
     
     context_text = ""
     sources = []
     if results and results["documents"] and len(results["documents"][0]) > 0:
-        context_text = " ".join(results["documents"][0])[:3000]  # Hard limit context to prevent VRAM OOM
-        sources = [m.get("source", "Unknown") for m in results["metadatas"][0]]
+        budget = 3000
+        current_len = 0
+        packed_chunks = []
+        for i, doc in enumerate(results["documents"][0]):
+            doc_len = len(doc)
+            source_meta = results["metadatas"][0][i].get("source", "Unknown") if i < len(results["metadatas"][0]) else "Unknown"
+            
+            if current_len + doc_len <= budget:
+                packed_chunks.append(f"[{source_meta}]: {doc}")
+                current_len += doc_len + len(source_meta) + 4
+                sources.append(source_meta)
+            else:
+                # Truncate at word boundary to fill budget gracefully
+                remaining = budget - current_len
+                if remaining > 100:
+                    truncated = doc[:remaining].rsplit(' ', 1)[0] + "..."
+                    packed_chunks.append(f"[{source_meta}]: {truncated}")
+                    sources.append(source_meta)
+                break
+        context_text = "\n\n".join(packed_chunks)
         
     prompt = f"Context: {context_text}\n\nQuestion: {req.query}\nAnswer:"
     

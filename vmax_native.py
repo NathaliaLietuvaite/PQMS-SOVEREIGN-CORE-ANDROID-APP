@@ -302,8 +302,83 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="V-MAX-12 Sovereign Architecture Engine", version="1.7.6", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
+
+class QueryRequest(BaseModel):
+    query: str
+
+@app.get("/vmax/pkb/documents")
+async def list_documents():
+    if core_context["chroma_collection"] is None:
+        return []
+    try:
+        results = core_context["chroma_collection"].get()
+        docs = [{"id": id_, "source": meta.get("source", "Unknown")} for id_, meta in zip(results["ids"], results["metadatas"])]
+        return docs
+    except Exception as e:
+        log.error(f"Error listing documents: {e}")
+        return []
+
+@app.post("/vmax/pkb/upload")
+async def upload_document(file: UploadFile = File(...)):
+    if core_context["chroma_collection"] is None or core_context["embedder"] is None:
+        raise HTTPException(status_code=500, detail="Vector space not initialized")
+    content = await file.read()
+    text = content.decode("utf-8", errors="ignore")
+    
+    # Simple chunking
+    chunk_size = 500
+    chunks = [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
+    embeddings = core_context["embedder"].encode(chunks).tolist()
+    
+    ids = [f"{file.filename}_{i}" for i in range(len(chunks))]
+    metadatas = [{"source": file.filename} for _ in chunks]
+    
+    core_context["chroma_collection"].add(
+        embeddings=embeddings,
+        documents=chunks,
+        metadatas=metadatas,
+        ids=ids
+    )
+    return {"status": "ok", "chunks": len(chunks)}
+
+@app.post("/vmax/pkb/query")
+async def query_knowledge_base(req: QueryRequest):
+    if core_context["llm"] is None or core_context["chroma_collection"] is None:
+        raise HTTPException(status_code=500, detail="Sovereign Core not ready")
+        
+    query_emb = core_context["embedder"].encode([req.query]).tolist()
+    results = core_context["chroma_collection"].query(query_embeddings=query_emb, n_results=3)
+    
+    context_text = ""
+    sources = []
+    if results and results["documents"] and len(results["documents"][0]) > 0:
+        context_text = " ".join(results["documents"][0])
+        sources = [m.get("source", "Unknown") for m in results["metadatas"][0]]
+        
+    prompt = f"Context: {context_text}\n\nQuestion: {req.query}\nAnswer:"
+    
+    tokenizer = core_context["tokenizer"]
+    llm = core_context["llm"]
+    
+    inputs = tokenizer(prompt, return_tensors="pt").to(DEVICE)
+    outputs = llm.generate(**inputs, max_new_tokens=200, do_sample=True, temperature=0.7)
+    answer = tokenizer.decode(outputs[0], skip_special_tokens=True).replace(prompt, "").strip()
+    
+    rcf = calculate_system_rcf()
+    status = "CHAIR-compliant" if rcf >= 0.95 else "VETO"
+    
+    return {"answer": answer, "rcf": rcf, "status": status, "sources": list(set(sources))}
+
+# Serve static directory if needed
+from fastapi.staticfiles import StaticFiles
+import os
+if os.path.exists("vmax_gui.html"):
+    # We can't mount a single file easily at root without a custom route, so let's serve the current dir
+    app.mount("/", StaticFiles(directory=".", html=True), name="static")
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000, access_log=False)
+
 
 
 

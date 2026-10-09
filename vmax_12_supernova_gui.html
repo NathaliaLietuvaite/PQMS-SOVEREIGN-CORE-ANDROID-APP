@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V-MAX-12 | SUPERNOVA Interface</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #f8fafc;
+            --bg-card: #ffffff;
+            --bg-side: #1e293b; /* Dunklere Seitenleiste für Supernova-Vibe */
+            --primary: #f59e0b; /* Sternenfeuer-Amber */
+            --primary-hover: #d97706;
+            --text-main: #0f172a;
+            --text-side: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: var(--bg-main); 
+            color: var(--text-main); 
+            height: 100vh; 
+            display: flex; 
+            overflow: hidden; 
+        }
+
+        /* Strukturierte Sidebar */
+        .sidebar { 
+            width: 380px; 
+            background: var(--bg-side); 
+            border-right: 1px solid var(--border); 
+            display: flex; 
+            flex-direction: column; 
+            padding: 28px;
+            color: var(--text-side);
+        }
+
+        .logo-area { margin-bottom: 32px; }
+        .logo-area h2 { font-weight: 600; color: var(--primary); letter-spacing: -0.5px; }
+        .logo-area p { font-size: 0.85em; color: var(--text-muted); }
+
+        .upload-zone { 
+            border: 2px dashed var(--primary); 
+            border-radius: 8px; 
+            padding: 24px 16px; 
+            text-align: center; 
+            cursor: pointer; 
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--primary);
+            margin-bottom: 28px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .upload-zone:hover { background: rgba(245, 158, 11, 0.2); }
+
+        .btn { 
+            padding: 12px 24px; 
+            border: none; 
+            border-radius: 6px; 
+            font-weight: 500; 
+            cursor: pointer; 
+            transition: background 0.2s ease;
+        }
+        .btn-primary { background: var(--primary); color: #ffffff; }
+        .btn-primary:hover { background: var(--primary-hover); }
+
+        #statusCard {
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 28px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+        .status-line { display: flex; justify-content: space-between; font-size: 0.9em; margin-bottom: 8px; }
+        .status-val { font-weight: 600; color: var(--accent-green); }
+
+        /* Kein Abschneiden von Dateinamen */
+        .doc-list-header { font-size: 0.9em; font-weight: 600; margin-bottom: 14px; color: var(--text-muted); border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+        .doc-container { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        
+        .doc-item { 
+            padding: 12px 16px; 
+            background: rgba(15, 23, 42, 0.8); 
+            border: 1px solid var(--border); 
+            border-radius: 6px; 
+            font-size: 0.9em; 
+            cursor: pointer;
+            word-break: break-all;
+            white-space: normal;
+            color: var(--text-side);
+            box-shadow: var(--shadow);
+            line-height: 1.4;
+        }
+        .doc-item:hover { border-color: var(--primary); background: rgba(245, 158, 11, 0.1); }
+
+        /* Haupt-Chatbereich */
+        .main { flex: 1; display: flex; flex-direction: column; background: #ffffff; }
+        .chat-header { 
+            padding: 20px 40px; 
+            background: var(--bg-card); 
+            border-bottom: 1px solid #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-area { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 40px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 24px; 
+            background: var(--bg-main);
+        }
+
+        .msg { max-width: 85%; padding: 18px 24px; border-radius: 12px; font-size: 1em; line-height: 1.6; }
+        .user { align-self: flex-end; background: var(--primary); color: #ffffff; border-bottom-right-radius: 4px; font-weight: 500; }
+        .assistant { align-self: flex-start; background: var(--bg-card); color: var(--text-main); border: 1px solid #cbd5e1; border-bottom-left-radius: 4px; box-shadow: var(--shadow); }
+
+        .meta-info { 
+            margin-top: 16px; 
+            padding-top: 12px; 
+            border-top: 1px solid #e2e8f0; 
+            font-size: 0.85em; 
+            color: #64748b;
+            font-family: 'Fira Code', monospace;
+        }
+        .rcf-badge { padding: 4px 8px; border-radius: 4px; font-weight: 600; border: 1px solid currentColor; }
+        .rcf-ok { background: #ecfdf5; color: var(--accent-green); }
+        .rcf-veto { background: #fef2f2; color: var(--accent-red); }
+
+        /* Eingabebereich */
+        .input-wrapper { padding: 24px 40px; background: #f1f5f9; border-top: 1px solid #cbd5e1; }
+        .input-container { 
+            background: var(--bg-card); 
+            border: 1px solid #cbd5e1; 
+            border-radius: 8px; 
+            display: flex; 
+            padding: 8px;
+            box-shadow: var(--shadow);
+        }
+        .input-container input { 
+            flex: 1; 
+            border: none; 
+            padding: 12px 16px; 
+            outline: none; 
+            font-size: 1.05em; 
+            color: var(--text-main);
+        }
+        
+        .pulse { animation: pulse-animation 1.5s infinite; }
+        @keyframes pulse-animation { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="logo-area">
+        <h2>V-MAX-12 SUPERNOVA</h2>
+        <p>Habitable Zone Interface</p>
+    </div>
+
+    <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+        Datei ablegen & Supernova zünden<br>
+        <span style="font-size: 0.85em; font-weight: 400; color: var(--text-muted);">Erzeugt G-Sterne im Hintergrund</span>
+    </div>
+    <input type="file" id="fileInput" multiple style="display:none" onchange="uploadFiles(this.files)">
+
+    <div id="statusCard">
+        <div class="status-line">
+            <span>System-Status:</span>
+            <span id="statusLabel" class="status-val">Online</span>
+        </div>
+        <div class="status-line">
+            <span>Vektor-Index:</span>
+            <span id="indexCount" class="status-val">0 G-Sterne</span>
+        </div>
+    </div>
+
+    <div class="doc-list-header">HABITABLE ZONE (INDEX)</div>
+    <div class="doc-container" id="docList">
+        <div style="text-align:center; color:var(--text-muted); padding-top:20px;">Lade Matrix...</div>
+    </div>
+</div>
+
+<div class="main">
+    <div class="chat-header">
+        <div style="font-weight: 600; color: var(--text-main);">Navigator Chat-Interface</div>
+        <div style="color: #64748b; font-size: 0.9em; font-family: 'Fira Code', monospace;">RTX 4060 Ti | Nemotron-3-Nano</div>
+    </div>
+
+    <div class="chat-area" id="chatBox">
+        <div class="msg assistant">
+            System bereit. Habitable Zone geladen. Wie lautet Ihre Abfrage an die G-Stern Matrix?
+        </div>
+    </div>
+
+    <div class="input-wrapper">
+        <div class="input-container">
+            <input type="text" id="queryInput" placeholder="Frage an die Supernova Knowledge Base eingeben..." onkeydown="if(event.key==='Enter')sendQuery()">
+            <button class="btn btn-primary" onclick="sendQuery()">Senden</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const BASE_API = 'http://127.0.0.1:8000/vmax/pkb';
+const CHAT_API = 'http://127.0.0.1:8000/chat';
+
+async function loadDocuments() {
+    try {
+        const res = await fetch(`${BASE_API}/documents`);
+        if (!res.ok) return;
+        const docs = await res.json();
+        const container = document.getElementById('docList');
+        document.getElementById('indexCount').textContent = docs.length + " Dokumente";
+
+        if (docs.length === 0) {
+            container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px;">Keine Dokumente im Vektorraum.</div>';
+        } else {
+            container.innerHTML = docs.map(d => `
+                <div class="doc-item" onclick="setContext('${d.source.replace(/'/g, "\\'")}')" title="${d.source}">
+                    ${d.source}
+                </div>
+            `).join('');
+        }
+    } catch(e) {
+        console.error("Fehler beim Laden der Dokumentenliste:", e);
+    }
+}
+
+function setContext(src) {
+    const input = document.getElementById('queryInput');
+    input.value = `Untersuche '${src}': `;
+    input.focus();
+}
+
+async function uploadFiles(files) {
+    const label = document.getElementById('statusLabel');
+    label.textContent = "Supernova zündet...";
+    label.className = "status-val pulse";
+    label.style.color = "var(--primary)";
+    
+    for (let f of files) {
+        if (f.name.includes("Zone.Identifier") || f.name.startsWith('.')) continue;
+        
+        let form = new FormData();
+        form.append('file', f);
+        try {
+            await fetch(`${BASE_API}/upload`, { method: 'POST', body: form });
+        } catch (err) {
+            console.error("Upload-Fehler bei Datei " + f.name, err);
+        }
+    }
+    
+    // Wir setzen den Status nicht sofort zurück, da der Hintergrund-Prozess noch läuft.
+    // Aber wir laden die Liste kurz neu und stellen auf Online.
+    setTimeout(() => {
+        label.textContent = "Schmiedet im Hintergrund";
+        label.style.color = "var(--accent-green)";
+        label.className = "status-val pulse";
+        
+        setTimeout(() => {
+            label.textContent = "Online";
+            label.className = "status-val";
+            loadDocuments();
+        }, 15000); // Nach 15s wieder auf Online
+    }, 2000);
+}
+
+async function sendQuery() {
+    const input = document.getElementById('queryInput');
+    const q = input.value.trim();
+    if (!q) return;
+
+    appendMessage(q, 'user');
+    input.value = '';
+    
+    const chat = document.getElementById('chatBox');
+    const thinkingId = 'think-' + Date.now();
+    const thinkMsg = document.createElement('div');
+    thinkMsg.className = 'msg assistant pulse';
+    thinkMsg.id = thinkingId;
+    thinkMsg.textContent = 'Analysiere Habitable Zone und durchsuche G-Sterne...';
+    chat.appendChild(thinkMsg);
+    chat.scrollTop = chat.scrollHeight;
+
+    try {
+        const res = await fetch(CHAT_API, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({prompt: q})
+        });
+        const data = await res.json();
+        document.getElementById(thinkingId).remove();
+
+        const html = `
+            <div>${data.response}</div>
+        `;
+        appendMessage(html, 'assistant');
+    } catch(e) {
+        if(document.getElementById(thinkingId)) {
+            document.getElementById(thinkingId).remove();
+        }
+        appendMessage("Systemfehler: Die Verbindung zum V-MAX-12 Core wurde unterbrochen.", 'assistant');
+    }
+}
+
+function appendMessage(content, type) {
+    const chat = document.getElementById('chatBox');
+    const div = document.createElement('div');
+    div.className = `msg ${type}`;
+    div.innerHTML = content;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+setInterval(loadDocuments, 8000);
+loadDocuments();
+</script>
+
+</body>
+</html>

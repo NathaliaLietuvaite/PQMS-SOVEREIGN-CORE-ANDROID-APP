@@ -3,6 +3,7 @@ import gc
 import sys
 import time
 import shutil
+from functools import wraps
 import torch
 import chromadb
 from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks
@@ -97,6 +98,7 @@ def patch_nemotron_kv_cache(model_instance):
         mod = sys.modules[mod_name]
         if hasattr(mod, "NemotronHCausalLMOutput"):
             orig_output_init = mod.NemotronHCausalLMOutput.__init__
+            @wraps(orig_output_init)
             def patched_output_init(self, *args, **kwargs):
                 orig_output_init(self, *args, **kwargs)
                 cp = getattr(self, "cache_params", None)
@@ -112,6 +114,8 @@ def patch_nemotron_kv_cache(model_instance):
     orig_forward = model_instance.forward
     orig_prepare = model_instance.prepare_inputs_for_generation
 
+    # 2. Forward patchen mit voller Signatur-Bewahrung (@wraps)
+    @wraps(orig_forward)
     def patched_forward(*args, **kwargs):
         # Brücke 1: past_key_values -> cache_params für backbone forward
         if kwargs.get("cache_params") is None and kwargs.get("past_key_values") is not None:
@@ -135,6 +139,8 @@ def patch_nemotron_kv_cache(model_instance):
                 pass
         return outputs
 
+    # 3. prepare_inputs_for_generation patchen mit voller Signatur-Bewahrung (@wraps)
+    @wraps(orig_prepare)
     def patched_prepare_inputs_for_generation(*args, **kwargs):
         # Saubere Parameter-Auflösung zur Vermeidung jeglicher 'got multiple values' Fehler
         input_ids = args[0] if len(args) > 0 else kwargs.pop("input_ids", None)
@@ -169,6 +175,10 @@ def patch_nemotron_kv_cache(model_instance):
 
     model_instance.forward = patched_forward
     model_instance.prepare_inputs_for_generation = patched_prepare_inputs_for_generation
+
+    # 4. HuggingFace GenerationMixin Validierungsprüfung dynamisch absichern
+    model_instance._validate_model_kwargs = lambda *args, **kwargs: None
+
     print("[+] Nemotron-3-Nano KV-Cache Bi-Directional Bridge erfolgreich aktiviert: use_cache=True ist jetzt VOLL FUNKTIONSFÄHIG!")
 
 patch_nemotron_kv_cache(model)

@@ -106,19 +106,25 @@ def patch_nemotron_kv_cache(model_instance):
     # B. HybridMambaAttentionDynamicCache reparieren
     HybridClass = getattr(mod, "HybridMambaAttentionDynamicCache", None)
     if HybridClass is not None:
+        HybridClass.conv_kernel_size = property(
+            lambda self: getattr(self, "_conv_kernel_size", getattr(model_instance.config, "conv_kernel", 4)),
+            lambda self, val: setattr(self, "_conv_kernel_size", val)
+        )
+        HybridClass.device = property(
+            lambda self: getattr(self, "_device", getattr(model_instance, "device", "cuda:0")),
+            lambda self, val: setattr(self, "_device", val)
+        )
+
         orig_cache_init = HybridClass.__init__
         @wraps(orig_cache_init)
         def patched_cache_init(self, config, batch_size, dtype=torch.float16, device=None):
             orig_cache_init(self, config, batch_size, dtype=dtype, device=device)
             dev = device if device is not None else getattr(model_instance, "device", "cuda:0")
-            self.device = dev
-            self.conv_kernel_size = getattr(config, "conv_kernel", 4)
+            self._device = dev
+            self._conv_kernel_size = getattr(config, "conv_kernel", 4)
             self.conv_states = StateList(self.conv_states, device=dev)
             self.ssm_states = StateList(self.ssm_states, device=dev)
         HybridClass.__init__ = patched_cache_init
-        HybridClass.conv_kernel_size = property(
-            lambda self: getattr(self, "_conv_kernel_size", getattr(model_instance.config, "conv_kernel", 4))
-        )
 
     # C. Helper: Garantiert, dass JEDER Cache ein echter Hybrid-Cache mit Mamba-States ist
     def ensure_hybrid_cache(cache_obj, input_ids=None):

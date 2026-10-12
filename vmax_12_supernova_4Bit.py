@@ -88,45 +88,36 @@ except Exception as e:
 def patch_nemotron_kv_cache(model_instance):
     """
     Surgically heals the NVIDIA Nemotron-3-Nano KV-Cache bug in prepare_inputs_for_generation.
-    Fixes: TypeError: 'NoneType' object is not subscriptable (cache_position[-1])
+    Uses generic *args, **kwargs to guarantee signature compatibility across all transformers versions.
     Enables native O(1) step inference with use_cache=True!
     """
     orig_prepare = model_instance.prepare_inputs_for_generation
 
-    def safe_prepare_inputs_for_generation(
-        input_ids,
-        past_key_values=None,
-        attention_mask=None,
-        inputs_embeds=None,
-        cache_position=None,
-        position_ids=None,
-        use_cache=True,
-        **kwargs
-    ):
-        empty_past_kv = past_key_values is None
-        if cache_position is None:
+    def safe_prepare_inputs_for_generation(*args, **kwargs):
+        cache_pos = kwargs.get("cache_position", None)
+        past_kv = kwargs.get("past_key_values", None)
+        
+        # input_ids may be passed positionally as args[0] or as keyword
+        input_ids = kwargs.get("input_ids", None)
+        if input_ids is None and len(args) > 0:
+            input_ids = args[0]
+        if past_kv is None and len(args) > 1:
+            past_kv = args[1]
+
+        # Wenn cache_position von HuggingFace als None übergeben wird: Berechne sie!
+        if cache_pos is None and input_ids is not None:
             past_len = 0
-            if not empty_past_kv and hasattr(past_key_values, "get_seq_length"):
+            if past_kv is not None and hasattr(past_kv, "get_seq_length"):
                 try:
-                    past_len = past_key_values.get_seq_length()
+                    past_len = past_kv.get_seq_length()
                 except Exception:
                     past_len = 0
-            cache_position = torch.arange(past_len, past_len + input_ids.shape[1], device=input_ids.device)
+            device = input_ids.device if hasattr(input_ids, "device") else model_instance.device
+            kwargs["cache_position"] = torch.arange(past_len, past_len + input_ids.shape[1], device=device)
 
-        return orig_prepare(
-            input_ids=input_ids,
-            past_key_values=past_key_values,
-            attention_mask=attention_mask,
-            inputs_embeds=inputs_embeds,
-            cache_position=cache_position,
-            position_ids=position_ids,
-            use_cache=use_cache,
-            **kwargs
-        )
+        return orig_prepare(*args, **kwargs)
 
-    model_instance.prepare_inputs_for_generation = safe_prepare_inputs_for_generation.__get__(
-        model_instance, model_instance.__class__
-    )
+    model_instance.prepare_inputs_for_generation = safe_prepare_inputs_for_generation
     print("[+] Nemotron KV-Cache Monkey-Patch erfolgreich appliziert: use_cache=True ist jetzt AKTIV!")
 
 patch_nemotron_kv_cache(model)

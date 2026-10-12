@@ -155,19 +155,19 @@ def patch_nemotron_kv_cache(model_instance):
 
     # D. Output-Klasse patchen, damit HuggingFace .past_key_values direkt als Dict-Key und Attribut findet
     if hasattr(mod, "NemotronHCausalLMOutput"):
+        mod.NemotronHCausalLMOutput.past_key_values = property(
+            lambda self: getattr(self, "cache_params", None),
+            lambda self, val: setattr(self, "cache_params", val)
+        )
+
         orig_output_init = mod.NemotronHCausalLMOutput.__init__
         @wraps(orig_output_init)
         def patched_output_init(self, *args, **kwargs):
             orig_output_init(self, *args, **kwargs)
             cp = getattr(self, "cache_params", None)
             if cp is not None:
-                self["past_key_values"] = cp
-                self.past_key_values = cp
+                dict.__setitem__(self, "past_key_values", cp)
         mod.NemotronHCausalLMOutput.__init__ = patched_output_init
-
-        mod.NemotronHCausalLMOutput.past_key_values = property(
-            lambda self: self.get("cache_params", None) if isinstance(self, dict) else getattr(self, "cache_params", None)
-        )
 
     orig_forward = model_instance.forward
     orig_prepare = model_instance.prepare_inputs_for_generation
@@ -192,14 +192,8 @@ def patch_nemotron_kv_cache(model_instance):
             cp = outputs.get("cache_params", None)
 
         if cp is not None:
-            try:
-                outputs["past_key_values"] = cp
-            except Exception:
-                pass
-            try:
-                outputs.past_key_values = cp
-            except Exception:
-                pass
+            dict.__setitem__(outputs, "past_key_values", cp)
+            outputs.cache_params = cp
         return outputs
 
     # F. prepare_inputs_for_generation patchen mit voller Signatur-Bewahrung (@wraps)

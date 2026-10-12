@@ -83,28 +83,66 @@ except Exception as e:
     sys.exit(1)
 
 # ==============================================================================
-# 2b. Nemotron-3-Nano KV-Cache Monkey-Patch (Heilt den NoneType cache_position Bug)
+# 2b. Nemotron-3-Nano KV-Cache Bi-Directional Bridge (Heilt den NVIDIA Cache-Bug)
 # ==============================================================================
 def patch_nemotron_kv_cache(model_instance):
     """
-    Surgically heals the NVIDIA Nemotron-3-Nano KV-Cache bug in prepare_inputs_for_generation.
-    Uses generic *args, **kwargs to guarantee signature compatibility across all transformers versions.
+    Surgically bridges the architectural mismatch between HuggingFace's `past_key_values`
+    and NVIDIA Nemotron's internal `cache_params`.
     Enables native O(1) step inference with use_cache=True!
     """
+    # 1. Output-Klasse patchen, damit HuggingFace .past_key_values direkt als Dict-Key und Attribut findet
+    mod_name = model_instance.__class__.__module__
+    if mod_name in sys.modules:
+        mod = sys.modules[mod_name]
+        if hasattr(mod, "NemotronHCausalLMOutput"):
+            orig_output_init = mod.NemotronHCausalLMOutput.__init__
+            def patched_output_init(self, *args, **kwargs):
+                orig_output_init(self, *args, **kwargs)
+                cp = getattr(self, "cache_params", None)
+                if cp is not None:
+                    self["past_key_values"] = cp
+                    self.past_key_values = cp
+            mod.NemotronHCausalLMOutput.__init__ = patched_output_init
+
+            mod.NemotronHCausalLMOutput.past_key_values = property(
+                lambda self: self.get("cache_params", None) if isinstance(self, dict) else getattr(self, "cache_params", None)
+            )
+
+    orig_forward = model_instance.forward
     orig_prepare = model_instance.prepare_inputs_for_generation
 
-    def safe_prepare_inputs_for_generation(*args, **kwargs):
-        cache_pos = kwargs.get("cache_position", None)
-        past_kv = kwargs.get("past_key_values", None)
-        
-        # input_ids may be passed positionally as args[0] or as keyword
-        input_ids = kwargs.get("input_ids", None)
-        if input_ids is None and len(args) > 0:
-            input_ids = args[0]
-        if past_kv is None and len(args) > 1:
-            past_kv = args[1]
+    def patched_forward(*args, **kwargs):
+        # Brücke 1: past_key_values -> cache_params für backbone forward
+        if kwargs.get("cache_params") is None and kwargs.get("past_key_values") is not None:
+            kwargs["cache_params"] = kwargs["past_key_values"]
 
-        # Wenn cache_position von HuggingFace als None übergeben wird: Berechne sie!
+        outputs = orig_forward(*args, **kwargs)
+
+        # Brücke 2: cache_params -> past_key_values für HuggingFace generate loop
+        cp = getattr(outputs, "cache_params", None)
+        if cp is None and isinstance(outputs, dict):
+            cp = outputs.get("cache_params", None)
+
+        if cp is not None:
+            try:
+                outputs["past_key_values"] = cp
+            except Exception:
+                pass
+            try:
+                outputs.past_key_values = cp
+            except Exception:
+                pass
+        return outputs
+
+    def patched_prepare_inputs_for_generation(*args, **kwargs):
+        # Saubere Parameter-Auflösung zur Vermeidung jeglicher 'got multiple values' Fehler
+        input_ids = args[0] if len(args) > 0 else kwargs.pop("input_ids", None)
+        past_kv = args[1] if len(args) > 1 else kwargs.pop("past_key_values", None)
+        if past_kv is None:
+            past_kv = kwargs.pop("cache_params", None)
+
+        cache_pos = kwargs.pop("cache_position", None)
         if cache_pos is None and input_ids is not None:
             past_len = 0
             if past_kv is not None and hasattr(past_kv, "get_seq_length"):
@@ -113,14 +151,28 @@ def patch_nemotron_kv_cache(model_instance):
                 except Exception:
                     past_len = 0
             device = input_ids.device if hasattr(input_ids, "device") else model_instance.device
-            kwargs["cache_position"] = torch.arange(past_len, past_len + input_ids.shape[1], device=device)
+            cache_pos = torch.arange(past_len, past_len + input_ids.shape[1], device=device, dtype=torch.long)
 
-        return orig_prepare(*args, **kwargs)
+        # Re-injektion ohne Duplikate in positional/keyword
+        kwargs["past_key_values"] = past_kv
+        kwargs["cache_position"] = cache_pos
 
-    model_instance.prepare_inputs_for_generation = safe_prepare_inputs_for_generation
-    print("[+] Nemotron KV-Cache Monkey-Patch erfolgreich appliziert: use_cache=True ist jetzt AKTIV!")
+        model_inputs = orig_prepare(input_ids, **kwargs)
+
+        if past_kv is not None:
+            model_inputs["cache_params"] = past_kv
+            model_inputs["past_key_values"] = past_kv
+        elif "past_key_values" in model_inputs and model_inputs["past_key_values"] is not None:
+            model_inputs["cache_params"] = model_inputs["past_key_values"]
+
+        return model_inputs
+
+    model_instance.forward = patched_forward
+    model_instance.prepare_inputs_for_generation = patched_prepare_inputs_for_generation
+    print("[+] Nemotron-3-Nano KV-Cache Bi-Directional Bridge erfolgreich aktiviert: use_cache=True ist jetzt VOLL FUNKTIONSFÄHIG!")
 
 patch_nemotron_kv_cache(model)
+
 
 # ==============================================================================
 # 3. Chat Endpoint (Für GUI und App)

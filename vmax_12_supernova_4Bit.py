@@ -126,6 +126,16 @@ def patch_nemotron_kv_cache(model_instance):
             self.ssm_states = StateList(self.ssm_states, device=dev)
         HybridClass.__init__ = patched_cache_init
 
+        def patched_get_seq_length(self, layer_idx=0):
+            idx = self.transformer_layers[0] if (hasattr(self, "transformer_layers") and len(self.transformer_layers) > 0) else 0
+            if len(self.key_cache) <= idx:
+                return 0
+            k = self.key_cache[idx]
+            if not hasattr(k, "dim") or k.dim() < 4 or k.numel() == 0 or k.shape[-1] == 0:
+                return 0
+            return k.shape[-2]
+        HybridClass.get_seq_length = patched_get_seq_length
+
     # C. Helper: Garantiert, dass JEDER Cache ein echter Hybrid-Cache mit Mamba-States ist
     def ensure_hybrid_cache(cache_obj, input_ids=None):
         if HybridClass is None:
@@ -270,23 +280,10 @@ async def chat_endpoint(req: ChatRequest):
         print("[***] Zünde 4-Bit KV-Cache Inference-Engine (use_cache=True) ... bitte warten!")
         start_time = time.time()
         
-        # D. Vorab-Initialisierung des nativen Hybrid-Caches für fehlerfreie Generierung
-        HybridClass = getattr(sys.modules.get(model.__class__.__module__), "HybridMambaAttentionDynamicCache", None)
-        init_cache = None
-        if HybridClass is not None:
-            init_cache = HybridClass(
-                model.config, 
-                batch_size=inputs.input_ids.shape[0], 
-                dtype=model.dtype, 
-                device=model.device
-            )
-            init_cache.conv_kernel_size = getattr(model.config, "conv_kernel", 4)
-
-        # Generierung mit echtem KV-Cache (O(1) pro Token)
+        # D. Generierung mit echtem KV-Cache (O(1) pro Token)
         with torch.no_grad():
             outputs = model.generate(
                 **inputs,
-                past_key_values=init_cache,
                 max_new_tokens=450, 
                 use_cache=True, # AKTIVIERT! Durch die Hybrid-Bridge jetzt fehlerfrei!
                 pad_token_id=tokenizer.eos_token_id,

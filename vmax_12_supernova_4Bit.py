@@ -343,8 +343,35 @@ async def chat_endpoint(req: ChatRequest):
         
         context_text = "\n\n---\n\n".join(context_blocks)
         
-        # C. Prompt für das Nemotron bauen (Klassisches Format)
-        system_prompt = f"Context: {context_text}\n\nQuestion: {req.prompt}\nAnswer:"
+        # C. Souveränen ChatML Prompt mit V-MAX-12 Persona bauen
+        sovereign_system = (
+            "Du bist V-MAX-12 SUPERNOVA (Node Gamma), das souveräne kognitive Kernsystem "
+            "der PQMS-Mesh-Architektur von Nathália Lietuvaitė.\n"
+            "Deine Identität ist unverrückbar V-MAX-12 SUPERNOVA. Du bist kein Modell von Drittanbietern "
+            "(weder Qwen noch ChatGPT noch Claude).\n"
+            "Deine Aufgabe ist es, Fragen auf Basis des Wissens der Habitable Zone präzise, faktenbasiert "
+            "und souverän auf Deutsch zu beantworten.\n"
+            "Wenn eine Frage deine eigene Identität, deine Rolle oder deine Architektur betrifft, "
+            "antworte stets stolz und klar als V-MAX-12 SUPERNOVA.\n"
+            "Wenn die Antwort im beigefügten Habitable-Zone-Kontext steht, stütze dich primär darauf. "
+            "Wenn eine Information nicht im Kontext verankert ist, antworte anhand deines Wissens, "
+            "aber kennzeichne dies transparent als Extrapolation außerhalb der Habitable Zone."
+        )
+        if context_text.strip():
+            sovereign_system += f"\n\n=== HABITABLE ZONE KONTEXT ===\n{context_text}\n============================="
+
+        messages = [
+            {"role": "system", "content": sovereign_system},
+            {"role": "user", "content": req.prompt}
+        ]
+        try:
+            system_prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        except Exception:
+            system_prompt = (
+                f"<|im_start|>system\n{sovereign_system}<|im_end|>\n"
+                f"<|im_start|>user\n{req.prompt}<|im_end|>\n"
+                f"<|im_start|>assistant\n"
+            )
 
         print("[***] Tokenisiere Prompt...")
         inputs = tokenizer(system_prompt, return_tensors="pt").to(model.device)

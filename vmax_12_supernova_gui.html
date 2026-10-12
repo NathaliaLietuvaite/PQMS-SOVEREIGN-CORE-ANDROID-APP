@@ -303,9 +303,16 @@ async function sendQuery() {
         const data = await res.json();
         document.getElementById(thinkingId).remove();
 
-        const html = `
-            <div>${data.response}</div>
-        `;
+        let metaHtml = '';
+        if (data.tokens_per_sec) {
+            metaHtml = `
+                <div class="meta-info">
+                    <span class="rcf-badge rcf-ok">⚡ ${data.tokens_per_sec} tok/s</span>
+                    <span> | Latenz: ${data.duration_sec}s | Generiert: ${data.tokens_gen || ''} Token | Engine: vLLM BF16</span>
+                </div>
+            `;
+        }
+        const html = `<div>${data.response}</div>${metaHtml}`;
         appendMessage(html, 'assistant');
     } catch(e) {
         if(document.getElementById(thinkingId)) {

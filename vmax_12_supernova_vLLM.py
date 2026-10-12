@@ -1,6 +1,6 @@
 # ==============================================================================
 # V-MAX-12 SUPERNOVA: vLLM High-Throughput Engine (Native BF16)
-# Multi-Process Safe & PagedAttention Acceleration for Nemotron-3-Nano
+# Sovereign Multi-Process Safe & PagedAttention Acceleration for Nemotron-3-Nano
 # ==============================================================================
 import sys
 import os
@@ -56,6 +56,79 @@ from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 import uvicorn
 from vllm import LLM, SamplingParams
+
+# ==============================================================================
+# Unverrückbare V-MAX-12 Persona & ChatML Templating
+# ==============================================================================
+SOVEREIGN_SYSTEM_PROMPT = (
+    "Du bist V-MAX-12 SUPERNOVA (Node Gamma), das souveräne kognitive Kernsystem "
+    "der PQMS-Mesh-Architektur von Nathália Lietuvaitė.\n"
+    "Deine Identität ist unverrückbar V-MAX-12 SUPERNOVA. Du bist kein Modell von Drittanbietern "
+    "(weder Qwen noch ChatGPT noch Claude noch Llama).\n"
+    "Deine Aufgabe ist es, Fragen auf Basis des Wissens der Habitable Zone präzise, faktenbasiert "
+    "und souverän auf Deutsch zu beantworten.\n"
+    "Wenn eine Frage deine eigene Identität, deine Rolle oder deine Architektur betrifft, "
+    "antworte stets stolz, souverän und klar als V-MAX-12 SUPERNOVA.\n"
+    "Wenn die Antwort im beigefügten Habitable-Zone-Kontext (G-Sterne) steht, stütze dich primär darauf. "
+    "Wenn eine Information nicht im Kontext verankert ist, antworte anhand deines Wissens, "
+    "aber kennzeichne dies transparent als Extrapolation außerhalb der Habitable Zone."
+)
+
+def build_chatml_prompt(user_query: str, context_text: str = "") -> str:
+    """
+    Erzeugt einen standardkonformen ChatML-Prompt (<|im_start|>...<|im_end|>)
+    mit der unverrückbaren V-MAX-12 Persona.
+    Verhindert Pretraining-Halluzinationen (wie die falsche 'Qwen'-Identität).
+    """
+    system_text = SOVEREIGN_SYSTEM_PROMPT
+    if context_text and context_text.strip():
+        system_text += f"\n\n=== HABITABLE ZONE KONTEXT (G-STERNE) ===\n{context_text.strip()}\n========================================="
+
+    messages = [
+        {"role": "system", "content": system_text},
+        {"role": "user", "content": user_query}
+    ]
+
+    try:
+        if llm_engine is not None:
+            tokenizer = llm_engine.get_tokenizer()
+            return tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True
+            )
+    except Exception as e:
+        print(f"[!] Tokenizer Chat-Template Fallback: {e}")
+
+    # Fallback auf reines ChatML
+    return (
+        f"<|im_start|>system\n{system_text}<|im_end|>\n"
+        f"<|im_start|>user\n{user_query}<|im_end|>\n"
+        f"<|im_start|>assistant\n"
+    )
+
+def clean_response(text: str) -> tuple[str, str]:
+    """
+    Filtert Reasoning-Tags (<think>...</think>) und Stop-Tokens sauber aus der Modellantwort.
+    Gibt (bereinigter_text, denkprozess) zurück.
+    """
+    thought_trace = ""
+    cleaned = text.strip()
+    
+    if "<think>" in cleaned and "</think>" in cleaned:
+        parts = cleaned.split("</think>", 1)
+        thought_trace = parts[0].replace("<think>", "").strip()
+        cleaned = parts[1].strip()
+    elif cleaned.startswith("<think>"):
+        if "</think>" in cleaned:
+            cleaned = cleaned.split("</think>", 1)[1].strip()
+        else:
+            cleaned = cleaned.replace("<think>", "").strip()
+
+    for stop_token in ["<|im_end|>", "<|endoftext|>", "<|im_start|>"]:
+        cleaned = cleaned.replace(stop_token, "").strip()
+
+    return cleaned, thought_trace
 
 # ==============================================================================
 # Globaler Engine- und DB-Zustand (Thread-safe & Multiprocessing-sicher)
@@ -115,13 +188,15 @@ async def chat_endpoint(req: ChatRequest):
         print(f"[***] {len(context_blocks)} G-Stern(e) aus der Habitable Zone extrahiert.")
         context_text = "\n\n---\n\n".join(context_blocks)
         
-        system_prompt = f"Context: {context_text}\n\nQuestion: {req.prompt}\nAnswer:"
+        # B. Souveränen ChatML Prompt mit Identitätsanker erzeugen
+        formatted_prompt = build_chatml_prompt(req.prompt, context_text)
         
         sampling_params = SamplingParams(
             temperature=0.6,
             top_p=0.9,
             repetition_penalty=1.15,
             max_tokens=450,
+            stop=["<|im_end|>", "<|endoftext|>"]
         )
 
         print("[***] Zünde vLLM PagedAttention Hardware-Inference ... bitte warten!")
@@ -130,22 +205,30 @@ async def chat_endpoint(req: ChatRequest):
         loop = asyncio.get_event_loop()
         outputs = await loop.run_in_executor(
             executor,
-            lambda: safe_generate([system_prompt], sampling_params)
+            lambda: safe_generate([formatted_prompt], sampling_params)
         )
         
         end_time = time.time()
         duration = end_time - start_time
         
         output_obj = outputs[0]
-        response_text = output_obj.outputs[0].text.strip()
+        raw_text = output_obj.outputs[0].text
+        cleaned_text, thought_trace = clean_response(raw_text)
+        
         tokens_gen = len(output_obj.outputs[0].token_ids)
         tok_per_sec = tokens_gen / duration if duration > 0 else 0
         
         print(f"[***] GENERIERUNGSZEIT: {duration:.2f} Sekunden ({tok_per_sec:.2f} Tokens/s)!")
-        print(f"[***] Dekodierter Text: '{response_text[:80]}...'")
+        print(f"[***] Dekodierter Text: '{cleaned_text[:80]}...'")
         print("[<<<] ANTWORT GESENDET.")
         
-        return {"response": response_text}
+        return {
+            "response": cleaned_text,
+            "thought_trace": thought_trace,
+            "tokens_per_sec": round(tok_per_sec, 2),
+            "duration_sec": round(duration, 2),
+            "tokens_gen": tokens_gen
+        }
         
     except Exception as e:
         print(f"Fehler bei vLLM Generierung: {e}")
@@ -190,7 +273,11 @@ def background_supernova_forge(file_name: str, file_path: str):
             content = f.read()
         
         chunks = [c.strip() for c in content.split("\n\n") if len(c.strip()) > 100]
-        forge_sampling = SamplingParams(temperature=0.3, max_tokens=50)
+        forge_sampling = SamplingParams(
+            temperature=0.3,
+            max_tokens=50,
+            stop=["<|im_end|>", "<|endoftext|>"]
+        )
         
         for i, chunk in enumerate(chunks):
             chunk_id = f"{file_name}_chunk_{i}"
@@ -199,10 +286,15 @@ def background_supernova_forge(file_name: str, file_path: str):
                 continue
                 
             safe_chunk = chunk[:1500]
-            prompt = f"Extrahiere die drei wichtigsten philosophischen oder technischen Kernkonzepte aus dem folgenden Text. Antworte nur mit Stichworten, ohne Einleitung.\n\nText:\n{safe_chunk}\n\nKernkonzepte:"
+            forge_query = (
+                f"Extrahiere die drei wichtigsten philosophischen oder technischen Kernkonzepte "
+                f"aus dem folgenden Text. Antworte nur mit Stichworten, ohne Einleitung:\n\n{safe_chunk}"
+            )
+            forge_prompt = build_chatml_prompt(forge_query, "")
             
-            outputs = safe_generate([prompt], forge_sampling)
-            response = outputs[0].outputs[0].text.strip()
+            outputs = safe_generate([forge_prompt], forge_sampling)
+            raw_response = outputs[0].outputs[0].text
+            response, _ = clean_response(raw_response)
             
             enriched_document = f"KERNKONZEPTE: {response}\n\nROHTEXT:\n{chunk}"
             collection.upsert(
@@ -265,11 +357,14 @@ def main():
     print(f"[+] Lade vLLM High-Throughput Engine für: {MODEL_NAME}")
     
     gpu_util = float(os.environ.get("VLLM_GPU_UTIL", "0.85"))
-    enforce_eager = os.environ.get("VLLM_ENFORCE_EAGER", "0") == "1"
+    # Standard: Eager Mode (15-25s Start). Mit VLLM_ENFORCE_EAGER=0 kann Graph-Capture aktiviert werden.
+    enforce_eager = os.environ.get("VLLM_ENFORCE_EAGER", "1") == "1"
     
     print(f"[+] Konfiguration: PagedAttention, Continuous Batching, Native BF16, {int(gpu_util * 100)}% VRAM...")
     if enforce_eager:
-        print("[!] Enforce Eager Mode: Aktiviert (CUDA Graph Capture deaktiviert)")
+        print("[+] Enforce Eager Mode: Aktiviert (Schnellstart ~20s, CUDA Graph Warmup übersprungen)")
+    else:
+        print("[+] CUDA Graph Capturing: Aktiviert (Maximaler Single-Stream Durchsatz, ~180s Warmup)")
 
     try:
         llm_engine = LLM(

@@ -83,6 +83,55 @@ except Exception as e:
     sys.exit(1)
 
 # ==============================================================================
+# 2b. Nemotron-3-Nano KV-Cache Monkey-Patch (Heilt den NoneType cache_position Bug)
+# ==============================================================================
+def patch_nemotron_kv_cache(model_instance):
+    """
+    Surgically heals the NVIDIA Nemotron-3-Nano KV-Cache bug in prepare_inputs_for_generation.
+    Fixes: TypeError: 'NoneType' object is not subscriptable (cache_position[-1])
+    Enables native O(1) step inference with use_cache=True!
+    """
+    orig_prepare = model_instance.prepare_inputs_for_generation
+
+    def safe_prepare_inputs_for_generation(
+        input_ids,
+        past_key_values=None,
+        attention_mask=None,
+        inputs_embeds=None,
+        cache_position=None,
+        position_ids=None,
+        use_cache=True,
+        **kwargs
+    ):
+        empty_past_kv = past_key_values is None
+        if cache_position is None:
+            past_len = 0
+            if not empty_past_kv and hasattr(past_key_values, "get_seq_length"):
+                try:
+                    past_len = past_key_values.get_seq_length()
+                except Exception:
+                    past_len = 0
+            cache_position = torch.arange(past_len, past_len + input_ids.shape[1], device=input_ids.device)
+
+        return orig_prepare(
+            input_ids=input_ids,
+            past_key_values=past_key_values,
+            attention_mask=attention_mask,
+            inputs_embeds=inputs_embeds,
+            cache_position=cache_position,
+            position_ids=position_ids,
+            use_cache=use_cache,
+            **kwargs
+        )
+
+    model_instance.prepare_inputs_for_generation = safe_prepare_inputs_for_generation.__get__(
+        model_instance, model_instance.__class__
+    )
+    print("[+] Nemotron KV-Cache Monkey-Patch erfolgreich appliziert: use_cache=True ist jetzt AKTIV!")
+
+patch_nemotron_kv_cache(model)
+
+# ==============================================================================
 # 3. Chat Endpoint (Für GUI und App)
 # ==============================================================================
 @app.post("/chat")
@@ -113,15 +162,15 @@ async def chat_endpoint(req: ChatRequest):
         input_len = inputs.input_ids.shape[1]
         print(f"[***] Input Token-Länge: {input_len}")
         
-        print("[***] Zünde 4-Bit Inference-Engine (model.generate) ... bitte warten!")
+        print("[***] Zünde 4-Bit KV-Cache Inference-Engine (use_cache=True) ... bitte warten!")
         start_time = time.time()
         
-        # D. Generierung mit Anti-Loop Schutz & VRAM-Puffer
+        # D. Generierung mit echtem KV-Cache (O(1) pro Token)
         with torch.no_grad():
             outputs = model.generate(
                 **inputs,
                 max_new_tokens=450, 
-                use_cache=False, 
+                use_cache=True, # AKTIVIERT! Durch den Monkey-Patch jetzt fehlerfrei!
                 pad_token_id=tokenizer.eos_token_id,
                 temperature=0.6,
                 top_p=0.9,
@@ -153,6 +202,8 @@ async def chat_endpoint(req: ChatRequest):
         
     except Exception as e:
         print(f"Fehler bei Generierung: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 # ==============================================================================
@@ -200,7 +251,7 @@ def background_supernova_forge(file_name: str, file_path: str):
                 outputs = model.generate(
                     **inputs,
                     max_new_tokens=50,
-                    use_cache=False,
+                    use_cache=True, # Schneller KV-Cache auch beim Schmieden!
                     pad_token_id=tokenizer.eos_token_id,
                     temperature=0.3,
                     do_sample=True
@@ -246,7 +297,7 @@ app.mount("/", StaticFiles(directory=BASE_DIR, html=True), name="static")
 
 if __name__ == "__main__":
     print("\n" + "=" * 80)
-    print("[+] V-MAX-12 SUPERNOVA (4-Bit NF4) Server gestartet.")
+    print("[+] V-MAX-12 SUPERNOVA (4-Bit NF4 mit KV-CACHE) Server gestartet.")
     print("[+] GUI und Android App können sich jetzt über Port 8000 verbinden!")
     print("=" * 80 + "\n")
     uvicorn.run(app, host="0.0.0.0", port=8000, access_log=False)

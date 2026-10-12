@@ -92,38 +92,85 @@ def patch_nemotron_kv_cache(model_instance):
     and NVIDIA Nemotron's internal `cache_params`.
     Enables native O(1) step inference with use_cache=True!
     """
-    # 1. Output-Klasse patchen, damit HuggingFace .past_key_values direkt als Dict-Key und Attribut findet
     mod_name = model_instance.__class__.__module__
-    if mod_name in sys.modules:
-        mod = sys.modules[mod_name]
-        if hasattr(mod, "NemotronHCausalLMOutput"):
-            orig_output_init = mod.NemotronHCausalLMOutput.__init__
-            @wraps(orig_output_init)
-            def patched_output_init(self, *args, **kwargs):
-                orig_output_init(self, *args, **kwargs)
-                cp = getattr(self, "cache_params", None)
-                if cp is not None:
-                    self["past_key_values"] = cp
-                    self.past_key_values = cp
-            mod.NemotronHCausalLMOutput.__init__ = patched_output_init
+    mod = sys.modules.get(mod_name)
+    if not mod:
+        return
 
-            mod.NemotronHCausalLMOutput.past_key_values = property(
-                lambda self: self.get("cache_params", None) if isinstance(self, dict) else getattr(self, "cache_params", None)
-            )
+    # A. Hilfsklasse für Mamba-States mit .device-Attribut
+    class StateList(list):
+        def __init__(self, items=(), device=None):
+            super().__init__(items)
+            self.device = device
+
+    # B. HybridMambaAttentionDynamicCache reparieren
+    HybridClass = getattr(mod, "HybridMambaAttentionDynamicCache", None)
+    if HybridClass is not None:
+        orig_cache_init = HybridClass.__init__
+        @wraps(orig_cache_init)
+        def patched_cache_init(self, config, batch_size, dtype=torch.float16, device=None):
+            orig_cache_init(self, config, batch_size, dtype=dtype, device=device)
+            dev = device if device is not None else getattr(model_instance, "device", "cuda:0")
+            self.device = dev
+            self.conv_kernel_size = getattr(config, "conv_kernel", 4)
+            self.conv_states = StateList(self.conv_states, device=dev)
+            self.ssm_states = StateList(self.ssm_states, device=dev)
+        HybridClass.__init__ = patched_cache_init
+        HybridClass.conv_kernel_size = property(
+            lambda self: getattr(self, "_conv_kernel_size", getattr(model_instance.config, "conv_kernel", 4))
+        )
+
+    # C. Helper: Garantiert, dass JEDER Cache ein echter Hybrid-Cache mit Mamba-States ist
+    def ensure_hybrid_cache(cache_obj, input_ids=None):
+        if HybridClass is None:
+            return cache_obj
+        if isinstance(cache_obj, HybridClass):
+            if not hasattr(cache_obj, "conv_kernel_size"):
+                cache_obj.conv_kernel_size = getattr(model_instance.config, "conv_kernel", 4)
+            return cache_obj
+
+        # Falls HuggingFace einen generischen DynamicCache erzeugt hat -> in echten Hybrid-Cache umwandeln!
+        batch_size = input_ids.shape[0] if (input_ids is not None and hasattr(input_ids, "shape")) else 1
+        dev = input_ids.device if (input_ids is not None and hasattr(input_ids, "device")) else model_instance.device
+        dtype = model_instance.dtype
+        new_cache = HybridClass(model_instance.config, batch_size, dtype=dtype, device=dev)
+        new_cache.conv_kernel_size = getattr(model_instance.config, "conv_kernel", 4)
+        return new_cache
+
+    # D. Output-Klasse patchen, damit HuggingFace .past_key_values direkt als Dict-Key und Attribut findet
+    if hasattr(mod, "NemotronHCausalLMOutput"):
+        orig_output_init = mod.NemotronHCausalLMOutput.__init__
+        @wraps(orig_output_init)
+        def patched_output_init(self, *args, **kwargs):
+            orig_output_init(self, *args, **kwargs)
+            cp = getattr(self, "cache_params", None)
+            if cp is not None:
+                self["past_key_values"] = cp
+                self.past_key_values = cp
+        mod.NemotronHCausalLMOutput.__init__ = patched_output_init
+
+        mod.NemotronHCausalLMOutput.past_key_values = property(
+            lambda self: self.get("cache_params", None) if isinstance(self, dict) else getattr(self, "cache_params", None)
+        )
 
     orig_forward = model_instance.forward
     orig_prepare = model_instance.prepare_inputs_for_generation
 
-    # 2. Forward patchen mit voller Signatur-Bewahrung (@wraps)
+    # E. Forward patchen mit voller Signatur-Bewahrung (@wraps)
     @wraps(orig_forward)
     def patched_forward(*args, **kwargs):
-        # Brücke 1: past_key_values -> cache_params für backbone forward
-        if kwargs.get("cache_params") is None and kwargs.get("past_key_values") is not None:
-            kwargs["cache_params"] = kwargs["past_key_values"]
+        input_ids = kwargs.get("input_ids")
+        if input_ids is None and len(args) > 0:
+            input_ids = args[0]
+
+        curr_cache = kwargs.get("cache_params") or kwargs.get("past_key_values")
+        if curr_cache is not None:
+            curr_cache = ensure_hybrid_cache(curr_cache, input_ids)
+            kwargs["cache_params"] = curr_cache
+            kwargs["past_key_values"] = curr_cache
 
         outputs = orig_forward(*args, **kwargs)
 
-        # Brücke 2: cache_params -> past_key_values für HuggingFace generate loop
         cp = getattr(outputs, "cache_params", None)
         if cp is None and isinstance(outputs, dict):
             cp = outputs.get("cache_params", None)
@@ -139,14 +186,16 @@ def patch_nemotron_kv_cache(model_instance):
                 pass
         return outputs
 
-    # 3. prepare_inputs_for_generation patchen mit voller Signatur-Bewahrung (@wraps)
+    # F. prepare_inputs_for_generation patchen mit voller Signatur-Bewahrung (@wraps)
     @wraps(orig_prepare)
     def patched_prepare_inputs_for_generation(*args, **kwargs):
-        # Saubere Parameter-Auflösung zur Vermeidung jeglicher 'got multiple values' Fehler
         input_ids = args[0] if len(args) > 0 else kwargs.pop("input_ids", None)
         past_kv = args[1] if len(args) > 1 else kwargs.pop("past_key_values", None)
         if past_kv is None:
             past_kv = kwargs.pop("cache_params", None)
+
+        if past_kv is not None:
+            past_kv = ensure_hybrid_cache(past_kv, input_ids)
 
         cache_pos = kwargs.pop("cache_position", None)
         if cache_pos is None and input_ids is not None:
@@ -159,7 +208,6 @@ def patch_nemotron_kv_cache(model_instance):
             device = input_ids.device if hasattr(input_ids, "device") else model_instance.device
             cache_pos = torch.arange(past_len, past_len + input_ids.shape[1], device=device, dtype=torch.long)
 
-        # Re-injektion ohne Duplikate in positional/keyword
         kwargs["past_key_values"] = past_kv
         kwargs["cache_position"] = cache_pos
 
@@ -175,8 +223,6 @@ def patch_nemotron_kv_cache(model_instance):
 
     model_instance.forward = patched_forward
     model_instance.prepare_inputs_for_generation = patched_prepare_inputs_for_generation
-
-    # 4. HuggingFace GenerationMixin Validierungsprüfung dynamisch absichern
     model_instance._validate_model_kwargs = lambda *args, **kwargs: None
 
     print("[+] Nemotron-3-Nano KV-Cache Bi-Directional Bridge erfolgreich aktiviert: use_cache=True ist jetzt VOLL FUNKTIONSFÄHIG!")
@@ -218,12 +264,25 @@ async def chat_endpoint(req: ChatRequest):
         print("[***] Zünde 4-Bit KV-Cache Inference-Engine (use_cache=True) ... bitte warten!")
         start_time = time.time()
         
-        # D. Generierung mit echtem KV-Cache (O(1) pro Token)
+        # D. Vorab-Initialisierung des nativen Hybrid-Caches für fehlerfreie Generierung
+        HybridClass = getattr(sys.modules.get(model.__class__.__module__), "HybridMambaAttentionDynamicCache", None)
+        init_cache = None
+        if HybridClass is not None:
+            init_cache = HybridClass(
+                model.config, 
+                batch_size=inputs.input_ids.shape[0], 
+                dtype=model.dtype, 
+                device=model.device
+            )
+            init_cache.conv_kernel_size = getattr(model.config, "conv_kernel", 4)
+
+        # Generierung mit echtem KV-Cache (O(1) pro Token)
         with torch.no_grad():
             outputs = model.generate(
                 **inputs,
+                past_key_values=init_cache,
                 max_new_tokens=450, 
-                use_cache=True, # AKTIVIERT! Durch den Monkey-Patch jetzt fehlerfrei!
+                use_cache=True, # AKTIVIERT! Durch die Hybrid-Bridge jetzt fehlerfrei!
                 pad_token_id=tokenizer.eos_token_id,
                 temperature=0.6,
                 top_p=0.9,

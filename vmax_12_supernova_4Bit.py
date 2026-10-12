@@ -512,8 +512,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 app.mount("/", StaticFiles(directory=BASE_DIR, html=True), name="static")
 
 if __name__ == "__main__":
-    print("\n" + "=" * 80)
-    print("[+] V-MAX-12 SUPERNOVA (4-Bit NF4 mit KV-CACHE) Server gestartet.")
-    print("[+] GUI und Android App können sich jetzt über Port 8000 verbinden!")
-    print("=" * 80 + "\n")
-    uvicorn.run(app, host="0.0.0.0", port=8000, access_log=False)
+    import logging
+    logging.getLogger("uvicorn.access").disabled = True
+    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+    logging.getLogger("uvicorn").setLevel(logging.WARNING)
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="warning", access_log=False)

@@ -381,12 +381,12 @@ def main():
         print("    Fallback-Tipp: Nutze weiterhin 'vmax_12_supernova_4Bit.py' für 4-Bit Betrieb.")
         sys.exit(1)
 
-    print("\n" + "=" * 80)
-    print("[+] V-MAX-12 SUPERNOVA (vLLM High-Throughput Engine) Server gestartet.")
-    print("[+] GUI und Android App können sich jetzt über Port 8000 verbinden!")
-    print("=" * 80 + "\n")
+    import logging
+    logging.getLogger("uvicorn.access").disabled = True
+    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+    logging.getLogger("uvicorn").setLevel(logging.WARNING)
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="warning", access_log=False)
 
 if __name__ == "__main__":
     import multiprocessing

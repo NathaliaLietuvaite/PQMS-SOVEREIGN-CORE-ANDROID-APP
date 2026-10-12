@@ -1,6 +1,59 @@
+# ==============================================================================
+# 0. Sovereign Mesh Self-Healing Auto-Dependency & Engine Diagnostic Routine
+# ==============================================================================
+import sys
+import subprocess
+import importlib
+
+def ensure_dependencies():
+    """
+    Sovereign Node Self-Healing Dependency Routine.
+    Prüft alle Kern- und Beschleunigungs-Module und lädt fehlende Pakete automatisch nach.
+    """
+    required_packages = {
+        "torch": "torch",
+        "transformers": "transformers>=4.44.0",
+        "bitsandbytes": "bitsandbytes",
+        "accelerate": "accelerate",
+        "chromadb": "chromadb",
+        "fastapi": "fastapi",
+        "uvicorn": "uvicorn",
+        "pydantic": "pydantic",
+        "causal_conv1d": "causal_conv1d",
+    }
+
+    missing_core = []
+    for mod_name, pkg_name in required_packages.items():
+        try:
+            importlib.import_module(mod_name)
+        except ImportError:
+            missing_core.append(pkg_name)
+
+    if missing_core:
+        print("=" * 80)
+        print(f"[!] Fehlende Kern-Module erkannt: {missing_core}")
+        print("[+] Starte automatische Nachinstallation via pip...")
+        print("=" * 80)
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", *missing_core])
+            print("[+] Alle Kern-Abhängigkeiten erfolgreich nachgeladen!\n")
+        except Exception as e:
+            print(f"[-] Warnung bei automatischer Installation: {e}\n")
+
+    # Diagnose für optionale High-Throughput Engines (vLLM)
+    vllm_installed = False
+    try:
+        importlib.import_module("vllm")
+        vllm_installed = True
+    except ImportError:
+        pass
+
+    return {"vllm_available": vllm_installed}
+
+_dep_info = ensure_dependencies()
+
 import os
 import gc
-import sys
 import time
 import shutil
 from functools import wraps
@@ -32,6 +85,10 @@ class ChatRequest(BaseModel):
 
 print("=" * 80)
 print("V-MAX-12 SUPERNOVA: Initialisiere 4-Bit NF4 Habitable Zone & Nemotron Engine")
+if _dep_info.get("vllm_available"):
+    print("[+] High-Throughput Engine Status: vLLM ist installiert und verfügbar!")
+else:
+    print("[*] High-Throughput Engine Hinweis: vLLM nicht installiert (Optional: 'pip install vllm')")
 print("=" * 80)
 
 # ==============================================================================

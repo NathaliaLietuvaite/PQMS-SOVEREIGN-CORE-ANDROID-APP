@@ -18,3 +18,5 @@ local.properties
 debug.keystore
 /.build-outputs/
 *.apk
+__pycache__/
+*.pyc

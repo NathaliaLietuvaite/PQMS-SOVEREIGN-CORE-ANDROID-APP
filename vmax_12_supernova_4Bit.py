@@ -78,6 +78,10 @@ try:
         reserved_gb = torch.cuda.memory_reserved() / (1024 ** 3)
         print(f"[+] VRAM Belegung Gewichte: {allocated_gb:.2f} GB (Reserviert: {reserved_gb:.2f} GB)")
         print(f"[+] Freier VRAM Puffer für Attention & KV: ~{16.0 - reserved_gb:.2f} GB!")
+    if hasattr(model, "generation_config") and model.generation_config is not None:
+        model.generation_config.do_sample = True
+        model.generation_config.top_p = 0.9
+        model.generation_config.temperature = 0.6
 except Exception as e:
     print(f"[-] FEHLER beim Laden des 4-Bit Modells: {e}")
     print("    Tipp: Falls bitsandbytes fehlt, führe 'pip install bitsandbytes' aus!")
@@ -153,19 +157,38 @@ def patch_nemotron_kv_cache(model_instance):
         new_cache.conv_kernel_size = getattr(model_instance.config, "conv_kernel", 4)
         return new_cache
 
-    # D. Output-Klasse patchen, damit HuggingFace .past_key_values direkt als Dict-Key und Attribut findet
+    # D. Output-Klasse patchen, damit HuggingFace .past_key_values als Attribut und via ['past_key_values'] findet
     if hasattr(mod, "NemotronHCausalLMOutput"):
+        # 1. Property für direkten Attributzugriff (.past_key_values)
         mod.NemotronHCausalLMOutput.past_key_values = property(
             lambda self: getattr(self, "cache_params", None),
             lambda self, val: setattr(self, "cache_params", val)
         )
 
+        # 2. __getitem__ überschreiben (fängt KeyError bei outputs['past_key_values'] ab)
+        orig_getitem = mod.NemotronHCausalLMOutput.__getitem__
+        def patched_getitem(self, k):
+            if k == "past_key_values":
+                return getattr(self, "cache_params", None)
+            return orig_getitem(self, k)
+        mod.NemotronHCausalLMOutput.__getitem__ = patched_getitem
+
+        # 3. __contains__ absichern (damit 'past_key_values' in outputs True ergibt)
+        orig_contains = mod.NemotronHCausalLMOutput.__contains__
+        def patched_contains(self, k):
+            if k == "past_key_values":
+                return hasattr(self, "cache_params") and self.cache_params is not None
+            return orig_contains(self, k)
+        mod.NemotronHCausalLMOutput.__contains__ = patched_contains
+
+        # 4. Initialisierungspatch (sichert cache_params und Dictionary ab)
         orig_output_init = mod.NemotronHCausalLMOutput.__init__
         @wraps(orig_output_init)
         def patched_output_init(self, *args, **kwargs):
             orig_output_init(self, *args, **kwargs)
             cp = getattr(self, "cache_params", None)
             if cp is not None:
+                self.cache_params = cp
                 dict.__setitem__(self, "past_key_values", cp)
         mod.NemotronHCausalLMOutput.__init__ = patched_output_init
 

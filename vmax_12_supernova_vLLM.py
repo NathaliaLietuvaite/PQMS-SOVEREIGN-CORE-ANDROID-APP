@@ -1,10 +1,21 @@
 # ==============================================================================
-# 0. Sovereign Mesh Self-Healing Auto-Dependency & Engine Routine (vLLM Edition)
+# V-MAX-12 SUPERNOVA: vLLM High-Throughput Engine (Native BF16)
+# Multi-Process Safe & PagedAttention Acceleration for Nemotron-3-Nano
 # ==============================================================================
 import sys
+import os
+import gc
+import time
+import shutil
+import asyncio
+import threading
 import subprocess
 import importlib
+from concurrent.futures import ThreadPoolExecutor
 
+# ==============================================================================
+# 0. Sovereign Mesh Self-Healing Auto-Dependency Routine (vLLM Edition)
+# ==============================================================================
 def ensure_dependencies():
     """
     Sovereign Node Self-Healing Dependency Routine für die vLLM High-Throughput Engine.
@@ -37,14 +48,6 @@ def ensure_dependencies():
             print(f"[-] Warnung bei Installation: {e}")
             print("    Tipp: Manuell ausführen mit: pip install vllm\n")
 
-ensure_dependencies()
-
-import os
-import gc
-import time
-import shutil
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
 import chromadb
 from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
@@ -54,11 +57,12 @@ from pydantic import BaseModel
 import uvicorn
 from vllm import LLM, SamplingParams
 
+# ==============================================================================
+# Globaler Engine- und DB-Zustand (Thread-safe & Multiprocessing-sicher)
+# ==============================================================================
 app = FastAPI(title="V-MAX-12 SUPERNOVA (vLLM High-Throughput Engine - Node Gamma)")
 
-# ==============================================================================
 # CORS für GUI und Android App
-# ==============================================================================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -70,53 +74,31 @@ app.add_middleware(
 class ChatRequest(BaseModel):
     prompt: str
 
-print("=" * 80)
-print("V-MAX-12 SUPERNOVA: Initialisiere vLLM High-Throughput Engine (Native BF16)")
-print("=" * 80)
-
-# ==============================================================================
-# 1. DB Anbindung an die G-Stern Galaxie
-# ==============================================================================
-DB_PATH = "./chroma_db"
-COLLECTION_NAME = "pkb_habitable_zone"
-try:
-    chroma_client = chromadb.PersistentClient(path=DB_PATH)
-    collection = chroma_client.get_collection(name=COLLECTION_NAME)
-    print(f"[+] Datenbank verbunden: {COLLECTION_NAME} (Die Habitable Zone ist online)")
-except Exception as e:
-    print(f"[-] KRITISCHER FEHLER: Konnte '{COLLECTION_NAME}' nicht finden.")
-    print(f"    Detail: {e}")
-    sys.exit(1)
-
-# ==============================================================================
-# 2. vLLM Engine Initialisierung (Volle VRAM-Nutzung & PagedAttention)
-# ==============================================================================
-MODEL_NAME = "nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16"
-print(f"[+] Lade vLLM High-Throughput Engine für: {MODEL_NAME}")
-print("[+] Konfiguration: PagedAttention, Continuous Batching, Native BF16, 85% VRAM...")
-
-try:
-    llm_engine = LLM(
-        model=MODEL_NAME,
-        trust_remote_code=True,
-        dtype="bfloat16",
-        gpu_memory_utilization=0.85, # Reserviert ~13.6 GB der 16 GB VRAM für PagedAttention!
-        max_model_len=4096,
-        enforce_eager=False,
-    )
-    print("[+] vLLM High-Throughput Engine erfolgreich mit maximaler VRAM-Sättigung geladen!")
-except Exception as e:
-    print(f"[-] Fehler beim Initialisieren der vLLM Engine: {e}")
-    print("    Fallback-Tipp: Nutze weiterhin 'vmax_12_supernova_4Bit.py' für 4-Bit Betrieb.")
-    sys.exit(1)
-
+# Lazy Global References (werden in main() initialisiert, um spawn-Worker nicht zu blockieren)
+llm_engine = None
+collection = None
+chroma_client = None
+engine_lock = threading.Lock()
 executor = ThreadPoolExecutor(max_workers=2)
 
+def safe_generate(prompts, sampling_params):
+    """
+    Thread-sicherer Aufruf der vLLM Offline-Engine.
+    Verhindert Kollisionen zwischen GUI/Chat und Hintergrund-Dokumenten-Schmiede.
+    """
+    if llm_engine is None:
+        raise RuntimeError("vLLM Engine ist noch nicht initialisiert!")
+    with engine_lock:
+        return llm_engine.generate(prompts, sampling_params)
+
 # ==============================================================================
-# 3. Chat Endpoint (Für GUI und Android App)
+# 1. Chat Endpoint (Für GUI und Android App)
 # ==============================================================================
 @app.post("/chat")
 async def chat_endpoint(req: ChatRequest):
+    if llm_engine is None or collection is None:
+        raise HTTPException(status_code=503, detail="V-MAX-12 Supernova Engine initialisiert noch...")
+
     print(f"\n[>>>] EINGEHENDE ABFRAGE: {req.prompt}")
     try:
         # A. Habitable Zone Sonar-Ping
@@ -148,7 +130,7 @@ async def chat_endpoint(req: ChatRequest):
         loop = asyncio.get_event_loop()
         outputs = await loop.run_in_executor(
             executor,
-            lambda: llm_engine.generate([system_prompt], sampling_params)
+            lambda: safe_generate([system_prompt], sampling_params)
         )
         
         end_time = time.time()
@@ -172,10 +154,12 @@ async def chat_endpoint(req: ChatRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 # ==============================================================================
-# 3b. Dokumenten-Index für GUI
+# 2. Dokumenten-Index für GUI
 # ==============================================================================
 @app.get("/vmax/pkb/documents")
 async def list_documents():
+    if collection is None:
+        return []
     try:
         results = collection.get()
         unique_sources = set()
@@ -193,9 +177,13 @@ async def list_documents():
         return []
 
 # ==============================================================================
-# 3c. Upload & Auto-Schmiede (Supernova)
+# 3. Upload & Auto-Schmiede (Supernova)
 # ==============================================================================
 def background_supernova_forge(file_name: str, file_path: str):
+    if llm_engine is None or collection is None:
+        print("[-] Engine nicht bereit für Hintergrund-Schmiede.")
+        return
+
     print(f"\n[BACKGROUND] Zünde Supernova für neues Dokument: {file_name}")
     try:
         with open(file_path, "r", encoding="utf-8") as f:
@@ -213,7 +201,7 @@ def background_supernova_forge(file_name: str, file_path: str):
             safe_chunk = chunk[:1500]
             prompt = f"Extrahiere die drei wichtigsten philosophischen oder technischen Kernkonzepte aus dem folgenden Text. Antworte nur mit Stichworten, ohne Einleitung.\n\nText:\n{safe_chunk}\n\nKernkonzepte:"
             
-            outputs = llm_engine.generate([prompt], forge_sampling)
+            outputs = safe_generate([prompt], forge_sampling)
             response = outputs[0].outputs[0].text.strip()
             
             enriched_document = f"KERNKONZEPTE: {response}\n\nROHTEXT:\n{chunk}"
@@ -247,9 +235,65 @@ async def root():
 
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
-if __name__ == "__main__":
+# ==============================================================================
+# 5. Hauptprozess (Multiprocessing & Spawn Bootstrap Guard)
+# ==============================================================================
+def main():
+    global collection, chroma_client, llm_engine
+
+    # A. Abhängigkeiten absichern
+    ensure_dependencies()
+
+    print("=" * 80)
+    print("V-MAX-12 SUPERNOVA: Initialisiere vLLM High-Throughput Engine (Native BF16)")
+    print("=" * 80)
+
+    # B. DB Anbindung an die G-Stern Galaxie
+    DB_PATH = "./chroma_db"
+    COLLECTION_NAME = "pkb_habitable_zone"
+    try:
+        chroma_client = chromadb.PersistentClient(path=DB_PATH)
+        collection = chroma_client.get_collection(name=COLLECTION_NAME)
+        print(f"[+] Datenbank verbunden: {COLLECTION_NAME} (Die Habitable Zone ist online)")
+    except Exception as e:
+        print(f"[-] KRITISCHER FEHLER: Konnte '{COLLECTION_NAME}' nicht finden.")
+        print(f"    Detail: {e}")
+        sys.exit(1)
+
+    # C. vLLM Engine Initialisierung (Volle VRAM-Nutzung & PagedAttention)
+    MODEL_NAME = "nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16"
+    print(f"[+] Lade vLLM High-Throughput Engine für: {MODEL_NAME}")
+    
+    gpu_util = float(os.environ.get("VLLM_GPU_UTIL", "0.85"))
+    enforce_eager = os.environ.get("VLLM_ENFORCE_EAGER", "0") == "1"
+    
+    print(f"[+] Konfiguration: PagedAttention, Continuous Batching, Native BF16, {int(gpu_util * 100)}% VRAM...")
+    if enforce_eager:
+        print("[!] Enforce Eager Mode: Aktiviert (CUDA Graph Capture deaktiviert)")
+
+    try:
+        llm_engine = LLM(
+            model=MODEL_NAME,
+            trust_remote_code=True,
+            dtype="bfloat16",
+            gpu_memory_utilization=gpu_util, # Reserviert ~13.6 GB der 16 GB VRAM für PagedAttention!
+            max_model_len=4096,
+            enforce_eager=enforce_eager,
+        )
+        print("[+] vLLM High-Throughput Engine erfolgreich mit maximaler VRAM-Sättigung geladen!")
+    except Exception as e:
+        print(f"[-] Fehler beim Initialisieren der vLLM Engine: {e}")
+        print("    Fallback-Tipp: Nutze weiterhin 'vmax_12_supernova_4Bit.py' für 4-Bit Betrieb.")
+        sys.exit(1)
+
     print("\n" + "=" * 80)
     print("[+] V-MAX-12 SUPERNOVA (vLLM High-Throughput Engine) Server gestartet.")
     print("[+] GUI und Android App können sich jetzt über Port 8000 verbinden!")
     print("=" * 80 + "\n")
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+if __name__ == "__main__":
+    import multiprocessing
+    multiprocessing.freeze_support()
+    main()

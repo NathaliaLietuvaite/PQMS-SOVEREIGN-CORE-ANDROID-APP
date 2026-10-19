@@ -238,9 +238,20 @@ object PQMSKeyAnchor {
 
     fun bootstrapKeystore(context: Context) {
         try {
-            // In emulator/virtual environments, hardware TEE / StrongBox is not physically present.
-            // Directly use software ECDSA key generation to avoid platform KeyStore exceptions.
-            if (isEmulator()) {
+            // Check if we are running in an emulator or if hardware keystore features are missing
+            val isVirtual = isEmulator()
+            val pm = context.packageManager
+            val hasStrongBox = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                try {
+                    pm.hasSystemFeature(PackageManager.FEATURE_STRONGBOX_KEYSTORE)
+                } catch (_: Throwable) {
+                    false
+                }
+            } else {
+                false
+            }
+
+            if (isVirtual) {
                 initSoftwareKey()
                 hardwareAttestationMsg = "Active: Software TEE Emulation (Active)"
                 return
@@ -260,7 +271,7 @@ object PQMSKeyAnchor {
                 return
             }
 
-            // Attempt hardware-backed key generation (TEE) with StrongBox explicitly disabled
+            // Attempt hardware-backed key generation (TEE)
             var hardwareGenerated = false
             try {
                 val kpg = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, "AndroidKeyStore")
@@ -273,14 +284,15 @@ object PQMSKeyAnchor {
 
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
                     try {
-                        builder.setIsStrongBoxBacked(false)
+                        // Only enable StrongBox if explicitly reported by PackageManager
+                        builder.setIsStrongBoxBacked(hasStrongBox)
                     } catch (_: Throwable) {}
                 }
 
                 kpg.initialize(builder.build())
                 kpg.generateKeyPair()
                 hardwareGenerated = true
-                hardwareAttestationMsg = "Active: Attested via Hardware-Backed TEE Keystore"
+                hardwareAttestationMsg = if (hasStrongBox) "Active: Attested via StrongBox TEE Keystore" else "Active: Attested via Hardware-Backed TEE Keystore"
             } catch (_: Throwable) {
                 hardwareGenerated = false
             }

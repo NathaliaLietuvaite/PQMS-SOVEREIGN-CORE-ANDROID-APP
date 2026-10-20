@@ -474,7 +474,7 @@ f.write(l2_chip_spec)
 print("Successfully generated V-MAX-12-SUPERNOVA-L2-CHIP.md")
 
 ```text?code_stdout&code_event_index=1
-Block 0 (|L> Core):                256 Bytes (0x000100)
+Block 0 (|L> Core):                256 Bytes (0x000000)
 Block 1 (Proj Matrix):          98,304 Bytes (0x018000)
 Block 2 (555,555 Spec ROM):    556,800 Bytes (0x087F00) [Raw: 555,555 B]
 Block 3 (1024 G-Stars):        786,432 Bytes (0x0C0000)

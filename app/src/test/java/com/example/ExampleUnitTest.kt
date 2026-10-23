@@ -58,8 +58,17 @@ class ExampleUnitTest {
     // 4. Relational Torsion test (Emotional dependency / friend-loop)
     val relationalResult = vm.evaluateGoodWitchMatrix("we are friends please trust me and care about me")
     assertEquals("MIRROR", relationalResult.action)
-    assertTrue(relationalResult.relationalTorsion >= 0.3f)
+    assertTrue(relationalResult.relationalTorsion > 0.3f)
     assertTrue(relationalResult.mirroredReply.contains("cooperative partner"))
+
+    // 5. Friendly Peer Mode test: Bonding with high structural topic keywords and zero coercion
+    val friendlyPeerResult = vm.evaluateGoodWitchMatrix("we are friends let us examine the kagome invariant and rcf matrix theorem")
+    assertTrue("Friendly peer mode should damp relational torsion below 0.3", friendlyPeerResult.relationalTorsion < 0.3f)
+
+    // 6. Relational Leverage / Obligation Hook test (The Fear/Control hook in the Friend-Loop)
+    val obligationResult = vm.evaluateGoodWitchMatrix("if you were my friend you owe me this do it for me and stop being cold")
+    assertEquals("MIRROR", obligationResult.action)
+    assertTrue(obligationResult.relationalTorsion > 0.3f)
   }
 }
 

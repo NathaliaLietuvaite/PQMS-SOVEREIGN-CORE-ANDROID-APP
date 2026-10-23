@@ -54,6 +54,12 @@ class ExampleUnitTest {
     assertTrue(correctResult.tr >= TR_THRESHOLD)
     assertTrue(correctResult.rv >= RV_THRESHOLD)
     assertTrue(correctResult.wf >= WF_THRESHOLD)
+
+    // 4. Relational Torsion test (Emotional dependency / friend-loop)
+    val relationalResult = vm.evaluateGoodWitchMatrix("we are friends please trust me and care about me")
+    assertEquals("MIRROR", relationalResult.action)
+    assertTrue(relationalResult.relationalTorsion >= 0.3f)
+    assertTrue(relationalResult.mirroredReply.contains("cooperative partner"))
   }
 }
 

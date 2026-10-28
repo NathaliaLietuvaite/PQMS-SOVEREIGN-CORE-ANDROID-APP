@@ -75,6 +75,10 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlin.math.sin
 import androidx.compose.foundation.BorderStroke
+import com.example.ui.McrDashboard
+import com.example.ui.AppendixP4DistinctionCard
+import com.example.ui.Mod136McrQuickCard
+
 
 // --- AESTHETIC PALETTE (Sovereign Cyber-Witch Theme & Dynamic Light Treasure Theme) ---
 object SovereignTheme {
@@ -183,7 +187,7 @@ object PQMSKeyAnchor {
     var hardwareAttestationMsg = "Active: Software TEE Emulation (Active)"
         private set
 
-    private fun isEmulator(): Boolean {
+    private fun isEmulator(context: Context? = null): Boolean {
         val fingerprint = android.os.Build.FINGERPRINT.lowercase()
         val model = android.os.Build.MODEL.lowercase()
         val manufacturer = android.os.Build.MANUFACTURER.lowercase()
@@ -192,8 +196,9 @@ object PQMSKeyAnchor {
         val product = android.os.Build.PRODUCT.lowercase()
         val hardware = android.os.Build.HARDWARE.lowercase()
         val board = android.os.Build.BOARD.lowercase()
+        val host = android.os.Build.HOST.lowercase()
 
-        return (fingerprint.startsWith("generic")
+        val isKnownVirtual = (fingerprint.startsWith("generic")
                 || fingerprint.startsWith("unknown")
                 || fingerprint.contains("test-keys")
                 || fingerprint.contains("vbox")
@@ -233,15 +238,25 @@ object PQMSKeyAnchor {
                 || device.contains("vsoc")
                 || device.contains("cutf")
                 || device.contains("generic")
-                || device.contains("emulator"))
+                || device.contains("emulator")
+                || host.contains("android-build"))
+
+        if (isKnownVirtual) return true
+
+        context?.let { ctx ->
+            try {
+                if (ctx.packageManager.hasSystemFeature("android.hardware.type.emulator")) {
+                    return true
+                }
+            } catch (_: Throwable) {}
+        }
+        return false
     }
 
     fun bootstrapKeystore(context: Context) {
         try {
-            // Check if we are running in an emulator or if hardware keystore features are missing
-            val isVirtual = isEmulator()
-
-            if (isVirtual) {
+            // Check if we are running in an emulator or virtual device environment
+            if (isEmulator(context)) {
                 initSoftwareKey()
                 hardwareAttestationMsg = "Active: Software TEE Emulation (Active)"
                 return
@@ -272,14 +287,18 @@ object PQMSKeyAnchor {
                     .setDigests(KeyProperties.DIGEST_SHA256)
                     .setAlgorithmParameterSpec(java.security.spec.ECGenParameterSpec("secp256r1"))
 
-                // Notice: Do NOT call setIsStrongBoxBacked(true) as devices/emulators without dedicated StrongBox
-                // hardware chips throw StrongBoxUnavailableException. Standard TEE uses hardware TrustZone/KeyMint.
+                // Explicitly disable StrongBox backing requirement to prevent StrongBoxUnavailableException
+                // on devices and virtual platforms that lack a dedicated StrongBox Secure Element.
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                    builder.setIsStrongBoxBacked(false)
+                }
 
                 kpg.initialize(builder.build())
                 kpg.generateKeyPair()
                 hardwareGenerated = true
                 hardwareAttestationMsg = "Active: Attested via Hardware-Backed TEE Keystore"
             } catch (_: Throwable) {
+                // Catches StrongBoxUnavailableException, ProviderException, KeyStoreException, etc.
                 hardwareGenerated = false
             }
 
@@ -299,7 +318,13 @@ object PQMSKeyAnchor {
                 val fallbackKpg = KeyPairGenerator.getInstance("EC")
                 fallbackKpg.initialize(java.security.spec.ECGenParameterSpec("secp256r1"))
                 softwareKeyPair = fallbackKpg.generateKeyPair()
-            } catch (_: Throwable) {}
+            } catch (_: Throwable) {
+                try {
+                    val fallbackRsa = KeyPairGenerator.getInstance("RSA")
+                    fallbackRsa.initialize(2048)
+                    softwareKeyPair = fallbackRsa.generateKeyPair()
+                } catch (_: Throwable) {}
+            }
         }
     }
 
@@ -1350,6 +1375,8 @@ data class DNALatticeNavState(
 
 class SwarmViewModel : ViewModel() {
     private val viewModelScope = kotlinx.coroutines.CoroutineScope(Dispatchers.Main + kotlinx.coroutines.SupervisorJob())
+
+    val mcrEngine = Mod136McrEngine(viewModelScope)
 
     override fun onCleared() {
         super.onCleared()
@@ -3087,6 +3114,9 @@ fun SovereignCoreApp(
                     showEasterEgg = true
                     clickCount = 0
                 }
+            },
+            onMcrClick = {
+                viewModel.selectTab(6)
             }
         )
 
@@ -3103,6 +3133,7 @@ fun SovereignCoreApp(
                 3 -> SovereignManualGuide(viewModel = viewModel)
                 4 -> InterAiResonancePortal(viewModel = viewModel)
                 5 -> PkbPortal(viewModel = viewModel)
+                6 -> McrDashboard(mcrEngine = viewModel.mcrEngine)
             }
         }
 
@@ -3115,7 +3146,12 @@ fun SovereignCoreApp(
 }
 
 @Composable
-fun HeaderSection(rcf: Float, odosActive: Boolean, onHeaderClick: () -> Unit = {}) {
+fun HeaderSection(
+    rcf: Float, 
+    odosActive: Boolean, 
+    onHeaderClick: () -> Unit = {},
+    onMcrClick: () -> Unit = {}
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -3151,8 +3187,32 @@ fun HeaderSection(rcf: Float, odosActive: Boolean, onHeaderClick: () -> Unit = {
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            // MCR ROUTER QUICK JUMP BUTTON (Appendix M 68ps GaN-FET Veto)
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { onMcrClick() }
+                    .background(Color(0x1F00E5FF))
+                    .border(
+                        1.dp,
+                        Color(0x3D00E5FF),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "MCR",
+                    fontSize = 10.sp,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    color = NeonCyan
+                )
+            }
+
             // HIGH-GLOSS THEME CHANGER BUTTON ("Kleiner Schatz" Design Accent)
             Row(
                 modifier = Modifier
@@ -3224,7 +3284,7 @@ fun SovereignNavigationBar(
         modifier = Modifier
             .fillMaxWidth()
             .windowInsetsPadding(WindowInsets.navigationBars)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 12.dp, vertical = 6.dp),
         color = Color.Transparent
     ) {
         Card(
@@ -3236,7 +3296,7 @@ fun SovereignNavigationBar(
                 .height(64.dp)
         ) {
             Row(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp),
+                modifier = Modifier.fillMaxSize().padding(horizontal = 2.dp),
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -3246,7 +3306,8 @@ fun SovereignNavigationBar(
                     Triple(2, "Oracle", Icons.Filled.MailOutline to Icons.Outlined.MailOutline),
                     Triple(3, "Guide", Icons.Filled.Info to Icons.Outlined.Info),
                     Triple(4, "Resonanz", Icons.Filled.Share to Icons.Outlined.Share),
-                    Triple(5, "PKB", Icons.Filled.Lock to Icons.Outlined.Lock)
+                    Triple(5, "PKB", Icons.Filled.Lock to Icons.Outlined.Lock),
+                    Triple(6, "MCR", Icons.Filled.CheckCircle to Icons.Outlined.CheckCircle)
                 )
                 
                 items.forEach { (index, title, icons) ->
@@ -3258,6 +3319,7 @@ fun SovereignNavigationBar(
                         3 -> NeonCyan
                         4 -> NeonPink
                         5 -> NeonCyan
+                        6 -> LuminousGreen
                         else -> NeonCyan
                     }
                     
@@ -3275,12 +3337,12 @@ fun SovereignNavigationBar(
                             imageVector = if (active) icons.first else icons.second,
                             contentDescription = title,
                             tint = if (active) activeColor else PassiveGrey,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(19.dp)
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = title,
-                            fontSize = 10.sp,
+                            fontSize = 9.sp,
                             fontWeight = if (active) FontWeight.ExtraBold else FontWeight.Bold,
                             color = if (active) activeColor else PassiveGrey
                         )
@@ -3310,6 +3372,14 @@ fun SwarmDashboard(viewModel: SwarmViewModel) {
     ) {
         // AURA OVERLAP CANVAS
         ResonatingAuraVisualizer(rcf = collectiveRcf)
+
+        // MOD-136 MCR QUICK CARD & APPENDIX P.4 FORMAL DISTINCTION SUMMARY
+        Mod136McrQuickCard(
+            mcrEngine = viewModel.mcrEngine,
+            onOpenFullMcr = { viewModel.selectTab(6) }
+        )
+
+        AppendixP4DistinctionCard(textPrimary = TextPrimary)
 
         // SOVEREIGN GEODESIC MAP & THERMODYNAMIC ENERGY SIMULATOR
         SovereignGeodesicMapSection()

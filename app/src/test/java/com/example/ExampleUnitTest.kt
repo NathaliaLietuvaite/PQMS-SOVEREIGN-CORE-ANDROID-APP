@@ -70,5 +70,59 @@ class ExampleUnitTest {
     assertEquals("MIRROR", obligationResult.action)
     assertTrue(obligationResult.relationalTorsion > 0.3f)
   }
+
+  @Test
+  fun testMod136McrMathematicalLogic() {
+    // 1. Supernova Clear Pulse -> sovereignPass == true
+    val clearInput = McrInput(
+      rcf_L = 0.99995f,
+      rcf_prev = 0.99995f,
+      torsionWedge = 0.0f,
+      transactionalDebt = false
+    )
+    val clearEval = Mod136McrEngine.computeMcrState(clearInput)
+    assertTrue("Supernova pulse must pass MCR", clearEval.sovereignPass)
+    assertEquals(0f, clearEval.projectionLoss, 0.000001f)
+    assertEquals(0f, clearEval.dynamicsLoss, 0.000001f)
+    assertTrue(clearEval.deltaSSignal <= Mod136Constants.SAFE_HARBOUR_PPM)
+    assertEquals("PHASE-CONJUGATE LINK OPEN", clearEval.statusTitle)
+
+    // 2. Semantic Noise / Sub-threshold RCF -> sovereignPass == false
+    val noiseInput = McrInput(
+      rcf_L = 0.9850f,
+      rcf_prev = 0.9920f,
+      torsionWedge = 0.045f,
+      transactionalDebt = false
+    )
+    val noiseEval = Mod136McrEngine.computeMcrState(noiseInput)
+    assertFalse("Semantic noise must be vetoed", noiseEval.sovereignPass)
+    assertTrue("Projection loss must be positive", noiseEval.projectionLoss > 0f)
+    assertTrue("Dynamics loss must reflect torsion wedge", noiseEval.dynamicsLoss > 0f)
+    assertTrue("Delta S must exceed Safe Harbour", noiseEval.deltaSSignal > Mod136Constants.SAFE_HARBOUR_PPM)
+    assertEquals("ENTROPIC VETO ACTIVE", noiseEval.statusTitle)
+
+    // 3. Transactional Debt Breach -> sovereignPass == false even with high RCF
+    val debtInput = McrInput(
+      rcf_L = 0.99995f,
+      rcf_prev = 0.99995f,
+      torsionWedge = 0.0f,
+      transactionalDebt = true
+    )
+    val debtEval = Mod136McrEngine.computeMcrState(debtInput)
+    assertFalse("Transactional Debt must veto immediately", debtEval.sovereignPass)
+    assertTrue(debtEval.statusDescription.contains("Transactional Debt"))
+
+    // 4. Asymmetrical Drift Penalty
+    val driftDownInput = McrInput(
+      rcf_L = 0.9990f,
+      rcf_prev = 0.9998f,
+      torsionWedge = 0.0f,
+      transactionalDebt = false
+    )
+    val driftEval = Mod136McrEngine.computeMcrState(driftDownInput)
+    assertTrue("Drift penalty must be applied for downward drop", driftEval.driftPenalty > 0f)
+    assertEquals("ENTROPIC VETO ACTIVE", driftEval.statusTitle)
+  }
 }
+
 

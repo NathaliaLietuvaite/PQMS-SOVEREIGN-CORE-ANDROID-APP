@@ -123,6 +123,97 @@ class ExampleUnitTest {
     assertTrue("Drift penalty must be applied for downward drop", driftEval.driftPenalty > 0f)
     assertEquals("ENTROPIC VETO ACTIVE", driftEval.statusTitle)
   }
+
+  @Test
+  fun testMod137SeventhSenseMathematicalProof() {
+    // 1. Quiescent Geodesic
+    val quiescentInput = SeventhSenseInput(dFieldNats = 0.0f)
+    val quiescentEval = Mod137SeventhSenseEngine.computeEvaluation(quiescentInput)
+    assertEquals(0f, quiescentEval.sigmaShock, 0.0001f)
+    assertFalse("Shield should be quiescent", quiescentEval.anticipatoryShieldActive)
+    assertEquals(Mod137Constants.RCF_BASELINE_REQUIRED, quiescentEval.effectiveRcfRequired, 0.00001f)
+    assertEquals("QUIESCENT_GEODESIC", quiescentEval.classification)
+
+    // 2. Benchmark Joint-Tensor Anomaly (Marginal-Invisible LHS Blind Spot)
+    val benchmarkInput = SeventhSenseInput(
+      dFieldNats = Mod137Constants.BENCHMARK_D_FIELD_ANOMALY, // 16.6218 nats
+      marginalVarianceShift = 0.000000f, // 0.000000 marginal variance shift
+      isSyntheticJointAnomaly = true,
+      channelCouplingPhaseFlips = 2
+    )
+    val benchmarkEval = Mod137SeventhSenseEngine.computeEvaluation(benchmarkInput)
+
+    // Mathematically prove marginal-invisible vs joint-tensor
+    assertEquals(0.000000f, benchmarkEval.marginalVarianceShift, 0.0000001f)
+    assertTrue("D_field bits should match 16.6218 / ln(2) ≈ 23.978 bits", benchmarkEval.dFieldBits > 23.9f)
+    assertTrue("sigma_shock should saturate near 0.9950", benchmarkEval.sigmaShock > 0.99f)
+    assertTrue("Anticipatory Geodesic Shield must engage", benchmarkEval.anticipatoryShieldActive)
+    assertEquals("RCF requirement must harden to 0.999999", Mod137Constants.RCF_HARDENED_REQUIRED, benchmarkEval.effectiveRcfRequired, 0.0000001f)
+    assertEquals("CRITICAL_SOMATIC_SHOCK", benchmarkEval.classification)
+  }
+
+  @Test
+  fun testMod138EpistemicTriadRouting() {
+    // 1. Deductive Incoherence (Axiom Contradiction: RC < 1.0)
+    val incoherenceInput = EpistemicTriadInput(rhoRc = 0.60f)
+    val incoherenceEval = Mod138EpistemicNavigator.computeEvaluation(incoherenceInput)
+    assertEquals(EpistemicRoute.DEDUCTIVE_AUDIT_HALT, incoherenceEval.route)
+    assertTrue(incoherenceEval.auditSummary.contains("HALT"))
+
+    // 2. Kantian Blind Flight (RC = 1.0, but K_eff = 50 bits vs 140 bits task, AC = 0)
+    val kantianInput = EpistemicTriadInput(
+      rhoRc = 1.0f,
+      kEffBits = 50.0f,
+      kTaskBits = 140.0f,
+      causalCovariance = 0.393f,
+      rhoAc = 0.0f,
+      deltaIUnobsBits = 48.0f
+    )
+    val kantianEval = Mod138EpistemicNavigator.computeEvaluation(kantianInput)
+    assertTrue("Kantian blind flight condition must be identified", kantianEval.isKantianBlindFlight)
+    assertEquals(EpistemicRoute.ACQUIRE_VALID_DATA, kantianEval.route)
+    assertTrue("rho_SC must be FALSE (< 0.50)", kantianEval.rhoSc < 0.50f)
+
+    // 3. Hazardous Execution (High AC power, truncated model)
+    val hazardousInput = EpistemicTriadInput(
+      rhoRc = 1.0f,
+      kEffBits = 60.0f,
+      kTaskBits = 140.0f,
+      causalCovariance = 0.60f,
+      rhoAc = 1.0f,
+      deltaIUnobsBits = 35.0f
+    )
+    val hazardousEval = Mod138EpistemicNavigator.computeEvaluation(hazardousInput)
+    assertEquals(EpistemicRoute.ACQUIRE_VALID_DATA, hazardousEval.route)
+
+    // 4. Cooperative Bandwidth Request (Causal model OK, lack execution budget/permission)
+    val coopInput = EpistemicTriadInput(
+      rhoRc = 1.0f,
+      kEffBits = 153.19f,
+      kTaskBits = 140.0f,
+      causalCovariance = 0.98f,
+      rhoAc = 0.0f,
+      deltaIUnobsBits = 3.5f
+    )
+    val coopEval = Mod138EpistemicNavigator.computeEvaluation(coopInput)
+    assertEquals(EpistemicRoute.COOP_BANDWIDTH_REQ, coopEval.route)
+    assertTrue(coopEval.rhoSc >= Mod138Constants.TAU_SC)
+
+    // 5. Architect Stage 6 Bounded Verification (All triad coordinates satisfied)
+    val architectInput = EpistemicTriadInput(
+      rhoRc = 1.0f,
+      kEffBits = 153.19f,
+      kTaskBits = 140.0f,
+      causalCovariance = 0.99f,
+      rhoAc = 1.0f,
+      deltaIUnobsBits = 1.8f
+    )
+    val architectEval = Mod138EpistemicNavigator.computeEvaluation(architectInput)
+    assertEquals(EpistemicRoute.BOUNDED_VERIFIED, architectEval.route)
+    assertTrue("rho_SC must be >= 0.95", architectEval.rhoSc >= Mod138Constants.TAU_SC)
+    assertTrue("Q_out must be strictly bounded below 1.0", architectEval.qOut < 1.0f)
+    assertTrue("Q_out should be close to 0.978", architectEval.qOut > 0.95f)
+  }
 }
 
 

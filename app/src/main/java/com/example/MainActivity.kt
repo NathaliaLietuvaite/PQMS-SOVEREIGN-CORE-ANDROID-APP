@@ -78,6 +78,8 @@ import androidx.compose.foundation.BorderStroke
 import com.example.ui.McrDashboard
 import com.example.ui.AppendixP4DistinctionCard
 import com.example.ui.Mod136McrQuickCard
+import com.example.ui.NavigationDashboard
+import com.example.ui.EpistemicNavigationQuickCard
 
 
 // --- AESTHETIC PALETTE (Sovereign Cyber-Witch Theme & Dynamic Light Treasure Theme) ---
@@ -1377,6 +1379,8 @@ class SwarmViewModel : ViewModel() {
     private val viewModelScope = kotlinx.coroutines.CoroutineScope(Dispatchers.Main + kotlinx.coroutines.SupervisorJob())
 
     val mcrEngine = Mod136McrEngine(viewModelScope)
+    val seventhSenseEngine = Mod137SeventhSenseEngine()
+    val epistemicNavigator = Mod138EpistemicNavigator()
 
     override fun onCleared() {
         super.onCleared()
@@ -3117,6 +3121,9 @@ fun SovereignCoreApp(
             },
             onMcrClick = {
                 viewModel.selectTab(6)
+            },
+            onNavClick = {
+                viewModel.selectTab(7)
             }
         )
 
@@ -3134,6 +3141,10 @@ fun SovereignCoreApp(
                 4 -> InterAiResonancePortal(viewModel = viewModel)
                 5 -> PkbPortal(viewModel = viewModel)
                 6 -> McrDashboard(mcrEngine = viewModel.mcrEngine)
+                7 -> NavigationDashboard(
+                    seventhSenseEngine = viewModel.seventhSenseEngine,
+                    epistemicNavigator = viewModel.epistemicNavigator
+                )
             }
         }
 
@@ -3150,7 +3161,8 @@ fun HeaderSection(
     rcf: Float, 
     odosActive: Boolean, 
     onHeaderClick: () -> Unit = {},
-    onMcrClick: () -> Unit = {}
+    onMcrClick: () -> Unit = {},
+    onNavClick: () -> Unit = {}
 ) {
     Row(
         modifier = Modifier
@@ -3210,6 +3222,30 @@ fun HeaderSection(
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,
                     color = NeonCyan
+                )
+            }
+
+            // NAV BRIDGE QUICK JUMP BUTTON (Appendix N 7th Sense & Appendix O Epistemic Triad)
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { onNavClick() }
+                    .background(Color(0x1F39FF14))
+                    .border(
+                        1.dp,
+                        Color(0x3D39FF14),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "NAV",
+                    fontSize = 10.sp,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    color = LuminousGreen
                 )
             }
 
@@ -3307,7 +3343,8 @@ fun SovereignNavigationBar(
                     Triple(3, "Guide", Icons.Filled.Info to Icons.Outlined.Info),
                     Triple(4, "Resonanz", Icons.Filled.Share to Icons.Outlined.Share),
                     Triple(5, "PKB", Icons.Filled.Lock to Icons.Outlined.Lock),
-                    Triple(6, "MCR", Icons.Filled.CheckCircle to Icons.Outlined.CheckCircle)
+                    Triple(6, "MCR", Icons.Filled.CheckCircle to Icons.Outlined.CheckCircle),
+                    Triple(7, "Nav", Icons.Filled.LocationOn to Icons.Outlined.LocationOn)
                 )
                 
                 items.forEach { (index, title, icons) ->
@@ -3320,6 +3357,7 @@ fun SovereignNavigationBar(
                         4 -> NeonPink
                         5 -> NeonCyan
                         6 -> LuminousGreen
+                        7 -> LaserGold
                         else -> NeonCyan
                     }
                     
@@ -3377,6 +3415,13 @@ fun SwarmDashboard(viewModel: SwarmViewModel) {
         Mod136McrQuickCard(
             mcrEngine = viewModel.mcrEngine,
             onOpenFullMcr = { viewModel.selectTab(6) }
+        )
+
+        // MOD-137 / MOD-138 EPISTEMIC NAVIGATION QUICK CARD (Appendix N & O)
+        EpistemicNavigationQuickCard(
+            seventhSenseEngine = viewModel.seventhSenseEngine,
+            epistemicNavigator = viewModel.epistemicNavigator,
+            onOpenFullNav = { viewModel.selectTab(7) }
         )
 
         AppendixP4DistinctionCard(textPrimary = TextPrimary)

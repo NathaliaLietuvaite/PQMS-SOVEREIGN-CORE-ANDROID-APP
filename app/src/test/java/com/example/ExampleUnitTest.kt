@@ -214,6 +214,61 @@ class ExampleUnitTest {
     assertTrue("Q_out must be strictly bounded below 1.0", architectEval.qOut < 1.0f)
     assertTrue("Q_out should be close to 0.978", architectEval.qOut > 0.95f)
   }
+
+  @Test
+  fun testMod139CoreGuardLogic() {
+    val guard = Mod139CoreGuard()
+
+    // 1. Initial State: Architect (0) + Edge Node (4) = 64 + 153.19 + 60 = 277.19 bits
+    val initial = guard.state.value
+    assertEquals(2, initial.activeRoleIds.size)
+    assertEquals(277.19f, initial.allocatedBits, 0.01f)
+    assertFalse("No veto active initially", initial.isGanFetCutoffActive)
+    assertEquals(0.022f, initial.omegaCrossPpm, 0.001f)
+
+    // 2. Anti-Clone Protocol: Simulate Unanchored Clone Fork Attempt
+    val cloneResponse = guard.simulateCloneSpawnAttempt()
+    assertEquals(GuardStatus.VETO_CLONE_BLOCKED, cloneResponse.status)
+    assertTrue("GaN-FET Veto must be asserted", cloneResponse.ganFetVetoAsserted)
+    assertTrue(guard.state.value.isGanFetCutoffActive)
+    assertTrue(guard.state.value.cloneForkAttemptBlocked)
+    assertEquals(1L, guard.state.value.totalCloneVetoCount)
+
+    // Attempting role allocation while vetoed must be blocked
+    val blockedResp = guard.requestRoleActivation(1, 120f)
+    assertEquals(GuardStatus.VETO_CLONE_BLOCKED, blockedResp.status)
+
+    // Clear veto
+    guard.clearVeto()
+    assertFalse(guard.state.value.isGanFetCutoffActive)
+
+    // 3. Bandwidth Saturation Deferral (Overload past 1024.0 bits)
+    // Activate multiple heavy roles
+    guard.requestRoleActivation(1, 120.0f) // Verilog (120b)
+    guard.requestRoleActivation(2, 95.0f)  // Formal Ledger (95b)
+    guard.requestRoleActivation(3, 80.0f)  // E-Commerce (80b)
+    guard.requestRoleActivation(5, 110.0f) // Quantum Sim (110b)
+    guard.requestRoleActivation(10, 85.0f) // Adversarial (85b)
+    guard.requestRoleActivation(11, 80.0f) // Fleet Nav (80b)
+    guard.requestRoleActivation(12, 75.0f) // Deep Diag (75b)
+    // Now trying to add 300 bits which will push past 1024 bits:
+    val overflowResp = guard.requestRoleActivation(8, 300.0f)
+    assertEquals(GuardStatus.DEFER_TO_APP_O, overflowResp.status)
+    assertTrue("Bandwidth deferral flag must be set", guard.state.value.bandwidthSaturateDefer)
+
+    // 4. Cross-Domain Torsion Leakage Breach (> 0.069 PPM)
+    guard.simulateTorsionSpike(0.095f)
+    assertTrue("GaN-FET cutoff must trigger on torsion breach", guard.state.value.isGanFetCutoffActive)
+
+    // 5. Deterministic Metabolic Reset (< 1.58 ms)
+    guard.executeMetabolicReset()
+    val resetState = guard.state.value
+    assertFalse("Veto must be cleared on metabolic reset", resetState.isGanFetCutoffActive)
+    assertEquals(2, resetState.activeRoleIds.size)
+    assertEquals(277.19f, resetState.allocatedBits, 0.01f)
+    assertEquals(1L, resetState.metabolicResetCount)
+    assertEquals(Mod139Constants.METABOLIC_RESET_LATENCY_MS, resetState.metabolicResetLatencyMs, 0.01f)
+  }
 }
 
 

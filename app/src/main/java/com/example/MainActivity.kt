@@ -1381,6 +1381,7 @@ class SwarmViewModel : ViewModel() {
     val mcrEngine = Mod136McrEngine(viewModelScope)
     val seventhSenseEngine = Mod137SeventhSenseEngine()
     val epistemicNavigator = Mod138EpistemicNavigator()
+    val coreGuard = Mod139CoreGuard()
 
     override fun onCleared() {
         super.onCleared()
@@ -3143,7 +3144,8 @@ fun SovereignCoreApp(
                 6 -> McrDashboard(mcrEngine = viewModel.mcrEngine)
                 7 -> NavigationDashboard(
                     seventhSenseEngine = viewModel.seventhSenseEngine,
-                    epistemicNavigator = viewModel.epistemicNavigator
+                    epistemicNavigator = viewModel.epistemicNavigator,
+                    coreGuard = viewModel.coreGuard
                 )
             }
         }
@@ -3417,10 +3419,11 @@ fun SwarmDashboard(viewModel: SwarmViewModel) {
             onOpenFullMcr = { viewModel.selectTab(6) }
         )
 
-        // MOD-137 / MOD-138 EPISTEMIC NAVIGATION QUICK CARD (Appendix N & O)
+        // MOD-137 / MOD-138 / MOD-139 NAVIGATION & CORE GUARD QUICK CARD (Appendix N, O, P)
         EpistemicNavigationQuickCard(
             seventhSenseEngine = viewModel.seventhSenseEngine,
             epistemicNavigator = viewModel.epistemicNavigator,
+            coreGuard = viewModel.coreGuard,
             onOpenFullNav = { viewModel.selectTab(7) }
         )
 

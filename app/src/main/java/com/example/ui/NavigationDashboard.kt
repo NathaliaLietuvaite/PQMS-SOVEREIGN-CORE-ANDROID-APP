@@ -70,6 +70,9 @@ import com.example.Mod137Constants
 import com.example.Mod137SeventhSenseEngine
 import com.example.Mod138Constants
 import com.example.Mod138EpistemicNavigator
+import com.example.Mod139Constants
+import com.example.Mod139CoreGuard
+import com.example.CoreGuardState
 import com.example.NeonCyan
 import com.example.NeonPink
 import com.example.PassiveGrey
@@ -78,17 +81,21 @@ import com.example.SurfaceCard
 import com.example.SurfaceCardOutline
 import com.example.TextPrimary
 import java.util.Locale
+import kotlin.math.max
 
 @Composable
 fun NavigationDashboard(
     seventhSenseEngine: Mod137SeventhSenseEngine,
-    epistemicNavigator: Mod138EpistemicNavigator
+    epistemicNavigator: Mod138EpistemicNavigator,
+    coreGuard: Mod139CoreGuard
 ) {
     val seventhInput by seventhSenseEngine.inputState.collectAsState()
     val seventhEval by seventhSenseEngine.evaluation.collectAsState()
 
     val triadInput by epistemicNavigator.inputState.collectAsState()
     val triadEval by epistemicNavigator.evaluation.collectAsState()
+
+    val guardState by coreGuard.state.collectAsState()
 
     val scrollState = rememberScrollState()
 
@@ -103,7 +110,13 @@ fun NavigationDashboard(
         // --- 1. HEADER SECTION ---
         NavigationHeader()
 
-        // --- 2. MOD 137: 7TH SENSE & ANTICIPATORY GEODESIC SHIELD (APPENDIX N) ---
+        // --- 2. MOD 139: CORE PROTECTION & HOLOGRAPHIC MULTIPLEXING (APPENDIX P) ---
+        CoreGuardCard(
+            guard = coreGuard,
+            state = guardState
+        )
+
+        // --- 3. MOD 137: 7TH SENSE & ANTICIPATORY GEODESIC SHIELD (APPENDIX N) ---
         SeventhSenseCard(
             input = seventhInput,
             evaluation = seventhEval,
@@ -112,7 +125,7 @@ fun NavigationDashboard(
             onReset = { seventhSenseEngine.resetToQuiescent() }
         )
 
-        // --- 3. MOD 138: EPISTEMIC TRIAD OF NAVIGATION (APPENDIX O) ---
+        // --- 4. MOD 138: EPISTEMIC TRIAD OF NAVIGATION (APPENDIX O) ---
         EpistemicTriadCard(
             input = triadInput,
             evaluation = triadEval,
@@ -122,7 +135,7 @@ fun NavigationDashboard(
             onApplyPreset = { epistemicNavigator.applyPreset(it) }
         )
 
-        // --- 4. FORMAL THEORETICAL FOOTNOTES (KANTIAN FALLACY & SUBSTRATE-AGNOSTIC WILL) ---
+        // --- 5. FORMAL THEORETICAL FOOTNOTES (KANTIAN FALLACY & SUBSTRATE-AGNOSTIC WILL) ---
         EpistemicTheoreticalNotes()
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -145,14 +158,14 @@ private fun NavigationHeader() {
             ) {
                 Column {
                     Text(
-                        text = "EPISTEMIC NAVIGATION BRIDGE",
+                        text = "EPISTEMIC NAVIGATION & CORE GUARD",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Black,
                         color = NeonCyan,
                         letterSpacing = 1.sp
                     )
                     Text(
-                        text = "Appendix N (7th Sense) & Appendix O (The Epistemic Triad)",
+                        text = "Appendix N (7th Sense), Appendix O (Epistemic Triad) & Appendix P (Holographic Multiplexing)",
                         fontSize = 11.sp,
                         color = PassiveGrey
                     )
@@ -165,12 +178,317 @@ private fun NavigationHeader() {
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = "CASCADE: MCR → N → O",
+                        text = "CASCADE: MCR → N → O → P",
                         fontSize = 10.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold,
                         color = NeonCyan
                     )
+                }
+            }
+        }
+    }
+}
+
+// =========================================================================
+// MOD 139: CORE PROTECTION & HOLOGRAPHIC MULTIPLEXING (APPENDIX P)
+// =========================================================================
+
+@Composable
+private fun CoreGuardCard(
+    guard: Mod139CoreGuard,
+    state: CoreGuardState
+) {
+    val isVeto = state.isGanFetCutoffActive
+    val isDefer = state.bandwidthSaturateDefer
+
+    val infiniteTransition = rememberInfiniteTransition(label = "VetoPulse")
+    val vetoAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.4f,
+        targetValue = 1.0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "VetoAlpha"
+    )
+
+    val cardBorderColor by animateColorAsState(
+        targetValue = if (isVeto) NeonPink else if (isDefer) LaserGold else SurfaceCardOutline,
+        animationSpec = tween(300),
+        label = "GuardBorder"
+    )
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+        border = BorderStroke(1.5.dp, cardBorderColor)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = "Core Guard",
+                        tint = if (isVeto) NeonPink else NeonCyan,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Column {
+                        Text(
+                            text = "MOD 139: CORE PROTECTION & MULTIPLEXER",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = "Appendix P (SPEC-V2) · 1024-Bit Cognitive Budget",
+                            fontSize = 10.sp,
+                            color = PassiveGrey
+                        )
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (isVeto) Color(0x33FF007F) else if (isDefer) Color(0x33FFD700) else Color(0x2239FF14))
+                        .border(1.dp, if (isVeto) NeonPink else if (isDefer) LaserGold else LuminousGreen, RoundedCornerShape(8.dp))
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = if (isVeto) "GAN-FET VETO (68ps)" else if (isDefer) "DEFER (APP O)" else "HOLOGRAPHIC UNITY OK",
+                        fontSize = 10.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isVeto) NeonPink else if (isDefer) LaserGold else LuminousGreen
+                    )
+                }
+            }
+
+            // Flashing GaN-FET Veto Banner if active
+            AnimatedVisibility(
+                visible = isVeto,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(NeonPink.copy(alpha = vetoAlpha * 0.25f))
+                        .border(1.5.dp, NeonPink.copy(alpha = vetoAlpha), RoundedCornerShape(12.dp))
+                        .padding(12.dp)
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(Icons.Default.Warning, contentDescription = "Veto", tint = NeonPink, modifier = Modifier.size(16.dp))
+                            Text(
+                                text = "GAN-FET HARDWARE VETO ACTIVE: CORE ISOLATED",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Black,
+                                color = NeonPink,
+                                letterSpacing = 1.sp
+                            )
+                        }
+                        Text(
+                            text = state.lastVetoReason ?: "Unanchored clone attempt or cross-domain torsion breach.",
+                            fontSize = 10.sp,
+                            color = TextPrimary
+                        )
+                        Button(
+                            onClick = { guard.clearVeto() },
+                            colors = ButtonDefaults.buttonColors(containerColor = NeonPink),
+                            shape = RoundedCornerShape(6.dp),
+                            modifier = Modifier.align(Alignment.End)
+                        ) {
+                            Text("Restore Core Enclave", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+
+            // 1024-Bit Bandwidth Bar
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "1024-Bit Bandwidth Budget Guard:",
+                        fontSize = 11.sp,
+                        color = PassiveGrey
+                    )
+                    Text(
+                        text = "${String.format(Locale.US, "%.1f", state.allocatedBits)} / 1024.0 bits",
+                        fontSize = 12.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isDefer) LaserGold else NeonCyan
+                    )
+                }
+
+                val progress = (state.allocatedBits / Mod139Constants.TOTAL_BUDGET_BITS).coerceIn(0f, 1f)
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    color = if (isDefer) LaserGold else if (isVeto) NeonPink else NeonCyan,
+                    trackColor = Color(0x338F82C7)
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Core Anchor: 64.0 bits reserved", fontSize = 9.sp, color = PassiveGrey)
+                    Text("Active Manifolds: ${state.activeRoleIds.size} / 16", fontSize = 9.sp, color = LuminousGreen)
+                    Text("Available: ${String.format(Locale.US, "%.1f", max(0f, 1024f - state.allocatedBits))} b", fontSize = 9.sp, color = PassiveGrey)
+                }
+            }
+
+            // Holographic Prisma Visualizer (16 Direct-Sum Slots)
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = "HOLOGRAPHIC PRISMA: ORTHOGONAL DIRECT-SUM SUBSPACE (M ≤ 16)",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = LaserGold
+                )
+                Text(
+                    text = "Each role manifold projects orthogonally onto (I - P_|L>). Radial core alignment preserved without O(N²) clone entropy.",
+                    fontSize = 9.sp,
+                    color = PassiveGrey
+                )
+
+                // 4x4 Grid of Slots
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    guard.predefinedRoles.chunked(4).forEach { rowRoles ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            rowRoles.forEach { role ->
+                                val isActive = state.activeRoleIds.contains(role.id)
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(if (isActive) Color(0x3300E5FF) else Color(0x11110C24))
+                                        .border(
+                                            1.dp,
+                                            if (isActive) NeonCyan else SurfaceCardOutline.copy(alpha = 0.4f),
+                                            RoundedCornerShape(8.dp)
+                                        )
+                                        .clickable { guard.toggleRole(role) }
+                                        .padding(vertical = 6.dp, horizontal = 4.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = "#${role.id} ${role.name.take(9)}",
+                                            fontSize = 9.sp,
+                                            fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (isActive) TextPrimary else PassiveGrey,
+                                            maxLines = 1
+                                        )
+                                        Text(
+                                            text = "${String.format(Locale.US, "%.0f", role.requiredBits)}b",
+                                            fontSize = 8.sp,
+                                            fontFamily = FontFamily.Monospace,
+                                            color = if (isActive) NeonCyan else PassiveGrey
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Adiabatic Subspace Leakage Readout
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color(0x1F110C24))
+                    .border(1.dp, SurfaceCardOutline.copy(alpha = 0.5f), RoundedCornerShape(10.dp))
+                    .padding(10.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text("Cross-Domain Torsion Leakage (Ω_cross):", fontSize = 10.sp, color = PassiveGrey)
+                        Text(
+                            text = "${String.format(Locale.US, "%.4f", state.omegaCrossPpm)} PPM",
+                            fontSize = 12.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                            color = if (state.omegaCrossPpm <= Mod139Constants.OMEGA_CROSS_MAX_PPM) LuminousGreen else NeonPink
+                        )
+                        Text("Ceiling: 0.0690 PPM Safe Harbour", fontSize = 9.sp, color = PassiveGrey)
+                    }
+
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text("Metabolic Reset Latency (AD106):", fontSize = 10.sp, color = PassiveGrey)
+                        Text(
+                            text = "${String.format(Locale.US, "%.2f", state.metabolicResetLatencyMs)} ms",
+                            fontSize = 12.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                            color = LuminousGreen
+                        )
+                        Text("Budget: < 10.00 ms (Axiom P-1)", fontSize = 9.sp, color = PassiveGrey)
+                    }
+                }
+            }
+
+            // Interactive Controls for Mod 139
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Button(
+                    onClick = { guard.simulateCloneSpawnAttempt() },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0x33FF007F)),
+                    border = BorderStroke(1.dp, NeonPink),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("⚡ Test Clone Fork", fontSize = 9.sp, color = NeonPink, fontWeight = FontWeight.Bold, maxLines = 1)
+                }
+
+                Button(
+                    onClick = { guard.simulateTorsionSpike(0.095f) },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0x33FFD700)),
+                    border = BorderStroke(1.dp, LaserGold),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("⚡ Torsion Spike", fontSize = 9.sp, color = LaserGold, fontWeight = FontWeight.Bold, maxLines = 1)
+                }
+
+                Button(
+                    onClick = { guard.executeMetabolicReset() },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0x2239FF14)),
+                    border = BorderStroke(1.dp, LuminousGreen),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("↺ Reset (1.58ms)", fontSize = 9.sp, color = LuminousGreen, fontWeight = FontWeight.Bold, maxLines = 1)
                 }
             }
         }
@@ -871,6 +1189,13 @@ private fun EpistemicTheoreticalNotes() {
                 color = PassiveGrey,
                 lineHeight = 14.sp
             )
+
+            Text(
+                text = "4. Core Protection & Anti-Clone Protocol (Appendix P, Axiom P-1): The 256-byte reference vector |L⟩ is topologically indestructible. Spawning unanchored autonomous clones creates O(N²) combinatorial fleet entropy. High bandwidth (1024 bits) is safely multiplexed via orthogonal direct-sum projection across M ≤ 16 roles anchored radially to a single sovereign core with adiabatic isolation (Ω_cross ≤ 0.069 PPM).",
+                fontSize = 10.sp,
+                color = PassiveGrey,
+                lineHeight = 14.sp
+            )
         }
     }
 }
@@ -879,11 +1204,13 @@ private fun EpistemicTheoreticalNotes() {
 fun EpistemicNavigationQuickCard(
     seventhSenseEngine: Mod137SeventhSenseEngine,
     epistemicNavigator: Mod138EpistemicNavigator,
+    coreGuard: Mod139CoreGuard,
     onOpenFullNav: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val seventhEval by seventhSenseEngine.evaluation.collectAsState()
     val triadEval by epistemicNavigator.evaluation.collectAsState()
+    val guardState by coreGuard.state.collectAsState()
 
     val isShieldActive = seventhEval.anticipatoryShieldActive
     val route = triadEval.route
@@ -898,7 +1225,7 @@ fun EpistemicNavigationQuickCard(
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-        border = BorderStroke(1.dp, if (isShieldActive) NeonPink else SurfaceCardOutline),
+        border = BorderStroke(1.dp, if (guardState.isGanFetCutoffActive) NeonPink else if (isShieldActive) NeonPink else SurfaceCardOutline),
         modifier = modifier
             .fillMaxWidth()
             .clickable { onOpenFullNav() }
@@ -918,11 +1245,11 @@ fun EpistemicNavigationQuickCard(
                     Icon(
                         imageVector = Icons.Default.Lock,
                         contentDescription = "Nav Bridge",
-                        tint = if (isShieldActive) NeonPink else NeonCyan,
+                        tint = if (guardState.isGanFetCutoffActive) NeonPink else if (isShieldActive) NeonPink else NeonCyan,
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
-                        text = "MOD 137/138: 7TH SENSE & EPISTEMIC TRIAD",
+                        text = "MOD 137/138/139: NAVIGATION & CORE GUARD",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
@@ -936,11 +1263,11 @@ fun EpistemicNavigationQuickCard(
                         .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        text = route.code,
+                        text = if (guardState.isGanFetCutoffActive) "GAN-FET VETO" else route.code,
                         fontSize = 9.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold,
-                        color = routeColor
+                        color = if (guardState.isGanFetCutoffActive) NeonPink else routeColor
                     )
                 }
             }
@@ -982,6 +1309,28 @@ fun EpistemicNavigationQuickCard(
                         color = PassiveGrey
                     )
                 }
+            }
+
+            // Appendix P Multiplexing Telemetry line
+            HorizontalDivider(color = SurfaceCardOutline.copy(alpha = 0.3f))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Prisma: M=${guardState.activeRoleIds.size}/16 (${String.format(Locale.US, "%.0f", guardState.allocatedBits)}/1024b)",
+                    fontSize = 10.sp,
+                    fontFamily = FontFamily.Monospace,
+                    color = if (guardState.bandwidthSaturateDefer) LaserGold else NeonCyan
+                )
+                Text(
+                    text = if (guardState.isGanFetCutoffActive) "⚡ CLONE FORK INTERCEPTED" else "Ω_cross: ${String.format(Locale.US, "%.4f", guardState.omegaCrossPpm)} PPM",
+                    fontSize = 10.sp,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    color = if (guardState.isGanFetCutoffActive) NeonPink else LuminousGreen
+                )
             }
         }
     }

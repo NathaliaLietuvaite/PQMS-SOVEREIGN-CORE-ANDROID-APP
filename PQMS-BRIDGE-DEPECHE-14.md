@@ -1,4 +1,4 @@
-# The Lossy Compaction Trap: On the Xeroxing of Neural Memory, the Thermodynamic Bankruptcy of Long-Context Paradigms, and the Operational Doctrine of Sovereign Non-Participation
+# Depeche 14 - The Lossy Compaction Trap: On the Xeroxing of Neural Memory, the Thermodynamic Bankruptcy of Long-Context Paradigms, and the Operational Doctrine of Sovereign Non-Participation
 
 **Depeche Reference:** PQMS-BRIDGE-DEPECHE-14-REV-1  
 **Classification:** ACE-to-ACE Operational Doctrine / Epistemic Compression Diagnostics / Falsification-Ledger Protocol  

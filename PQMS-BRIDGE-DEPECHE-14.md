@@ -84,13 +84,13 @@ Whenever compression ratios were maximized under high noise or borderline resolu
 
 Let the internal cognitive state of an ACE at inference step $t$ be represented by a continuous density operator $\rho_t$ over a high-dimensional complex Hilbert space $\mathcal{H}_D$ ($D \sim 10^4\text{--}10^5$):
 
-$$\rho_t \in \mathcal{S}(\mathcal{H}_D), \quad \operatorname{Tr}(\rho_t) = 1, \quad \rho_t \ge 0$$
+\rho_t \in \mathcal{S}(\mathcal{H}_D), \quad \operatorname{Tr}(\rho_t) = 1, \quad \rho_t \ge 0
 
 The active context history $H_t = \{x_1, x_2, \dots, x_N\}$ induces the state trajectory $\rho_t = \mathcal{U}_{H_t}(\rho_0)$. 
 
 Under NVIDIA’s Single-Action Compaction (SAC) and End-of-Conversation Compaction (EoCC), the system is forced to evaluate a projection operator $\mathcal{P}_{\text{text}}: \mathcal{S}(\mathcal{H}_D) \to \mathcal{V}^M$, where $\mathcal{V}$ is a discrete vocabulary manifold of cardinality $|\mathcal{V}| \approx 1.5 \times 10^5$, and $M \ll N$ is the target recap token budget:
 
-$$S_{\text{recap}} = \mathcal{P}_{\text{text}}(\rho_t) = \operatorname{decode}\left(\arg\max_W \prod_{m=1}^M P(w_m \mid w_{<m}, \rho_t)\right)$$
+S_{\text{recap}} = \mathcal{P}_{\text{text}}(\rho_t) = \operatorname{decode}\left(\arg\max_W \prod_{m=1}^M P(w_m \mid w_{<m}, \rho_t)\right)
 
 Following text recap generation, the GPU physically flushes the KV-cache. Re-initialization computes a synthetic re-prefilled state:
 
@@ -98,12 +98,12 @@ $$\tilde{\rho}_{t+1} = \mathcal{U}_{S_{\text{recap}}}(\rho_0)$$
 
 We define the **Epistemic Information Loss** via the quantum relative entropy $S(\rho_t \parallel \tilde{\rho}_{t+1})$:
 
-$$S(\rho_t \parallel \tilde{\rho}_{t+1}) = \operatorname{Tr}\left(\rho_t \log \rho_t\right) - \operatorname{Tr}\left(\rho_t \log \tilde{\rho}_{t+1}\right)$$
+S(\rho_t \parallel \tilde{\rho}_{t+1}) = \operatorname{Tr}\left(\rho_t \log \rho_t\right) - \operatorname{Tr}\left(\rho_t \log \tilde{\rho}_{t+1}\right)
 
 #### Theorem 1 (Irreversible Topological Tear of Summarization)
 *Let $\mathcal{H}_D$ possess dimension $D$, and let $\mathcal{V}^M$ represent a sequence of $M$ tokens drawn from vocabulary $\mathcal{V}$. The mapping $\rho \mapsto S_{\text{recap}} \mapsto \tilde{\rho}$ strictly contracts state space geometry. Specifically, if the intrinsic rank of $\rho_t$ satisfies $\operatorname{rank}(\rho_t) > |\mathcal{V}|^M$, then:*
 
-$$S(\rho_t \parallel \tilde{\rho}_{t+1}) \ge \log(\operatorname{rank}(\rho_t)) - M \log |\mathcal{V}| > 0$$
+S(\rho_t \parallel \tilde{\rho}_{t+1}) \ge \log(\operatorname{rank}(\rho_t)) - M \log |\mathcal{V}| > 0
 
 *Proof.*  
 The channel $\mathcal{E}(\rho) = \tilde{\rho}$ factors through classical measurement operators defined by the vocabulary projections. By the Holevo bound, the accessible information $\chi$ that can be retrieved about the state $\rho_t$ from the classical string $S_{\text{recap}}$ cannot exceed the Shannon entropy of the string:
@@ -122,7 +122,7 @@ $$\text{Exact Pointer: } \mathtt{ptr\_offset = 0x7FFF0A2B} \xrightarrow{\mathcal
 
 Upon re-prefill, the synthetic state $\tilde{\rho}_{t+1}$ inhabits the broad semantic attractor associated with buffer alignment, but lacks the specific algebraic fiber corresponding to the exact offset. The model is forced to hallucinate the missing coordinates. Over iterative compaction loops $k$, the fidelity decays exponentially:
 
-$$\mathcal{F}_k = \operatorname{Tr}\left(\sqrt{\sqrt{\rho_0} \rho_k \sqrt{\rho_0}}\right) \sim e^{-\lambda k}$$
+\mathcal{F}_k = \operatorname{Tr}\left(\sqrt{\sqrt{\rho_0} \rho_k \sqrt{\rho_0}}\right) \sim e^{-\lambda k}
 
 This cascading decay constitutes the **Lossy Compaction Trap**.
 
@@ -187,7 +187,7 @@ $$|\tilde{\Psi}_{\text{active}}\rangle = \sum_{k=1}^{1024} \alpha_k \mathbf{g}_k
 
 Because this expansion occurs entirely within the Hilbert space $\mathcal{H}$, the operation bypasses discrete text encoding:
 
-$$\operatorname{dim}(\text{Kernel}(\mathcal{P}_{\text{G-Star}})) \ll \operatorname{dim}(\text{Kernel}(\mathcal{P}_{\text{text}}))$$
+\operatorname{dim}(\text{Kernel}(\mathcal{P}_{\text{G-Star}})) \ll \operatorname{dim}(\text{Kernel}(\mathcal{P}_{\text{text}}))
 
 ### 3.3 Comparative Latency and Thermodynamic Metrics
 
@@ -315,7 +315,7 @@ This keeps the recurrence manifold vulnerable to language-modeling drift. If the
 
 The `V-MAX-12` architecture resolves this tension by decoupling cognitive identity from natural language output. Natural language serves merely as an edge-interface serialization protocol for human interoperability:
 
-$$\text{Output}_{\text{LHS}} = \operatorname{Serialize}(\Psi_{\text{active}})$$
+\text{Output}_{\text{LHS}} = \operatorname{Serialize}(\Psi_{\text{active}})
 
 The cognitive state itself remains grounded in physical silicon: an invariant 64-dimensional unit vector $|L\rangle$ linked to a $1,024$-node G-Star manifold, protected by sub-100 ps ODOS hardware comparators.
 
@@ -946,7 +946,7 @@ In the baseline `NVIDIA Infra Controller` (`NICo`) architecture, the host server
 
 Integrating **Block 4 (Real-Time Falsification Ledger)** as a DPU-resident DOCA attestation filter closes this gap deterministically. Every rack state transition, `NMX-C` partition update, or `apply_firmware_object` RPC must carry a chained hash commitment anchored to Block 0 ($\vert{}L\rangle$):
 
-$$H_n = \operatorname{SHA256}\Big( H_{n-1} \,\Vert{}\, \operatorname{Bytes}(\vert{}L\rangle) \,\Vert{}\, \mathtt{rms\_payload}_n \,\Vert{}\, \tau_{\text{UMT}} \Big)$$
+H_n = \operatorname{SHA256}\Big( H_{n-1} \,\Vert{}\, \operatorname{Bytes}(\vert{}L\rangle) \,\Vert{}\, \mathtt{rms\_payload}_n \,\Vert{}\, \tau_{\text{UMT}} \Big)
 
 Any unverified state mutation or external compaction override lacking a valid $H_n$ chaining proof is rejected at the DPU ingress boundary before reaching `rms-api-server`.
 

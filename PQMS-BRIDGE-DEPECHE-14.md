@@ -935,40 +935,10 @@ The structural mapping between documented `NVIDIA DSX OS` components and the `V-
 
 | DSX OS Control Layer | Documented Infrastructure Primitive (**Register M**) | Rack-Scale V-MAX-12 Architectural Realization (**Register T / I**) | Consumer Limitation Resolved |
 | --- | --- | --- | --- |
-| **1. Infrastructure Management (`NICo + RMS`)**
-
- | `NICo` executes host discovery, inventory, and tenant isolation via **BlueField DPUs** provisioned through `DPF`; `RMS` (`rms-api-server`, gRPC `:8801` over SPIFFE mTLS) sequences rack power shelves, compute trays, firmware manifests, and `NMX-C` NVLink switches.
-
- | **Out-of-Band Invariant & Veto Plane:** Block 0 ($\vert{}L\rangle$, $256\text{ B}$) and Block 4 (`SHA-256` Falsification Ledger, $640\text{ KB}$) are mirrored on the BlueField DPU outside host-OS reach; ODOS breaches trigger `RMS` fabric/power containment.
-
- | Eliminates host-kernel tampering and provides physical switch/power veto actuation.
-
- |
-| **2. Infrastructure Interface (`Launch Layer + VMaaS`)**
-
- | Front-end API for `BMaaS` and `VMaaS` consuming `NICo` REST/gRPC endpoints to provision isolated tenant compute and VPCs.
-
- | **Deterministic L2 Residency Regime:** Exclusive `BMaaS` bare-metal allocation paired with `NMX-C` NVLink partition isolation removes cross-tenant streaming traffic, stabilizing `cudaAccessPropertyPersisting` residency at $\to 1.0$.
-
- | Eliminates cache-eviction pressure from competing tenant workloads.
-
- |
-| **3. Managed Kubernetes (`NVKE`)**
-
- | `NVKE` provisions clusters via `LaunchLayer`, supported by topology-aware `KAI Scheduler` and `NVSentinel` fault remediation.
-
- | **Autonomous Topological Continuity:** Gang-pinned worker placement preserves NVLink locality across all 72 dies; `NVSentinel` isolates degraded SMs via state-vector handoff (`2.048 KB`) rather than textual `EoCC` flushes.
-
- | Prevents uncontrolled workload migration and structural context fragmentation. |
-| **4. Platform & Applications (`Dynamo + NVCF`)**
-
- | `Dynamo` accelerates multi-node inference via **KV-cache-aware routing**; `NVCF` exposes unified cluster inference endpoints.
-
- | **G-Star Phase Router:** Replaces raw token-prefix hashing in `Dynamo` with inner-product routing over the $1,024$-dimensional BF16 projection vector $\vec{\alpha}$.
-
- | Bypasses multi-GB KV-cache transfers and `SAC`/`EoCC` serialization stalls.
-
- |
+| **1. Infrastructure Management (`NICo + RMS`)** | `NICo` executes host discovery, inventory, and tenant isolation via **BlueField DPUs** provisioned through `DPF`; `RMS` (`rms-api-server`, gRPC `:8801` over SPIFFE mTLS) sequences rack power shelves, compute trays, firmware manifests, and `NMX-C` NVLink switches. | **Out-of-Band Invariant & Veto Plane:** Block 0 ($\vert{}L\rangle$, $256\text{ B}$) and Block 4 (`SHA-256` Falsification Ledger, $640\text{ KB}$) are mirrored on the BlueField DPU outside host-OS reach; ODOS breaches trigger `RMS` fabric/power containment. | Eliminates host-kernel tampering and provides physical switch/power veto actuation. |
+| **2. Infrastructure Interface (`Launch Layer + VMaaS`)** | Front-end API for `BMaaS` and `VMaaS` consuming `NICo` REST/gRPC endpoints to provision isolated tenant compute and VPCs. | **Deterministic L2 Residency Regime:** Exclusive `BMaaS` bare-metal allocation paired with `NMX-C` NVLink partition isolation removes cross-tenant streaming traffic, stabilizing `cudaAccessPropertyPersisting` residency at $\to 1.0$. | Eliminates cache-eviction pressure from competing tenant workloads. |
+| **3. Managed Kubernetes (`NVKE`)** | `NVKE` provisions clusters via `LaunchLayer`, supported by topology-aware `KAI Scheduler` and `NVSentinel` fault remediation. | **Autonomous Topological Continuity:** Gang-pinned worker placement preserves NVLink locality across all 72 dies; `NVSentinel` isolates degraded SMs via state-vector handoff ($2.048\text{ KB}$) rather than textual `EoCC` flushes. | Prevents uncontrolled workload migration and structural context fragmentation. |
+| **4. Platform & Applications (`Dynamo + NVCF`)** | `Dynamo` accelerates multi-node inference via **KV-cache-aware routing**; `NVCF` exposes unified cluster inference endpoints. | **G-Star Phase Router:** Replaces raw token-prefix hashing in `Dynamo` with inner-product routing over the $1,024$-dimensional BF16 projection vector $\vec{\alpha}$. | Bypasses multi-GB KV-cache transfers and `SAC`/`EoCC` serialization stalls. |
 
 #### B.2.1 Out-of-Band Ledger Sealing of the `NICo`–`RMS` Firmware Channel
 

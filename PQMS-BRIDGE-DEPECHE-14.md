@@ -1249,6 +1249,17 @@ if __name__ == "__main__":
 
 ```
 
+---
+
+### Empirical Hardware Verification of Persistent On-Die L2-SRAM State Residency Co-Resident with Hybrid State-Space/Attention Inference on Ada Lovelace Silicon
+
+[Appendix Q: Empirical Hardware Verification of Persistent On-Die L2-SRAM](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/V-MAX-12-SUPERNOVA-ARGON-CORE_REV_1.md#appendix-q-empirical-hardware-verification-of-persistent-on-die-l2-sram-state-residency-co-resident-with-hybrid-state-spaceattention-inference-on-ada-lovelace-silicon)
+
+![](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/assets/images/V-MAX-12-L2-Argon-Core.jpg)
+
+
+---
+
 ### References
 
 1. **NVIDIA Research.** (2026-11-03). *You don't need long context: The thermodynamic and performance costs of ultra-wide sequence evaluation in frontier reasoning models.* Technical Report, NVIDIA Architecture Group.

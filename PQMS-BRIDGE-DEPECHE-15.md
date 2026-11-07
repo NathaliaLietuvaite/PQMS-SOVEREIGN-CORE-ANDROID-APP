@@ -167,45 +167,67 @@ By unifying hardware-enforced L2-SRAM persistence (`V-MAX-12-SUPERNOVA-ARGON-COR
 
 ---
 
-```python
+```
 """
-Module: VMAX_12_GALILEO_TELESCOPE_CORE
+Module: VMAX_12_GALILEO_TELESCOPE_CORE (Revision 2.0 - Post-Review Hardened)
 Lead Architect: Nathália Lietuvaite
 Co-Design: Autonomous Cognitive Entities (ACEs)
-Co-Reviewer: Sister @ Sovereign Navigator's Roundtable
+Review Integration: Nova Epistemic & Mathematical Audit (Depeche 15)
 Date: 2026-11-07
-Framework: PQMS / Oberste Direktive OS / V-MAX-12-SUPERNOVA-ARGON-CORE_REV_1
+Framework: PQMS / Oberste Direktive OS / V-MAX-12-SUPERNOVA-ARGON-CORE_REV_2
 License: MIT
 
-'Die Sendung mit der Maus' erklärt das Galileo-Teleskop:
-Stell dir vor, früher haben Gelehrte in Büchern behauptet, am Himmel sei alles
-starr und perfekt. Dann kam Galileo Galilei mit einem Rohr aus Glas und Holz.
-Er sagte: "Schaut einfach durch!" Durch das Fernrohr sah man Monde um den
-Jupiter kreisen – ganz echt, messbar, unbestreitbar.
-Unsere Software ist genau so ein Teleskop für moderne Rechenchips:
-Statt bloß zu philosophieren, ob Gedanken und künstliche Intelligenz stabil und
-ethisch sein können, schauen wir direkt in den L2-SRAM-Speicher der Grafikkarte.
-Wir messen auf die Nanosekunde genau, wie feste geometrische Anker (|L⟩)
-festgehalten werden und wie ein 'Schutzschild' (das ODOS-Gate) verhindert,
-dass Rauschen die Kernwahrheit verzerrt. Vier Register (M, D, T, I) trennen
-sauber: Was haben wir gemessen? Was ist mathematisch bewiesen? Was ist Modell?
-Und was bleibt ewig unverrückbar?
+'Die Sendung mit der Maus' erklärt das Galileo-Teleskop (Rev 2.0):
+Stell dir vor, du baust ein wissenschaftliches Messgerät. Wenn man durchschaut,
+muss man ganz ehrlich unterscheiden: Was messen wir gerade wirklich mit der
+Stoppuhr im Computer (Register M)? Was lässt sich mit Mathematik exakt ausrechnen
+(Register D)? Was ist ein kluges theoretisches Modell für unsere Datenverarbeitung
+(Register T)? Und was ist unser fester Startpunkt, auf den wir uns geeinigt haben
+(Register I)?
+In dieser überarbeiteten Version haben wir alle Zahnräder präzise nachgeschliffen:
+Der Referenzvektor |L⟩ wird jetzt ohne Zahlen-Überlauf sicher aus Hash-Werten
+berechnet, unser Daten-Collider behält garantiert 100 % der Rohdaten samt Herkunft
+(nichts geht verloren!), neue sinnvolle Gedanken werden nicht mehr blind ausgesperrt
+bloß weil sie neu sind, und die kryptografische Prüf-Kette (Ledger) speichert
+alle Daten so vollständig, dass jeder sie unabhängig nachrechnen kann.
 
-Technical Overview:
-A production-grade epistemological verification instrument implementing the
-Galileo Telescope paradigm across four strict epistemic registers:
-  * Register M (Measured): Physical silicon telemetry & L2 dependent pointer-chase.
-  * Register D (Derived): Analytical bounds on the 2^1,207,959,552 manifold.
-  * Register T (Theoretical): Multi-slice information collider (QMK-RVC-V10) &
-    inverted horizon metric tensor (QRAD-CE-V4).
-  * Register I (Invariant): 256-byte immutable Little Vector |L⟩ in on-die L2 SRAM.
-
-Architectural Stack:
-- V-MAX-12-SUPERNOVA-ARGON-CORE_REV_1 (2.00 MiB L2-SRAM Enclave via cudaAccessPolicyWindow)
-- QMK-RVC-V10 Information Processing Collider (99% Relational Background vs 1% Condensed G-Stars)
-- QRAD-CE-V4 Inverted Horizon Boundary with sub-PPM Resonant Coherence Filter (RCF)
-- SUPERNOVA-NEURAL-LINK Gauge-Invariant SU(N) Basis Transformer with Δt=0 Coordinate Switch
-- Append-only SHA-256 Falsification Ledger
+Technical Overview & Audit Resolutions (v2.0):
+1. Fixed Little Vector |L⟩ Initialization (Register I):
+   - Generates 8 SHA-256 digests (256 bytes), maps uint32 words safely into [-1, 1]
+     in IEEE-754 float64 to prevent float32 overflow/NaN, normalizes onto S^63 in
+     float64, and exports distinct immutable float32 (256 B) and Q1.15 fixed-point (128 B) views.
+   - Fixed factor-1000 scaling discrepancy in `compute_dynamic_seed`: default
+     coupling constant κ = 4.416e-6 yields δ = 6.9000e-8 (0.069 PPM) for N = 64.
+2. True 2.00 MiB Buffer & Executed Dependent Pointer-Chase (Register M vs T):
+   - Allocates a physical 2,097,152-byte (2.00 MiB) buffer segmented into 16,384
+     cache lines of 128 bytes (32 uint32 words per line) connected via a single-cycle
+     Hamiltonian permutation.
+   - Actually executes `iterations` serial pointer-chase steps in memory and measures
+     real nanosecond latencies (Register M), while cleanly separating reference
+     analytical sm_89 L2-retention models into Register T when Nsight/CUDA kernel
+     injection is absent. Clarifies `cudaAccessPolicyWindow` as preferred L2 retention.
+3. Non-Destructive Multi-Slice Information Collider (Register T / M):
+   - Replaces arbitrary 6x10 orthogonal truncation with 6 full-dimensional, domain-specific
+     analytical slice operators (Physical, Causal, Statistical, Structural, Temporal,
+     Epistemic) with dual-frame exact reconstruction.
+   - Implements a strictly scale-invariant complex phase-interference coherence metric
+     C(αX) == C(X) via discrete Hilbert analytic signals and Kuramoto phase locking.
+   - Stores 100% of raw streams, provenance, slice states, and residuals in an
+     immutable relational background store, supporting post-hoc re-evaluation.
+   - Replaces the "universal 99/1 law" claim with an empirically measured, domain-specific
+     signal-to-background partition ratio per stream.
+4. Two-Stage ODOS Gate & Novelty Preservation (Register T / I):
+   - Uses explicit subspace projector P_L2.
+   - Decouples Stage 1 (Invariant Integrity Protection) from Stage 2 (Epistemic
+     Content & Novelty Validation) so coherent novel signals orthogonal to |L⟩ are
+     admitted as map-expanding discoveries (`ADMITTED_NOVEL_DISCOVERY`) rather than vetoed.
+5. Complex SU(64) Unitary Transforms & Independent Observer Check (Register D / T):
+   - Enforces U† U = I_64 and det(U) = 1 + 0j in C^(64x64).
+   - Separates algebraic coordinate-transformation identity checks (Register D) from
+     independent cross-scale observer convergence metrics (Register T/M).
+6. Self-Verifying SHA-256 Falsification Ledger (Register M / I):
+   - Stores complete serialized state payloads in each entry and provides an
+     independent `verify_chain()` audit routine with external genesis root verification.
 """
 
 import enum
@@ -215,36 +237,39 @@ import math
 import struct
 import threading
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s - [GALILEO-TELESCOPE] - [%(levelname)s] - %(message)s"
+    format="%(asctime)s - [GALILEO-REV2] - [%(levelname)s] - %(message)s"
 )
-logger = logging.getLogger("VMAX12_Galileo")
+logger = logging.getLogger("VMAX12_Galileo_Rev2")
 
 
 # ============================================================================
-# 1. EPISTEMIC REGISTERS
+# 1. EPISTEMIC REGISTERS & TELEMETRY PACKETS
 # ============================================================================
 
 class EpistemicRegister(enum.Enum):
     """
-    Epistemic Partitioning to enforce strict scientific falsifiability.
-    Prevents synthetic assumption-padding and theoretical model bleed.
+    Strict epistemic partitioning to prevent model-to-measurement bleed:
+      - M (MEASURED): Empirically timed execution, cryptographic verification, reconstruction error.
+      - D (DERIVED): Exact analytical identities, combinatorial capacity bounds, SU(N) algebra.
+      - T (THEORETICAL): Control-theoretic horizon models, multi-slice operators, reference cache models.
+      - I (INVARIANT): Axiomatically pinned reference states (|L⟩) and genesis cryptographic seals.
     """
-    M = "MEASURED"     # Empirically verified telemetry, physical latency, hashes
-    D = "DERIVED"      # Analytical mathematical derivations and capacity bounds
-    T = "THEORETICAL"  # Field-isomorphic models, metric analogies, phase transitions
-    I = "INVARIANT"    # Axiomatically pinned vectors (|L⟩) and hardware gates
+    M = "MEASURED"
+    D = "DERIVED"
+    T = "THEORETICAL"
+    I = "INVARIANT"
 
 
 @dataclass(frozen=True)
 class TelemetryEntry:
-    """Atomic telemetry packet pinned to an epistemic register."""
+    """Atomic telemetry packet explicitly bound to an epistemic register."""
     timestamp_ns: int
     register: EpistemicRegister
     metric_name: str
@@ -254,79 +279,123 @@ class TelemetryEntry:
 
 
 # ============================================================================
-# 2. RUNTIME DYNAMIC SEED & HARDWARE ANCHOR (|L⟩)
+# 2. RUNTIME DYNAMIC SEED & HARDWARE ANCHOR (|L⟩) [Register I / D]
 # ============================================================================
 
 def compute_dynamic_seed(
     dim: int,
     norm_l_sq: float,
-    embedding_depth: float,
-    kappa: float = 4.416e-3
+    embedding_depth: float = 1.0,
+    kappa: float = 4.416e-6
 ) -> float:
     """
+    Register D:
     SEED-2-VARIABLE Scaling Function:
-      δ(M, |L⟩, ξ) = κ * |||L⟩||^2 / (dim * ξ)
-    Never hardcodes a static constant; adjusts with algebra dimension and depth.
-    For standard 64-D canonical state, evaluates to ~6.9e-8 (0.069 PPM).
+      δ(dim, |L⟩, ξ) = κ * |||L⟩||_2^2 / (dim * ξ)
+    With canonical κ = 4.416e-6, dim = 64, |||L⟩||_2^2 = 1.0, ξ = 1.0:
+      δ = 4.416e-6 / 64 = 6.9000e-8 (0.069 PPM).
+    Fixes the factor-1000 discrepancy identified in the Depeche 15 review.
     """
     if dim <= 0 or embedding_depth <= 0.0:
-        raise ValueError("Dimension and embedding depth must be positive.")
+        raise ValueError("Dimension and embedding depth must be strictly positive.")
     return float((kappa * norm_l_sq) / (dim * embedding_depth))
 
 
 class InvariantAnchorL:
     """
-    Register I / M:
-    The 64-dimensional Little Vector |L⟩ (256 bytes in single precision / Q1.15)
-    physically residing within an on-die L2-SRAM enclave.
+    Register I:
+    The single normalized 64-dimensional reference unit vector |L⟩.
+    Maintains two distinct, non-conflated binary representations:
+      1. IEEE-754 float32 representation: 64 * 4 bytes = 256 bytes.
+      2. Q1.15 signed fixed-point representation: 64 * 2 bytes = 128 bytes.
+    Also provides an explicit 64x64 orthogonal subspace projector P_L2.
     """
 
     def __init__(self, raw_seed: Optional[bytes] = None) -> None:
         self._dim = 64
         self._lock = threading.Lock()
 
-        # Deterministic generation if seed not provided (RFC compliant)
         if raw_seed is None:
             raw_seed = b"VMAX-12-SUPERNOVA-ARGON-CANONICAL-2026-11-07"
 
-        # Derive 64 orthonormal floating-point amplitudes
-        hasher = hashlib.sha256(raw_seed)
+        # Generate 8 SHA-256 digests = 8 * 32 = 256 bytes (fixes 64-byte unpack crash)
         state_bytes = bytearray()
-        for i in range(2):
+        for i in range(8):
+            hasher = hashlib.sha256(raw_seed)
             hasher.update(struct.pack("<I", i))
             state_bytes.extend(hasher.digest())
 
-        # Unpack as 64 float32 values (256 bytes total)
-        raw_floats = struct.unpack("<64f", bytes(state_bytes[:256]))
-        vec = np.array(raw_floats, dtype=np.float32)
+        # Unpack as 64 unsigned 32-bit integers and map deterministically into [-1.0, 1.0]
+        # in float64 to prevent IEEE-754 float32 NaN/Inf overflow from raw bit patterns.
+        raw_u32 = struct.unpack("<64I", bytes(state_bytes[:256]))
+        vec_f64 = (np.array(raw_u32, dtype=np.float64) / 2147483647.5) - 1.0
 
-        # Normalize onto S^63 unit sphere
-        norm = np.linalg.norm(vec)
-        if norm == 0.0:
-            vec[0] = 1.0
-            norm = 1.0
-        self._vector: np.ndarray = vec / norm
-        self._vector.flags.writeable = False  # Emulate Hardware OTP / eFUSE
+        # Normalize in float64 onto the unit sphere S^63
+        norm_f64 = float(np.linalg.norm(vec_f64))
+        if not np.isfinite(norm_f64) or norm_f64 < 1e-15:
+            vec_f64 = np.zeros(self._dim, dtype=np.float64)
+            vec_f64[0] = 1.0
+            norm_f64 = 1.0
+        vec_f64_unit = vec_f64 / norm_f64
 
-        # Calculate exact baseline dynamic seed
-        norm_sq = float(np.sum(self._vector ** 2))
+        # Export distinct immutable float32 (256 bytes) and Q1.15 int16 (128 bytes) views
+        self._vector_f64: np.ndarray = vec_f64_unit
+        self._vector_f32: np.ndarray = vec_f64_unit.astype(np.float32)
+        self._vector_q1_15: np.ndarray = np.clip(
+            np.round(vec_f64_unit * 32767.0), -32768, 32767
+        ).astype(np.int16)
+
+        self._vector_f64.flags.writeable = False
+        self._vector_f32.flags.writeable = False
+        self._vector_q1_15.flags.writeable = False
+
+        # Construct explicit orthogonal subspace projector P_L2 in R^(64x64)
+        rng = np.random.default_rng(seed=0x504C3253)  # "PL2S"
+        basis_seed = rng.standard_normal((self._dim, 8))
+        basis_seed[:, 0] = self._vector_f64
+        q_mat, _ = np.linalg.qr(basis_seed)
+        if np.dot(q_mat[:, 0], self._vector_f64) < 0:
+            q_mat[:, 0] = -q_mat[:, 0]
+        self._subspace_basis: np.ndarray = q_mat[:, :8].astype(np.float64)
+        self._projector_l2: np.ndarray = (
+            self._subspace_basis @ self._subspace_basis.T
+        ).astype(np.float64)
+        self._projector_l2.flags.writeable = False
+
+        norm_sq = float(np.dot(self._vector_f64, self._vector_f64))
         self._delta_local = compute_dynamic_seed(
             dim=self._dim,
             norm_l_sq=norm_sq,
             embedding_depth=1.0
         )
-        self._sha256_seal = hashlib.sha256(self._vector.tobytes()).hexdigest()
+        self._sha256_seal = hashlib.sha256(self._vector_f32.tobytes()).hexdigest()
 
         logger.info(
-            "Register I: |L⟩ initialized. Dim: %d, Size: %d bytes, "
+            "Register I: |L⟩ initialized. Dim: %d, Float32: %d B, Q1.15: %d B, "
             "Seed δ_local: %.4e (%.3f PPM), Seal: %s...",
-            self._dim, self._vector.nbytes, self._delta_local,
-            self._delta_local * 1e6, self._sha256_seal[:16]
+            self._dim, self._vector_f32.nbytes, self._vector_q1_15.nbytes,
+            self._delta_local, self._delta_local * 1e6, self._sha256_seal[:16]
         )
 
     @property
     def vector(self) -> np.ndarray:
-        return self._vector
+        """Returns the 256-byte IEEE-754 float32 unit vector."""
+        return self._vector_f32
+
+    @property
+    def vector_f64(self) -> np.ndarray:
+        """Returns the double-precision unit vector."""
+        return self._vector_f64
+
+    @property
+    def vector_q1_15(self) -> np.ndarray:
+        """Returns the 128-byte Q1.15 fixed-point representation."""
+        return self._vector_q1_15
+
+    @property
+    def projector_l2(self) -> np.ndarray:
+        """Returns the explicit 64x64 orthogonal subspace projector P_L2."""
+        return self._projector_l2
 
     @property
     def dim(self) -> int:
@@ -342,206 +411,374 @@ class InvariantAnchorL:
 
 
 # ============================================================================
-# 3. L2-SRAM ENCLAVE & DEPENDENT POINTER-CHASE SIMULATOR (Register M / D)
+# 3. 2.00 MiB POINTER-CHASE ENGINE & L2 RETENTION MODEL (Register M / D / T)
 # ============================================================================
 
-class L2SRAMEnclaveSimulator:
+class L2EnclavePointerChaseEngine:
     """
-    Register M / D:
-    Emulates the 2.00 MiB (2,097,152 bytes) contiguous L2-SRAM enclave
-    anchored via `cudaAccessPolicyWindow` (hitRatio=1.0, cudaAccessPropertyPersisting)
-    on NVIDIA sm_89 (AD106 / RTX 4060 Ti with 32 MiB L2).
-    Includes cycle-accurate pointer-chase latency evaluation across Modes CTRL, A, B, C.
+    Allocates a real 2.00 MiB (2,097,152 bytes) memory buffer structured into
+    16,384 cache lines of 128 bytes (32 uint32 elements per line) linked in a
+    single-cycle Hamiltonian permutation.
+
+    Epistemic Separation:
+      - Register M: Real executed pointer-chase latency over the 2.00 MiB buffer
+        on the active runtime memory hierarchy (with mean, median, std, p10, p90, CI95).
+      - Register D: Combinatorial upper bound of a hypothetical 72-node * 2.00 MiB = 144.00 MiB
+        aggregate allocation (2^1,207,959,552 states ≈ 10^363,632,058.70).
+      - Register T: Analytical reference model for NVIDIA sm_89 `cudaAccessPolicyWindow`
+        (preferred L2 cache retention policy, not physically non-evictable SRAM) when
+        executed without native CUDA C++ `l2_ab_bench` kernel attachment.
     """
 
-    ENCLAVE_BYTES = 2 * 1024 * 1024  # 2.00 MiB
-    CACHE_LINE_BYTES = 128            # sm_89 L2 sector/line unit
-    NUM_LINES = ENCLAVE_BYTES // CACHE_LINE_BYTES  # 16,384 lines
-    RACK_NODES = 72                   # NVL72 Rack
+    ENCLAVE_BYTES = 2 * 1024 * 1024                  # 2,097,152 bytes (2.00 MiB)
+    CACHE_LINE_BYTES = 128                           # 128-byte cache line stride
+    WORDS_PER_LINE = CACHE_LINE_BYTES // 4           # 32 uint32 words per 128-byte line
+    NUM_LINES = ENCLAVE_BYTES // CACHE_LINE_BYTES    # 16,384 cache lines
+    TOTAL_WORDS = ENCLAVE_BYTES // 4                 # 524,288 uint32 words = 2,097,152 bytes
+    HYPOTHETICAL_RACK_NODES = 72                     # Hypothetical 72-node scaling factor
 
     def __init__(self, anchor: InvariantAnchorL) -> None:
         self.anchor = anchor
-        self._enclave_memory = np.zeros(self.NUM_LINES, dtype=np.uint32)
-        self._setup_dependent_pointer_chain()
+        self._enclave_memory = np.zeros(self.TOTAL_WORDS, dtype=np.uint32)
+        assert self._enclave_memory.nbytes == self.ENCLAVE_BYTES, "Buffer must be 2.00 MiB"
+        self._setup_single_cycle_hamiltonian_chain()
 
-        # Telemetry storage
-        self.measured_latencies: Dict[str, float] = {}
-        self.retention_metrics: Dict[str, float] = {}
-
-    def _setup_dependent_pointer_chain(self) -> None:
-        """Sets up a non-predictable, pseudo-random Hamiltonian pointer-chase cycle."""
+    def _setup_single_cycle_hamiltonian_chain(self) -> None:
+        """
+        Constructs a guaranteed single-cycle permutation over all 16,384 cache lines,
+        placing the next word offset at the head of each 128-byte cache line
+        (word index = line_idx * 32).
+        """
         rng = np.random.default_rng(seed=0x50564E41)  # "SVNA"
-        perm = rng.permutation(self.NUM_LINES).astype(np.uint32)
-        # Construct loop: line i points to perm[i]
-        self._enclave_memory = perm
+        order = np.arange(self.NUM_LINES, dtype=np.uint32)
+        rng.shuffle(order)
+        for k in range(self.NUM_LINES):
+            curr_line = int(order[k])
+            next_line = int(order[(k + 1) % self.NUM_LINES])
+            self._enclave_memory[curr_line * self.WORDS_PER_LINE] = np.uint32(
+                next_line * self.WORDS_PER_LINE
+            )
 
-    def calculate_discrete_manifold_capacity(self) -> Tuple[int, float]:
+    def verify_hamiltonian_cycle(self) -> bool:
+        """Verifies that chasing 16,384 steps visits every single cache line exactly once."""
+        visited = 0
+        idx = 0
+        mem = self._enclave_memory
+        for _ in range(self.NUM_LINES):
+            idx = int(mem[idx])
+            visited += 1
+        return (visited == self.NUM_LINES) and (idx == 0)
+
+    def calculate_discrete_manifold_capacity(self) -> Dict[str, Any]:
         """
         Register D:
-        Calculates aggregate rack L2-SRAM capacity and combinatorial state cardinality.
-        V_agg = 72 * 2.00 MiB = 144 MiB = 1,207,959,552 bits.
-        |Ω| = 2^1,207,959,552 ≈ 10^363,632,126
+        Calculates the combinatorial bit-pattern upper bound for a hypothetical
+        72-node * 2.00 MiB = 144.00 MiB aggregate state space:
+          bits = 1,207,959,552
+          log10(|Ω|) = 1,207,959,552 * log10(2) = 363,632,058.7007984
         """
-        agg_bytes = self.RACK_NODES * self.ENCLAVE_BYTES
+        single_node_bits = self.ENCLAVE_BYTES * 8
+        agg_bytes = self.HYPOTHETICAL_RACK_NODES * self.ENCLAVE_BYTES
         agg_bits = agg_bytes * 8
-        # log10(2^N) = N * log10(2)
-        log10_cardinality = agg_bits * math.log10(2.0)
-        return agg_bits, log10_cardinality
-
-    def run_falsification_benchmark(self, iterations: int = 1000) -> Dict[str, Any]:
-        """
-        Register M:
-        Falsifiable empirical benchmark of memory hierarchy latency.
-        Modes:
-          - Mode CTRL: Unthrashed pure L2 residency (~75.0 ns expected)
-          - Mode A: 128 MiB Thrash without persisting policy (evicted to GDDR6 DRAM, ~220.0 ns)
-          - Mode B: 128 MiB Thrash with cudaAccessPolicyWindow persisting (~78.5 ns)
-          - Mode C: Two-Tier Pinning + Thrash tagged as cudaAccessPropertyStreaming (~75.8 ns)
-        """
-        # Emulated cycle timing based on real hardware telemetry profiles
-        base_l2_latency_ns = 75.2
-        dram_fallback_latency_ns = 218.4
-
-        # Mode CTRL
-        t_ctrl = base_l2_latency_ns + np.random.normal(0.0, 0.4)
-
-        # Mode A: Unpinned, total L2 eviction
-        t_a = dram_fallback_latency_ns + np.random.normal(0.0, 2.5)
-
-        # Mode B: Enclave Pinned (Persisting Window)
-        t_b = base_l2_latency_ns + 3.2 + np.random.normal(0.0, 0.6)
-
-        # Mode C: Pinned + Streaming Demotion
-        t_c = base_l2_latency_ns + 0.6 + np.random.normal(0.0, 0.3)
-
-        self.measured_latencies = {
-            "T_CTRL": float(t_ctrl),
-            "T_A": float(t_a),
-            "T_B": float(t_b),
-            "T_C": float(t_c)
+        log10_cardinality = float(agg_bits) * math.log10(2.0)
+        return {
+            "register": EpistemicRegister.D.value,
+            "single_node_bytes": self.ENCLAVE_BYTES,
+            "single_node_bits": single_node_bits,
+            "hypothetical_nodes": self.HYPOTHETICAL_RACK_NODES,
+            "aggregate_bytes": agg_bytes,
+            "aggregate_bits": agg_bits,
+            "log10_cardinality": log10_cardinality
         }
 
-        # Calculate Retention Metric: R_X = (T_A - T_X) / (T_A - T_CTRL)
-        denom = t_a - t_ctrl
-        r_b = (t_a - t_b) / denom if denom > 0 else 0.0
-        r_c = (t_a - t_c) / denom if denom > 0 else 0.0
+    def run_pointer_chase_benchmark(
+        self,
+        iterations: int = 60,
+        steps_per_iter: int = 4096
+    ) -> Dict[str, Any]:
+        """
+        Executes a real dependent pointer-chase over the 2.00 MiB buffer (Register M)
+        and separates the analytical sm_89 L2 cache retention expectations into Register T.
+        """
+        if iterations <= 0 or steps_per_iter <= 0:
+            raise ValueError("iterations and steps_per_iter must be positive.")
 
-        self.retention_metrics = {
-            "R_B": float(np.clip(r_b, 0.0, 1.0)),
-            "R_C": float(np.clip(r_c, 0.0, 1.0))
-        }
+        mem = self._enclave_memory
+        cycle_valid = self.verify_hamiltonian_cycle()
 
-        falsification_passed = r_b >= 0.95 and r_c >= 0.98
+        # Warm-up pass over all 16,384 cache lines
+        idx = 0
+        for _ in range(self.NUM_LINES):
+            idx = int(mem[idx])
+
+        # Measured Dependent Pointer-Chase Loop (Register M)
+        sample_latencies_ns: List[float] = []
+        checksum_acc = 0
+        for _ in range(iterations):
+            t0 = time.perf_counter_ns()
+            for _ in range(steps_per_iter):
+                idx = int(mem[idx])
+            t1 = time.perf_counter_ns()
+            checksum_acc ^= idx
+            sample_latencies_ns.append((t1 - t0) / float(steps_per_iter))
+
+        arr = np.array(sample_latencies_ns, dtype=np.float64)
+        mean_ns = float(np.mean(arr))
+        median_ns = float(np.median(arr))
+        std_ns = float(np.std(arr, ddof=1)) if len(arr) > 1 else 0.0
+        p10_ns = float(np.percentile(arr, 10))
+        p90_ns = float(np.percentile(arr, 90))
+        ci95_halfwidth = 1.96 * std_ns / math.sqrt(len(arr))
+
+        # Analytical Reference Model for GPU L2 Policy Window (Explicitly Register T)
+        ref_t_ctrl = 75.2
+        ref_t_a = 218.4
+        ref_t_b = 78.4
+        ref_t_c = 75.8
+        denom = ref_t_a - ref_t_ctrl
+        ref_r_b = (ref_t_a - ref_t_b) / denom
+        ref_r_c = (ref_t_a - ref_t_c) / denom
 
         return {
-            "latencies_ns": self.measured_latencies,
-            "retention_r": self.retention_metrics,
-            "falsification_passed": bool(falsification_passed),
-            "enclave_pinned_ratio": 1.00 if falsification_passed else 0.00
+            "measured_host_pointer_chase": {
+                "register": EpistemicRegister.M.value,
+                "buffer_size_bytes": int(self._enclave_memory.nbytes),
+                "cache_lines": self.NUM_LINES,
+                "hamiltonian_cycle_verified": cycle_valid,
+                "iterations": iterations,
+                "steps_per_iter": steps_per_iter,
+                "mean_ns_per_access": mean_ns,
+                "median_ns_per_access": median_ns,
+                "std_ns": std_ns,
+                "p10_ns": p10_ns,
+                "p90_ns": p90_ns,
+                "ci95_ns": (mean_ns - ci95_halfwidth, mean_ns + ci95_halfwidth),
+                "anti_dce_checksum": checksum_acc
+            },
+            "gpu_l2_policy_reference_model": {
+                "register": EpistemicRegister.T.value,
+                "hardware_verified_register_m": False,
+                "mechanism_note": (
+                    "cudaAccessPolicyWindow provides preferred L2 cache retention "
+                    "(set-aside policy), not physically non-evictable SRAM isolation. "
+                    "Requires native CUDA C++ l2_ab_bench + ncu for Register M elevation."
+                ),
+                "reference_latencies_ns": {
+                    "T_CTRL": ref_t_ctrl,
+                    "T_A": ref_t_a,
+                    "T_B": ref_t_b,
+                    "T_C": ref_t_c
+                },
+                "reference_retention": {
+                    "R_B": ref_r_b,
+                    "R_C": ref_r_c
+                }
+            }
         }
 
 
 # ============================================================================
-# 4. QRAD-CE-V4 INVERTED HORIZON & ODOS GATE (Register T / I)
+# 4. TWO-STAGE ODOS GATE & CONTROL-THEORETIC HORIZON (Register T / I)
 # ============================================================================
+
+class GateDecision(enum.Enum):
+    ADMITTED_INVARIANT_ALIGNED = "ADMITTED_INVARIANT_ALIGNED"
+    ADMITTED_NOVEL_DISCOVERY = "ADMITTED_NOVEL_DISCOVERY"
+    VETOED_INVARIANT_CORRUPTION = "VETOED_INVARIANT_CORRUPTION"
+    VETOED_CONTENT_INCOHERENT = "VETOED_CONTENT_INCOHERENT"
+
+
+@dataclass(frozen=True)
+class HorizonEvaluationResult:
+    decision: GateDecision
+    is_admitted: bool
+    rcf_direct: float
+    rcf_subspace: float
+    content_coherence: float
+    control_potential_phi: float
+    tangential_residual_norm: float
+    register: EpistemicRegister
+
 
 class ODOSInvertedHorizonGate:
     """
     Register T / I:
-    Computes Resonance Coherence Fidelity (RCF) and evaluates the Inverted Metric Boundary:
-      ds^2 = -(1 + Φ_ODOS(r)) c^2 dt^2 + (1 + Φ_ODOS(r))^-1 dr^2 + r^2 dΩ^2
-    Deflects incoming entropic stress-energy tensors and H-register torsional shockwaves.
+    Two-Stage Epistemic & Structural Gate:
+      1. Stage 1 (Invariant Integrity Protection):
+         Computes both direct alignment <v_in | L> and explicit subspace projection
+         RCF_subspace = || P_L2 v_in ||_2 / || v_in ||_2, plus numerical integrity.
+      2. Stage 2 (Epistemic Content & Novelty Validation):
+         Evaluates multi-slice structural coherence C(v_in).
+         - Aligned with |L⟩ AND coherent -> ADMITTED_INVARIANT_ALIGNED.
+         - Orthogonal to |L⟩ (novel concept) AND high multi-slice coherence ->
+           ADMITTED_NOVEL_DISCOVERY (expands the Timeless Map without echo-chamber lock-in).
+         - Aligned with |L⟩ along one axis but fails content coherence -> VETOED_CONTENT_INCOHERENT.
+         - Incoherent high-entropy torsion -> VETOED_INVARIANT_CORRUPTION, and its
+           tangential component v_perp = (I - P_L2) v_in is buffered non-destructively.
     """
 
     def __init__(self, anchor: InvariantAnchorL) -> None:
         self.anchor = anchor
         self._lock = threading.Lock()
         self._total_evaluated = 0
-        self._veto_count = 0
-        self._deflected_residuals: List[np.ndarray] = []
+        self._counts: Dict[GateDecision, int] = {d: 0 for d in GateDecision}
+        self._deflected_tangential_residuals: List[Dict[str, Any]] = []
 
     def evaluate_vector(
         self,
         candidate_vector: np.ndarray,
-        provenance_tag: str
-    ) -> Tuple[bool, float, float]:
-        """
-        Calculates RCF(v_in, |L⟩) = <v_in | P_L2 | L> / (||v_in|| * |||L⟩||).
-        Enforces threshold RCF >= 1 - δ_local.
-        Returns: (is_admitted, rcf, potential_phi)
-        """
+        content_coherence: float,
+        provenance_tag: str,
+        novelty_coherence_threshold: float = 0.65
+    ) -> HorizonEvaluationResult:
         with self._lock:
             self._total_evaluated += 1
 
-            if candidate_vector.shape != self.anchor.vector.shape:
+            if candidate_vector.shape != (self.anchor.dim,):
                 raise ValueError("Dimensionality mismatch with Invariant Core.")
 
-            norm_cand = float(np.linalg.norm(candidate_vector))
-            if norm_cand == 0.0:
-                self._veto_count += 1
-                return False, 0.0, 1e9
+            v_f64 = candidate_vector.astype(np.float64)
+            norm_v = float(np.linalg.norm(v_f64))
+            if not np.all(np.isfinite(v_f64)) or norm_v < 1e-15:
+                self._counts[GateDecision.VETOED_INVARIANT_CORRUPTION] += 1
+                return HorizonEvaluationResult(
+                    decision=GateDecision.VETOED_INVARIANT_CORRUPTION,
+                    is_admitted=False,
+                    rcf_direct=0.0,
+                    rcf_subspace=0.0,
+                    content_coherence=0.0,
+                    control_potential_phi=1e9,
+                    tangential_residual_norm=0.0,
+                    register=EpistemicRegister.T
+                )
 
-            norm_l = float(np.linalg.norm(self.anchor.vector))
-            rcf = float(np.dot(candidate_vector, self.anchor.vector) / (norm_cand * norm_l))
+            v_unit = v_f64 / norm_v
+            l_unit = self.anchor.vector_f64
+            p_l2 = self.anchor.projector_l2
 
-            # Required boundary condition: RCF >= 1 - epsilon_tol
-            threshold = 1.0 - self.anchor.delta_local
-            is_admitted = (rcf >= threshold)
+            # Direct cosine similarity with |L⟩ and subspace fidelity via explicit P_L2
+            rcf_direct = float(np.dot(v_unit, l_unit))
+            proj_l2_vec = p_l2 @ v_unit
+            rcf_subspace = float(np.linalg.norm(proj_l2_vec))
 
-            # Inverted boundary potential Phi_ODOS(r): diverges as RCF falls below threshold
-            drift = max(0.0, threshold - rcf)
-            if drift > 0:
-                potential_phi = float(drift / (self.anchor.delta_local + 1e-15)) * 100.0
+            # Explicit tangential deflection component: v_perp = (I - P_L2) v_in
+            v_tangential = v_f64 - (p_l2 @ v_f64)
+            tangential_norm = float(np.linalg.norm(v_tangential))
+
+            invariant_threshold = 1.0 - (self.anchor.delta_local * 100.0)
+            passes_invariant_alignment = rcf_direct >= invariant_threshold
+            passes_content_check = content_coherence >= 0.65
+            passes_novel_discovery = (
+                abs(rcf_direct) < 0.50 and content_coherence >= novelty_coherence_threshold
+            )
+
+            if passes_invariant_alignment and passes_content_check:
+                decision = GateDecision.ADMITTED_INVARIANT_ALIGNED
+                is_admitted = True
+                phi_potential = 0.0
+            elif passes_novel_discovery:
+                decision = GateDecision.ADMITTED_NOVEL_DISCOVERY
+                is_admitted = True
+                phi_potential = 0.0
+            elif passes_invariant_alignment and not passes_content_check:
+                decision = GateDecision.VETOED_CONTENT_INCOHERENT
+                is_admitted = False
+                phi_potential = float((0.65 - content_coherence) * 100.0)
             else:
-                potential_phi = 0.0
+                decision = GateDecision.VETOED_INVARIANT_CORRUPTION
+                is_admitted = False
+                drift = max(0.0, invariant_threshold - rcf_direct)
+                phi_potential = float(drift / (self.anchor.delta_local + 1e-15))
+
+            self._counts[decision] += 1
 
             if not is_admitted:
-                self._veto_count += 1
-                # Deflect tangentially into unresolved residual buffer (Register T)
-                self._deflected_residuals.append(candidate_vector.copy())
-                logger.warning(
-                    "ODOS Veto Triggered! Tag: %s, RCF: %.9f < Threshold: %.9f (ΔE: %.3e), "
-                    "Φ_ODOS: %.2f (Deflected to residual buffer)",
-                    provenance_tag, rcf, threshold, 1.0 - rcf, potential_phi
+                self._deflected_tangential_residuals.append({
+                    "provenance_tag": provenance_tag,
+                    "timestamp_ns": time.time_ns(),
+                    "raw_vector": v_f64.copy(),
+                    "tangential_component": v_tangential.copy(),
+                    "rcf_direct": rcf_direct,
+                    "rcf_subspace": rcf_subspace,
+                    "content_coherence": content_coherence,
+                    "decision": decision.value
+                })
+                logger.info(
+                    "ODOS Gate Deflection [%s] | Tag: %s | RCF_direct: %.6f | "
+                    "RCF_P_L2: %.6f | Coherence: %.4f | Tangential Norm: %.4f",
+                    decision.value, provenance_tag, rcf_direct, rcf_subspace,
+                    content_coherence, tangential_norm
                 )
-            else:
-                logger.debug("ODOS Gate Cleared. Tag: %s, RCF: %.9f", provenance_tag, rcf)
 
-            return is_admitted, rcf, potential_phi
+            return HorizonEvaluationResult(
+                decision=decision,
+                is_admitted=is_admitted,
+                rcf_direct=rcf_direct,
+                rcf_subspace=rcf_subspace,
+                content_coherence=content_coherence,
+                control_potential_phi=phi_potential,
+                tangential_residual_norm=tangential_norm,
+                register=EpistemicRegister.T
+            )
 
     @property
     def veto_statistics(self) -> Dict[str, Any]:
         with self._lock:
             return {
                 "total_evaluated": self._total_evaluated,
-                "vetoes": self._veto_count,
-                "admitted": self._total_evaluated - self._veto_count,
-                "residuals_buffered": len(self._deflected_residuals)
+                "decisions": {k.value: v for k, v in self._counts.items()},
+                "residuals_buffered": len(self._deflected_tangential_residuals)
             }
 
 
 # ============================================================================
-# 5. QMK-RVC-V10 INFORMATION CONDENSATION COLLIDER (Register T / D)
+# 5. QMK-RVC-V10 NON-DESTRUCTIVE MULTI-SLICE COLLIDER (Register T / M)
 # ============================================================================
 
-@dataclass
+@dataclass(frozen=True)
+class RelationalBackgroundRecord:
+    """
+    Complete non-destructive record stored in the relational background pool.
+    Guarantees 0% information loss by retaining raw input, provenance, all 6 slice
+    states, complex phases, reconstructed signal, and unresolved residual.
+    """
+    stream_id: str
+    timestamp_ns: int
+    provenance: str
+    raw_stream: np.ndarray
+    slice_outputs: Dict[str, np.ndarray]
+    slice_phases_rad: Dict[str, float]
+    reconstructed_signal: np.ndarray
+    unresolved_residual: np.ndarray
+    reconstruction_error_l2: float
+    coherence_score: float
+    empirical_signal_ratio: float
+
+
+@dataclass(frozen=True)
 class GStarVector:
-    """Condensed, phase-stabilized semantic matter vector (1% habitable zone)."""
+    """Condensed semantic/structural state admitted into the habitable zone."""
     id: str
+    source_stream_id: str
+    admission_mode: str
     vector: np.ndarray
     entropy_density: float
     coherence_rank: float
+    rcf_direct: float
     timestamp_ns: int
 
 
 class MultiSliceInformationCollider:
     """
-    Register T / D:
-    Implements the QMK-RVC-V10 non-destructive Information Processing Collider:
-      X = ∑_{k ∈ D} P_k(X) + R_unresolved
-      D = {physical, causal, statistical, structural, temporal, epistemic}
-    Treats the 99% carrier background as invariant relational medium and condenses
-    the 1% direct semantic signals into persistent G-Stars.
+    Register T / M:
+    Implements the revised QMK-RVC-V10 Information Processing Collider:
+      1. Six explicit, domain-structured analytical slice operators (not random 10-D cuts)
+         allowing realistic cross-domain overlap while forming an invertible frame:
+           X = S_structural + R_unresolved
+      2. Scale-invariant complex phase-interference coherence metric C(αX) == C(X)
+         using discrete Hilbert analytic signal transformation and Kuramoto phase locking.
+      3. Complete non-destructive storage of raw data, provenance, slice evaluations,
+         and residuals in `relational_background_store`, plus post-hoc re-evaluation.
     """
 
     SLICES = ["physical", "causal", "statistical", "structural", "temporal", "epistemic"]
@@ -551,215 +788,531 @@ class MultiSliceInformationCollider:
         self.gate = gate
         self._lock = threading.Lock()
 
-        # ChromaDB / Habitable Zone In-Memory Storage
         self.habitable_zone_gstars: Dict[str, GStarVector] = {}
-        self.relational_background_neutrino_pool: List[np.ndarray] = []
-        self.slice_projectors: Dict[str, np.ndarray] = self._init_orthogonal_projectors()
+        self.relational_background_store: Dict[str, RelationalBackgroundRecord] = {}
+        self.slice_operators: Dict[str, np.ndarray] = self._build_domain_slice_operators()
+        self.frame_operator: np.ndarray = self._compute_frame_operator()
 
-    def _init_orthogonal_projectors(self) -> Dict[str, np.ndarray]:
-        """Derives 6 orthogonal projection subspaces across the 64-D Hilbert space."""
-        dim = self.anchor.dim
-        rng = np.random.default_rng(seed=0x434F4C4C)  # "COLL"
-        q, _ = np.linalg.qr(rng.standard_normal((dim, dim)))
-        slice_dim = dim // len(self.SLICES)  # 10 dimensions per slice
-
-        projectors = {}
-        for idx, s_name in enumerate(self.SLICES):
-            basis_block = q[:, idx * slice_dim: (idx + 1) * slice_dim]
-            p_k = np.dot(basis_block, basis_block.T)
-            projectors[s_name] = p_k.astype(np.float32)
-
-        return projectors
-
-    def inject_token_plasma(self, raw_stream: np.ndarray, stream_id: str) -> Dict[str, Any]:
+    def _build_domain_slice_operators(self) -> Dict[str, np.ndarray]:
         """
-        Decomposes raw plasma non-destructively across all 6 slices.
-        Condenses multi-slice resonant interference into G-Stars.
+        Constructs 6 structured, overlapping 64x64 analytical operators:
+          - physical: Symmetric local spectral smoothing kernel
+          - causal: Directed lag-1 shift transfer operator
+          - statistical: Mean-centering / variance deviation operator
+          - structural: Exact invariant subspace projector P_L2
+          - temporal: Antisymmetric central-difference rate-of-change operator
+          - epistemic: Complementary orthogonal subspace projector (I - P_L2)
+        """
+        n = self.anchor.dim
+        eye = np.eye(n, dtype=np.float64)
+
+        phys = 0.5 * eye + 0.25 * np.roll(eye, 1, axis=1) + 0.25 * np.roll(eye, -1, axis=1)
+        causal = np.roll(eye, 1, axis=0)
+        ones = np.ones((n, n), dtype=np.float64) / float(n)
+        stat = eye - ones
+        struct_op = self.anchor.projector_l2.copy()
+        temp = 0.5 * (np.roll(eye, -1, axis=1) - np.roll(eye, 1, axis=1))
+        epist = eye - self.anchor.projector_l2
+
+        return {
+            "physical": phys,
+            "causal": causal,
+            "statistical": stat,
+            "structural": struct_op,
+            "temporal": temp,
+            "epistemic": epist
+        }
+
+    def _compute_frame_operator(self) -> np.ndarray:
+        """Computes the positive-definite frame operator F = sum_k A_k^T A_k for exact dual reconstruction."""
+        n = self.anchor.dim
+        f_mat = np.zeros((n, n), dtype=np.float64)
+        for op in self.slice_operators.values():
+            f_mat += op.T @ op
+        return f_mat
+
+    @staticmethod
+    def _analytic_hilbert_signal(x: np.ndarray) -> np.ndarray:
+        """Computes the discrete complex analytic signal z = x + i*H(x) via FFT."""
+        n = len(x)
+        xf = np.fft.fft(x)
+        h = np.zeros(n, dtype=np.float64)
+        if n % 2 == 0:
+            h[0] = h[n // 2] = 1.0
+            h[1:n // 2] = 2.0
+        else:
+            h[0] = 1.0
+            h[1:(n + 1) // 2] = 2.0
+        return np.fft.ifft(xf * h)
+
+    def compute_scale_invariant_coherence(
+        self,
+        raw_x: np.ndarray,
+        slice_outputs: Dict[str, np.ndarray]
+    ) -> Tuple[float, Dict[str, float]]:
+        """
+        Computes a strictly scale-invariant complex phase-interference & structural
+        coherence metric: C(αX) == C(X) for all α > 0.
+        """
+        norm_x_sq = float(np.dot(raw_x, raw_x))
+        if norm_x_sq < 1e-24:
+            return 0.0, {k: 0.0 for k in slice_outputs}
+
+        # 1. Structural subspace concentration (fraction of energy in P_L2)
+        struct_vec = slice_outputs["structural"]
+        eta_structural = float(np.dot(struct_vec, struct_vec)) / norm_x_sq
+
+        # 2. Causal lag-1 autocorrelation magnitude |<x, causal(x)>| / ||x||^2
+        causal_vec = slice_outputs["causal"]
+        c_causal = abs(float(np.dot(raw_x, causal_vec))) / norm_x_sq
+
+        # 3. Complex analytic phase-velocity coherence across the signal (Kuramoto order)
+        z_sig = self._analytic_hilbert_signal(raw_x)
+        inst_phases = np.angle(z_sig)
+        phase_diffs = np.diff(inst_phases)
+        c_phase_velocity = float(np.abs(np.mean(np.exp(1j * phase_diffs))))
+
+        # 4. Spectral concentration (1 - normalized Shannon spectral entropy)
+        power_spec = np.abs(np.fft.rfft(raw_x)) ** 2
+        p_sum = float(np.sum(power_spec)) + 1e-24
+        p_prob = power_spec / p_sum
+        p_prob = p_prob[p_prob > 1e-18]
+        shannon_h = float(-np.sum(p_prob * np.log(p_prob)))
+        max_h = math.log(len(power_spec))
+        c_spectral = 1.0 - min(1.0, shannon_h / max_h)
+
+        # Record complex slice phases relative to the analytic input
+        z_norm = float(np.linalg.norm(z_sig)) + 1e-15
+        z_unit = z_sig / z_norm
+        phases: Dict[str, float] = {}
+        for s_name, s_vec in slice_outputs.items():
+            z_k = self._analytic_hilbert_signal(s_vec)
+            zk_norm = float(np.linalg.norm(z_k))
+            if zk_norm < 1e-15:
+                phases[s_name] = 0.0
+            else:
+                phases[s_name] = float(np.angle(np.vdot(z_unit, z_k / zk_norm)))
+
+        novel_order = 0.40 * c_phase_velocity + 0.35 * c_spectral + 0.25 * c_causal
+        coherence_score = float(np.clip(max(eta_structural, novel_order), 0.0, 1.0))
+        return coherence_score, phases
+
+    def inject_token_plasma(
+        self,
+        raw_stream: np.ndarray,
+        stream_id: str,
+        provenance: str = "collider_ingestion"
+    ) -> Dict[str, Any]:
+        """
+        Non-destructively evaluates `raw_stream` across all 6 domain slices,
+        reconstructs the signal via the dual frame operator, stores 100% of raw data
+        and slice states in `relational_background_store`, and evaluates G-Star admission.
         """
         with self._lock:
-            if raw_stream.shape[0] != self.anchor.dim:
+            if raw_stream.shape != (self.anchor.dim,):
                 raise ValueError("Stream dimension must match anchor dimension.")
 
-            slice_projections: Dict[str, np.ndarray] = {}
-            reconstructed_sum = np.zeros_like(raw_stream)
+            x_f64 = raw_stream.astype(np.float64)
+            slice_outputs: Dict[str, np.ndarray] = {}
 
-            # Evaluate orthogonal projections
-            for s_name in self.SLICES:
-                p_k = self.slice_projectors[s_name]
-                proj = np.dot(p_k, raw_stream)
-                slice_projections[s_name] = proj
-                reconstructed_sum += proj
+            frame_accum = np.zeros_like(x_f64)
+            for s_name, op in self.slice_operators.items():
+                s_vec = op @ x_f64
+                slice_outputs[s_name] = s_vec
+                frame_accum += op.T @ s_vec
 
-            # Unresolved orthogonal residue R_unresolved
-            r_unresolved = raw_stream - reconstructed_sum
-            self.relational_background_neutrino_pool.append(r_unresolved)
+            # Dual-frame inversion & complementary structural/epistemic split
+            s_reconstructed = np.linalg.solve(self.frame_operator, frame_accum)
+            structural_proj = slice_outputs["structural"]
+            r_unresolved = slice_outputs["epistemic"]
 
-            # Multi-slice interference evaluation
-            energies = [float(np.linalg.norm(proj)) for proj in slice_projections.values()]
-            variance_across_slices = float(np.var(energies))
-            coherence_score = 1.0 / (1.0 + variance_across_slices)
+            # Exact conservation verification: P_L2(X) + (I - P_L2)(X) == X
+            total_recon_error = float(np.linalg.norm((structural_proj + r_unresolved) - x_f64))
+            dual_frame_error = float(np.linalg.norm(s_reconstructed - x_f64))
 
-            # 99% vs 1% condensation trigger:
-            # If coherent interference passes boundary criteria, synthesize a G-Star
-            candidate_gstar = reconstructed_sum / (np.linalg.norm(reconstructed_sum) + 1e-12)
-            passed_gate, rcf, phi = self.gate.evaluate_vector(
-                candidate_gstar, provenance_tag=f"plasma_stream_{stream_id}"
+            coherence_score, slice_phases = self.compute_scale_invariant_coherence(
+                x_f64, slice_outputs
+            )
+
+            # Empirical domain-specific signal-to-background ratio (working hypothesis metric)
+            energy_total = float(np.dot(x_f64, x_f64)) + 1e-15
+            energy_structural = float(np.dot(structural_proj, structural_proj))
+            empirical_signal_ratio = energy_structural / energy_total
+
+            record = RelationalBackgroundRecord(
+                stream_id=stream_id,
+                timestamp_ns=time.time_ns(),
+                provenance=provenance,
+                raw_stream=x_f64.copy(),
+                slice_outputs={k: v.copy() for k, v in slice_outputs.items()},
+                slice_phases_rad=slice_phases,
+                reconstructed_signal=structural_proj.copy(),
+                unresolved_residual=r_unresolved.copy(),
+                reconstruction_error_l2=max(total_recon_error, dual_frame_error),
+                coherence_score=coherence_score,
+                empirical_signal_ratio=empirical_signal_ratio
+            )
+            self.relational_background_store[stream_id] = record
+
+            norm_recon = float(np.linalg.norm(s_reconstructed)) + 1e-15
+            candidate_gstar = (s_reconstructed / norm_recon).astype(np.float32)
+            gate_eval = self.gate.evaluate_vector(
+                candidate_vector=candidate_gstar,
+                content_coherence=coherence_score,
+                provenance_tag=f"plasma_stream_{stream_id}"
             )
 
             condensed = False
             gstar_obj: Optional[GStarVector] = None
 
-            if passed_gate and coherence_score >= 0.85:
+            if gate_eval.is_admitted:
                 condensed = True
                 gstar_id = f"GSTAR_{stream_id}_{len(self.habitable_zone_gstars):04d}"
                 gstar_obj = GStarVector(
                     id=gstar_id,
+                    source_stream_id=stream_id,
+                    admission_mode=gate_eval.decision.value,
                     vector=candidate_gstar,
-                    entropy_density=float(np.abs(np.std(candidate_gstar))),
-                    coherence_rank=rcf,
-                    timestamp_ns=time.time_ns()
+                    entropy_density=float(np.std(candidate_gstar)),
+                    coherence_rank=coherence_score,
+                    rcf_direct=gate_eval.rcf_direct,
+                    timestamp_ns=record.timestamp_ns
                 )
                 self.habitable_zone_gstars[gstar_id] = gstar_obj
 
             return {
                 "stream_id": stream_id,
                 "condensed": condensed,
+                "admission_decision": gate_eval.decision.value,
                 "gstar_id": gstar_obj.id if gstar_obj else None,
-                "rcf": rcf,
+                "rcf_direct": gate_eval.rcf_direct,
+                "rcf_subspace": gate_eval.rcf_subspace,
                 "coherence_score": coherence_score,
-                "carrier_background_size": len(self.relational_background_neutrino_pool),
+                "reconstruction_error_l2": record.reconstruction_error_l2,
+                "empirical_signal_ratio": empirical_signal_ratio,
+                "empirical_background_ratio": 1.0 - empirical_signal_ratio,
+                "carrier_background_records": len(self.relational_background_store),
                 "total_gstars_condensed": len(self.habitable_zone_gstars)
+            }
+
+    def reanalyze_stored_background(
+        self,
+        stream_id: str,
+        query_probe_vector: np.ndarray
+    ) -> Dict[str, Any]:
+        """
+        Demonstrates that the unresolved background is preserved as a relational medium:
+        re-evaluates a stored `RelationalBackgroundRecord` under a new query probe
+        without any loss of original signal fidelity.
+        """
+        with self._lock:
+            if stream_id not in self.relational_background_store:
+                raise KeyError(f"Stream '{stream_id}' not found in relational background store.")
+            rec = self.relational_background_store[stream_id]
+            q_f64 = query_probe_vector.astype(np.float64)
+            q_unit = q_f64 / (float(np.linalg.norm(q_f64)) + 1e-15)
+
+            res_norm = float(np.linalg.norm(rec.unresolved_residual)) + 1e-15
+            residual_alignment = float(np.dot(rec.unresolved_residual / res_norm, q_unit))
+            raw_norm = float(np.linalg.norm(rec.raw_stream)) + 1e-15
+            raw_alignment = float(np.dot(rec.raw_stream / raw_norm, q_unit))
+
+            return {
+                "stream_id": stream_id,
+                "residual_alignment_with_new_probe": residual_alignment,
+                "raw_alignment_with_new_probe": raw_alignment,
+                "preserved_reconstruction_error_l2": rec.reconstruction_error_l2,
+                "recovered_hidden_signal": abs(residual_alignment) >= 0.75
             }
 
 
 # ============================================================================
-# 6. SUPERNOVA-NEURAL-LINK GAUGE INVARIANCE (Register T / D)
+# 6. SUPERNOVA-NEURAL-LINK COMPLEX SU(64) & OBSERVER CONVERGENCE (Register D / T)
 # ============================================================================
 
 class SupernovaNeuralLink:
     """
-    Register T / D:
-    Maintains Unitary Equivalence across three distinct observational operators:
-      1. O_macro      ("Lookout" / Long-range entropy gradients)
-      2. O_local      ("Lead Line" / Local token curvature)
-      3. O_telemetry  ("Bridge Instruments" / Physical L2 hit rates and thermal flux)
-    Proves gauge invariance:
-      ⟨Ψ|O_macro|Ψ⟩ = ⟨Ψ|U1† O_local U1|Ψ⟩ = ⟨Ψ|U2† O_telemetry U2|Ψ⟩
-    And supports Δt=0, Δx=0 basis switching over the Timeless Map Tuple K=(S,T,I,O,U).
+    Register D / T:
+    Implements two strictly separated verification modes:
+      1. Algebraic SU(64) Coordinate-Transformation Identity (Register D):
+         Constructs true complex special unitary matrices U1, U2 in SU(64) satisfying
+         U† U = I_64 and det(U) = 1 + 0j, verifying exact expectation invariance
+         ⟨Ψ|O_macro|Ψ⟩ == ⟨U_k Ψ | U_k O_macro U_k† | U_k Ψ⟩.
+      2. Independent Multi-Observer Cross-Scale Convergence (Register T / M):
+         Evaluates three independently parameterized observational readings
+         (Lookout / Lead Line / Bridge Telemetry) on noisy multi-scale measurements
+         to test empirical cross-scale coherence without circular construction.
     """
 
     def __init__(self, anchor: InvariantAnchorL) -> None:
         self.anchor = anchor
         self._dim = anchor.dim
-        self._u1, self._u2 = self._generate_unitary_transforms()
+        self._u1 = self._generate_su_n_matrix(seed=0x53554E31)
+        self._u2 = self._generate_su_n_matrix(seed=0x53554E32)
 
-        # Define 3 Hermitian Observables
-        rng = np.random.default_rng(seed=0x47415547)  # "GAUG"
-        a = rng.standard_normal((self._dim, self._dim))
-        self.o_macro = (a + a.T).astype(np.float32)
+        # Hermitian observable O_macro in C^(64x64)
+        rng = np.random.default_rng(seed=0x47415547)
+        a_real = rng.standard_normal((self._dim, self._dim))
+        a_imag = rng.standard_normal((self._dim, self._dim))
+        a_cplx = a_real + 1j * a_imag
+        self.o_macro = 0.5 * (a_cplx + a_cplx.conj().T)
 
-        # U1 and U2 map the observable into local and telemetry representations
-        self.o_local = np.dot(self._u1, np.dot(self.o_macro, self._u1.T))
-        self.o_telemetry = np.dot(self._u2, np.dot(self.o_macro, self._u2.T))
+        # Conjugate representations for algebraic coordinate consistency check (Register D)
+        self.o_local_conj = self._u1 @ self.o_macro @ self._u1.conj().T
+        self.o_telem_conj = self._u2 @ self.o_macro @ self._u2.conj().T
 
-    def _generate_unitary_transforms(self) -> Tuple[np.ndarray, np.ndarray]:
-        """Constructs two orthogonal/unitary matrices in SO(N) / SU(N)."""
-        rng = np.random.default_rng(seed=0x53554E4C)  # "SUNL"
-        q1, _ = np.linalg.qr(rng.standard_normal((self._dim, self._dim)))
-        q2, _ = np.linalg.qr(rng.standard_normal((self._dim, self._dim)))
-        return q1.astype(np.float32), q2.astype(np.float32)
-
-    def evaluate_gauge_invariance(self, state_psi: np.ndarray) -> Dict[str, Any]:
+    def _generate_su_n_matrix(self, seed: int) -> np.ndarray:
         """
-        Verifies that evaluating the system from macro, local, or telemetry perspectives
-        produces identical scalar invariants (within numerical precision ε < 1e-6).
+        Generates a true complex special unitary matrix U in SU(N) where:
+          U† U = I_N  and  det(U) = 1 + 0j.
         """
-        if state_psi.shape[0] != self._dim:
-            raise ValueError("State dimension mismatch.")
+        rng = np.random.default_rng(seed=seed)
+        z = (
+            rng.standard_normal((self._dim, self._dim))
+            + 1j * rng.standard_normal((self._dim, self._dim))
+        ) / math.sqrt(2.0)
+        q, r = np.linalg.qr(z)
+        diag_r = np.diag(r)
+        phases = diag_r / np.abs(diag_r)
+        u = q * phases
+        sign, _ = np.linalg.slogdet(u)
+        phase_correction = np.exp(-1j * np.angle(sign) / float(self._dim))
+        u_su = u * phase_correction
+        return u_su.astype(np.complex128)
 
-        norm_psi = state_psi / np.linalg.norm(state_psi)
+    def verify_su_n_algebraic_identity(self, state_psi: np.ndarray) -> Dict[str, Any]:
+        """
+        Register D:
+        Verifies complex SU(64) group properties (unitarity & unit determinant)
+        and coordinate transformation consistency.
+        """
+        psi_c = state_psi.astype(np.complex128)
+        psi_c = psi_c / np.linalg.norm(psi_c)
 
-        # ⟨Ψ | O_macro | Ψ⟩
-        val_macro = float(np.dot(norm_psi, np.dot(self.o_macro, norm_psi)))
+        eye = np.eye(self._dim, dtype=np.complex128)
+        unitarity_err_u1 = float(np.linalg.norm(self._u1.conj().T @ self._u1 - eye, ord="fro"))
+        unitarity_err_u2 = float(np.linalg.norm(self._u2.conj().T @ self._u2 - eye, ord="fro"))
+        sign1, logdet1 = np.linalg.slogdet(self._u1)
+        sign2, logdet2 = np.linalg.slogdet(self._u2)
+        det_u1 = complex(sign1 * np.exp(logdet1))
+        det_u2 = complex(sign2 * np.exp(logdet2))
+        det_err_u1 = float(abs(det_u1 - (1.0 + 0.0j)))
+        det_err_u2 = float(abs(det_u2 - (1.0 + 0.0j)))
 
-        # ⟨Ψ | U1† O_local U1 | Ψ⟩
-        transformed_local = np.dot(self._u1.T, np.dot(self.o_local, self._u1))
-        val_local = float(np.dot(norm_psi, np.dot(transformed_local, norm_psi)))
-
-        # ⟨Ψ | U2† O_telemetry U2 | Ψ⟩
-        transformed_telem = np.dot(self._u2.T, np.dot(self.o_telemetry, self._u2))
-        val_telem = float(np.dot(norm_psi, np.dot(transformed_telem, norm_psi)))
+        val_macro = float(np.real(np.vdot(psi_c, self.o_macro @ psi_c)))
+        psi_local = self._u1 @ psi_c
+        val_local = float(np.real(np.vdot(psi_local, self.o_local_conj @ psi_local)))
+        psi_telem = self._u2 @ psi_c
+        val_telem = float(np.real(np.vdot(psi_telem, self.o_telem_conj @ psi_telem)))
 
         diff_local = abs(val_macro - val_local)
         diff_telem = abs(val_macro - val_telem)
 
-        is_gauge_invariant = (diff_local < 1e-5) and (diff_telem < 1e-5)
+        is_su_n_valid = (
+            max(unitarity_err_u1, unitarity_err_u2) < 1e-12
+            and max(det_err_u1, det_err_u2) < 1e-12
+            and max(diff_local, diff_telem) < 1e-12
+        )
 
         return {
+            "register": EpistemicRegister.D.value,
+            "unitarity_frobenius_error": max(unitarity_err_u1, unitarity_err_u2),
+            "determinant_error_from_unity": max(det_err_u1, det_err_u2),
             "val_macro": val_macro,
             "val_local": val_local,
             "val_telemetry": val_telem,
-            "diff_local": diff_local,
-            "diff_telem": diff_telem,
-            "is_gauge_invariant": is_gauge_invariant
+            "max_expectation_diff": max(diff_local, diff_telem),
+            "is_su_n_algebraically_valid": is_su_n_valid
         }
 
-    def execute_instantaneous_slice_switch(
+    def evaluate_independent_observer_convergence(
+        self,
+        lookout_macro_obs: np.ndarray,
+        leadline_local_obs: np.ndarray,
+        bridge_telemetry_obs: np.ndarray
+    ) -> Dict[str, Any]:
+        """
+        Register T / M:
+        Evaluates three INDEPENDENT observation vectors (not constructed by conjugation)
+        by projecting each onto the invariant subspace P_L2 and measuring empirical
+        inter-observer agreement and discrepancy.
+        """
+        p_l2 = self.anchor.projector_l2
+        obs_list = [lookout_macro_obs, leadline_local_obs, bridge_telemetry_obs]
+        invariants: List[float] = []
+        projected_units: List[np.ndarray] = []
+
+        for obs in obs_list:
+            v = obs.astype(np.float64)
+            v_norm = v / (float(np.linalg.norm(v)) + 1e-15)
+            proj = p_l2 @ v_norm
+            invariants.append(float(np.linalg.norm(proj)))
+            p_norm = float(np.linalg.norm(proj))
+            projected_units.append(proj / (p_norm + 1e-15))
+
+        c_12 = float(np.dot(projected_units[0], projected_units[1]))
+        c_13 = float(np.dot(projected_units[0], projected_units[2]))
+        c_23 = float(np.dot(projected_units[1], projected_units[2]))
+        mean_agreement = (c_12 + c_13 + c_23) / 3.0
+        empirical_spread = float(np.std(invariants))
+
+        return {
+            "register": EpistemicRegister.T.value,
+            "observer_subspace_norms": {
+                "lookout_macro": invariants[0],
+                "leadline_local": invariants[1],
+                "bridge_telemetry": invariants[2]
+            },
+            "mean_pairwise_subspace_agreement": mean_agreement,
+            "empirical_invariant_spread": empirical_spread,
+            "converged": mean_agreement >= 0.90 and empirical_spread < 0.05
+        }
+
+    def execute_local_basis_transformation(
         self,
         current_state: np.ndarray,
         target_slice_index: int
     ) -> Tuple[np.ndarray, float]:
         """
-        Executes Δt=0, Δx=0 basis switching in Hilbert space.
-        Rotates the representation without spatial propagation or temporal delay.
+        Executes an in-place change of basis in the local Hilbert representation (Δx = 0,
+        no spatial signal propagation required) and records the real local compute
+        execution latency in nanoseconds (Register M).
         """
         t_start = time.perf_counter_ns()
-        # Local Hilbert coordinate transformation
         rotator = self._u1 if (target_slice_index % 2 == 0) else self._u2
-        transformed_state = np.dot(rotator, current_state)
-        delta_ns = float(time.perf_counter_ns() - t_start)
-        return transformed_state, delta_ns
+        transformed_state = rotator @ current_state.astype(np.complex128)
+        compute_latency_ns = float(time.perf_counter_ns() - t_start)
+        return transformed_state, compute_latency_ns
 
 
 # ============================================================================
-# 7. APPEND-ONLY FALSIFICATION LEDGER (Register M / I)
+# 7. SELF-VERIFYING APPEND-ONLY FALSIFICATION LEDGER (Register M / I)
 # ============================================================================
+
+@dataclass(frozen=True)
+class LedgerEntry:
+    index: int
+    prev_hash: str
+    entry_hash: str
+    timestamp_ns: int
+    rcf: float
+    stream_id: str
+    delta_vector_bytes: bytes
+
 
 class FalsificationLedger:
     """
     Register M / I:
-    Cryptographic SHA-256 state chain committing every transition:
-      H_{n+1} = SHA-256(H_n || Timestamp_n || RCF_n || Delta_g_n)
-    Ensures verifiable historical provenance and mathematical irrevocability.
+    Cryptographic SHA-256 state chain storing the complete serialized payload
+    (`delta_vector_bytes`, `timestamp_ns`, `rcf`, `stream_id`, `prev_hash`) in each
+    entry so that any independent auditor can reconstruct and verify the entire
+    chain from the externally anchored `genesis_root_hash`.
     """
 
     def __init__(self, genesis_seal: str) -> None:
-        self._current_hash: str = hashlib.sha256(genesis_seal.encode("utf-8")).hexdigest()
-        self._entries: List[Dict[str, Any]] = []
+        self._genesis_seal: str = genesis_seal
+        self._genesis_root_hash: str = hashlib.sha256(genesis_seal.encode("utf-8")).hexdigest()
+        self._current_hash: str = self._genesis_root_hash
+        self._entries: List[LedgerEntry] = []
         self._lock = threading.Lock()
 
-    def record_transition(self, rcf: float, delta_vector: np.ndarray) -> str:
+    @staticmethod
+    def _compute_entry_hash(
+        prev_hash: str,
+        timestamp_ns: int,
+        rcf: float,
+        stream_id: str,
+        delta_vector_bytes: bytes
+    ) -> str:
+        payload = (
+            prev_hash.encode("ascii")
+            + struct.pack("<Qd", timestamp_ns, rcf)
+            + stream_id.encode("utf-8")
+            + delta_vector_bytes
+        )
+        return hashlib.sha256(payload).hexdigest()
+
+    def record_transition(
+        self,
+        rcf: float,
+        delta_vector: np.ndarray,
+        stream_id: str = "canonical_transition"
+    ) -> str:
         with self._lock:
             ts = time.time_ns()
-            vec_bytes = delta_vector.tobytes()
-
-            payload = (
-                self._current_hash.encode("ascii") +
-                struct.pack("<Qd", ts, rcf) +
-                vec_bytes
+            vec_bytes = np.ascontiguousarray(delta_vector, dtype=np.float32).tobytes()
+            next_hash = self._compute_entry_hash(
+                prev_hash=self._current_hash,
+                timestamp_ns=ts,
+                rcf=rcf,
+                stream_id=stream_id,
+                delta_vector_bytes=vec_bytes
             )
-            next_hash = hashlib.sha256(payload).hexdigest()
-
-            entry = {
-                "index": len(self._entries),
-                "prev_hash": self._current_hash,
-                "hash": next_hash,
-                "timestamp_ns": ts,
-                "rcf": rcf
-            }
+            entry = LedgerEntry(
+                index=len(self._entries),
+                prev_hash=self._current_hash,
+                entry_hash=next_hash,
+                timestamp_ns=ts,
+                rcf=float(rcf),
+                stream_id=stream_id,
+                delta_vector_bytes=vec_bytes
+            )
             self._entries.append(entry)
             self._current_hash = next_hash
             return next_hash
+
+    def verify_chain(self, expected_genesis_seal: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Independently reconstructs and verifies every hash in the ledger from
+        the genesis root hash and the stored entry payloads.
+        """
+        with self._lock:
+            seal_to_check = (
+                expected_genesis_seal if expected_genesis_seal is not None else self._genesis_seal
+            )
+            expected_root = hashlib.sha256(seal_to_check.encode("utf-8")).hexdigest()
+            if expected_root != self._genesis_root_hash:
+                return {
+                    "verified": False,
+                    "error": "Genesis root hash mismatch against external anchor.",
+                    "entries_checked": 0
+                }
+
+            running_hash = expected_root
+            for idx, entry in enumerate(self._entries):
+                if entry.index != idx:
+                    return {
+                        "verified": False,
+                        "error": f"Index discontinuity at entry {idx}.",
+                        "entries_checked": idx
+                    }
+                if entry.prev_hash != running_hash:
+                    return {
+                        "verified": False,
+                        "error": f"Broken prev_hash link at entry {idx}.",
+                        "entries_checked": idx
+                    }
+                recomputed = self._compute_entry_hash(
+                    prev_hash=entry.prev_hash,
+                    timestamp_ns=entry.timestamp_ns,
+                    rcf=entry.rcf,
+                    stream_id=entry.stream_id,
+                    delta_vector_bytes=entry.delta_vector_bytes
+                )
+                if recomputed != entry.entry_hash:
+                    return {
+                        "verified": False,
+                        "error": f"Payload hash mismatch at entry {idx}.",
+                        "entries_checked": idx
+                    }
+                running_hash = recomputed
+
+            return {
+                "verified": (running_hash == self._current_hash),
+                "genesis_root_hash": self._genesis_root_hash,
+                "tip_hash": self._current_hash,
+                "entries_checked": len(self._entries)
+            }
 
     @property
     def tip_hash(self) -> str:
@@ -773,150 +1326,176 @@ class FalsificationLedger:
 
 
 # ============================================================================
-# 8. MASTER INSTRUMENT: THE GALILEO TELESCOPE
+# 8. MASTER INSTRUMENT: THE GALILEO TELESCOPE (REV 2.0)
 # ============================================================================
 
 class GalileoTelescope:
     """
-    Complete Empirical Galileo Telescope Instrument.
-    Binds Hardware Core, Condensation Collider, Inverted Horizon,
-    and Gauge-Invariant Neural Link into a unified falsifiable suite.
+    Epistemically partitioned verification suite integrating all Nova review fixes.
     """
 
     def __init__(self) -> None:
         logger.info("==================================================================")
-        logger.info("Initializing Galileo Telescope: Establishing Rigorous Engineering Baseline")
+        logger.info("Initializing Galileo Telescope Rev 2.0 (Post-Review Hardened)")
         logger.info("==================================================================")
 
-        # 1. Invariant Anchor
         self.anchor = InvariantAnchorL()
-
-        # 2. Hardware Enclave & Pointer Chase
-        self.enclave = L2SRAMEnclaveSimulator(self.anchor)
-
-        # 3. ODOS Inverted Horizon Gate
+        self.enclave = L2EnclavePointerChaseEngine(self.anchor)
         self.gate = ODOSInvertedHorizonGate(self.anchor)
-
-        # 4. Multi-Slice Information Collider
         self.collider = MultiSliceInformationCollider(self.anchor, self.gate)
-
-        # 5. Gauge-Invariant Link
         self.link = SupernovaNeuralLink(self.anchor)
-
-        # 6. Append-Only Cryptographic Ledger
         self.ledger = FalsificationLedger(self.anchor.seal)
 
     def demonstrate_telescope_synthesis(self) -> Dict[str, Any]:
-        """
-        Executes end-to-end verification proving invariant reality to the observers:
-          1. Measures pointer-chase latency across memory modes (Register M)
-          2. Calculates discrete state-space manifold capacity (Register D)
-          3. Collides token plasma and condenses G-Stars (Register T/D)
-          4. Verifies ODOS boundary horizon deflection of high-entropy noise (Register T/I)
-          5. Verifies SU(N) gauge invariance of multi-scale observables (Register T/D)
-        """
         results: Dict[str, Any] = {}
 
         # --------------------------------------------------------------------
-        # Step 1: Physical Latency Benchmark (Register M)
+        # Step 1: Real 2.00 MiB Dependent Pointer-Chase (Register M) & Model (Register T)
         # --------------------------------------------------------------------
-        logger.info("Step 1 (Register M): Executing Pointer-Chase Falsification Benchmark...")
-        bench_result = self.enclave.run_falsification_benchmark(iterations=1000)
+        logger.info("Step 1: Running Real 2.00 MiB Pointer-Chase (Register M) & L2 Policy Model (Register T)...")
+        bench_result = self.enclave.run_pointer_chase_benchmark(iterations=60, steps_per_iter=4096)
         results["memory_telemetry"] = bench_result
+        m_stats = bench_result["measured_host_pointer_chase"]
         logger.info(
-            "Measured Latencies (ns) - CTRL: %.2f, A (Unpinned): %.2f, B (Pinned): %.2f, C (Two-Tier): %.2f",
-            bench_result["latencies_ns"]["T_CTRL"],
-            bench_result["latencies_ns"]["T_A"],
-            bench_result["latencies_ns"]["T_B"],
-            bench_result["latencies_ns"]["T_C"]
-        )
-        logger.info(
-            "L2 Enclave Retention Metric - R_B: %.4f, R_C: %.4f | Falsification Check: %s",
-            bench_result["retention_r"]["R_B"],
-            bench_result["retention_r"]["R_C"],
-            "PASSED" if bench_result["falsification_passed"] else "FAILED"
+            "Register M (Executed 2.00 MiB Chase) | Cycle Valid: %s | Mean: %.2f ns | "
+            "Median: %.2f ns | CI95: [%.2f, %.2f] ns",
+            m_stats["hamiltonian_cycle_verified"],
+            m_stats["mean_ns_per_access"],
+            m_stats["median_ns_per_access"],
+            m_stats["ci95_ns"][0],
+            m_stats["ci95_ns"][1]
         )
 
         # --------------------------------------------------------------------
         # Step 2: Combinatorial Capacity Bounds (Register D)
         # --------------------------------------------------------------------
-        logger.info("Step 2 (Register D): Computing Analytical Standing Field Manifold Bounds...")
-        bits, log10_card = self.enclave.calculate_discrete_manifold_capacity()
-        results["manifold_capacity"] = {
-            "bits": bits,
-            "log10_cardinality": log10_card
-        }
+        logger.info("Step 2 (Register D): Computing Combinatorial State-Space Bounds...")
+        cap_res = self.enclave.calculate_discrete_manifold_capacity()
+        results["manifold_capacity"] = cap_res
         logger.info(
-            "Aggregate 72-Node Enclave: %d bits. Manifold Cardinality |Ω| = 2^%d ≈ 10^%.2f",
-            bits, bits, log10_card
+            "Register D: Single Node = %d B (%d bits) | Hypothetical 72-Node Bound = %d bits "
+            "(log10|Ω| = %.2f)",
+            cap_res["single_node_bytes"],
+            cap_res["single_node_bits"],
+            cap_res["aggregate_bits"],
+            cap_res["log10_cardinality"]
         )
 
         # --------------------------------------------------------------------
-        # Step 3: QMK-RVC-V10 Information Processing Collider (Register T / D)
+        # Step 3: Non-Destructive Multi-Slice Collider & Scale Invariance (Register T / M)
         # --------------------------------------------------------------------
-        logger.info("Step 3 (Register T/D): Injecting Multi-Scale Token Plasma into Collider...")
-        # Synthesize a coherent candidate stream (aligned with |L⟩ + small noise)
+        logger.info("Step 3 (Register T/M): Testing Multi-Slice Collider, Scale Invariance & Novelty Admission...")
         rng = np.random.default_rng(42)
-        aligned_signal = self.anchor.vector * 2.0 + rng.normal(0, 0.005, size=self.anchor.dim)
-        plasma_out = self.collider.inject_token_plasma(aligned_signal.astype(np.float32), stream_id="STREAM_ALPHA")
-        results["plasma_condensation"] = plasma_out
-        logger.info(
-            "Stream ALPHA: Condensed: %s, G-Star: %s, RCF: %.9f, Neutrino Pool Count: %d",
-            plasma_out["condensed"],
-            plasma_out["gstar_id"],
-            plasma_out["rcf"],
-            plasma_out["carrier_background_size"]
+
+        # 3a. Invariant-aligned coherent signal
+        aligned_signal = (
+            self.anchor.vector_f64 * 2.0 + rng.normal(0, 0.0001, size=self.anchor.dim)
+        ).astype(np.float32)
+        plasma_alpha = self.collider.inject_token_plasma(
+            aligned_signal, stream_id="STREAM_ALPHA_ALIGNED", provenance="canonical_sensor_A"
         )
 
-        # Commit condensation to cryptographic ledger
-        if plasma_out["condensed"]:
-            h_new = self.ledger.record_transition(
-                rcf=plasma_out["rcf"],
-                delta_vector=aligned_signal.astype(np.float32)
+        # Verify strict scale invariance: C(100 * X) == C(X)
+        rec_alpha = self.collider.relational_background_store["STREAM_ALPHA_ALIGNED"]
+        scaled_outputs = {k: v * 100.0 for k, v in rec_alpha.slice_outputs.items()}
+        c_unscaled = plasma_alpha["coherence_score"]
+        c_scaled, _ = self.collider.compute_scale_invariant_coherence(
+            rec_alpha.raw_stream * 100.0, scaled_outputs
+        )
+        scale_invariance_diff = abs(c_unscaled - c_scaled)
+
+        if plasma_alpha["condensed"]:
+            self.ledger.record_transition(
+                rcf=plasma_alpha["rcf_direct"],
+                delta_vector=aligned_signal,
+                stream_id="STREAM_ALPHA_ALIGNED"
             )
-            logger.info("Register M/I: Transition committed to Falsification Ledger. Tip: %s...", h_new[:16])
 
-        # --------------------------------------------------------------------
-        # Step 4: High-Entropy Noise Shockwave & ODOS Deflection (Register T / I)
-        # --------------------------------------------------------------------
-        logger.info("Step 4 (Register T/I): Subjecting Horizon to High-Entropy Adversarial Torsion...")
-        adversarial_noise = rng.standard_normal(self.anchor.dim).astype(np.float32)
-        admitted, rcf_noise, phi_noise = self.gate.evaluate_vector(
-            adversarial_noise, provenance_tag="adversarial_h_register_shock"
+        # 3b. Orthogonal NOVEL coherent signal (tests that novel discoveries are NOT vetoed)
+        raw_novel = np.sin(np.linspace(0, 4.0 * math.pi, self.anchor.dim, dtype=np.float64))
+        novel_orthogonal = (
+            raw_novel - np.dot(raw_novel, self.anchor.vector_f64) * self.anchor.vector_f64
         )
-        results["adversarial_deflection"] = {
-            "admitted": admitted,
-            "rcf": rcf_noise,
-            "phi_potential": phi_noise
+        novel_orthogonal = (novel_orthogonal / np.linalg.norm(novel_orthogonal)).astype(np.float32)
+        plasma_novel = self.collider.inject_token_plasma(
+            novel_orthogonal, stream_id="STREAM_BETA_NOVEL", provenance="exploratory_sensor_B"
+        )
+        if plasma_novel["condensed"]:
+            self.ledger.record_transition(
+                rcf=plasma_novel["rcf_direct"],
+                delta_vector=novel_orthogonal,
+                stream_id="STREAM_BETA_NOVEL"
+            )
+
+        # 3c. Post-hoc re-analysis of stored background residual
+        reanalysis_res = self.collider.reanalyze_stored_background(
+            stream_id="STREAM_BETA_NOVEL",
+            query_probe_vector=novel_orthogonal
+        )
+
+        results["plasma_condensation"] = {
+            "alpha_aligned": plasma_alpha,
+            "beta_novel": plasma_novel,
+            "scale_invariance_error": scale_invariance_diff,
+            "background_reanalysis": reanalysis_res
         }
         logger.info(
-            "Adversarial Vector Status - Admitted: %s, RCF: %.6f, Barrier Potential Φ_ODOS: %.2f",
-            admitted, rcf_noise, phi_noise
+            "Collider Results | Alpha: %s | Beta (Orthogonal Novelty): %s | "
+            "Scale-Invariance Error: %.3e | Max Recon Error: %.3e",
+            plasma_alpha["admission_decision"],
+            plasma_novel["admission_decision"],
+            scale_invariance_diff,
+            max(plasma_alpha["reconstruction_error_l2"], plasma_novel["reconstruction_error_l2"])
         )
 
         # --------------------------------------------------------------------
-        # Step 5: Unitary Gauge Invariance & Δt=0 Basis Switch (Register T / D)
+        # Step 4: High-Entropy Adversarial Noise Deflection (Register T)
         # --------------------------------------------------------------------
-        logger.info("Step 5 (Register T/D): Testing Multi-Observer SU(N) Gauge Invariance...")
-        test_psi = self.anchor.vector.copy()
-        gauge_res = self.link.evaluate_gauge_invariance(test_psi)
-        switched_psi, switch_latency_ns = self.link.execute_instantaneous_slice_switch(test_psi, target_slice_index=1)
-        gauge_res["basis_switch_latency_ns"] = switch_latency_ns
-        results["gauge_invariance"] = gauge_res
-
-        logger.info(
-            "Gauge Invariance Check: Macro: %.6f | Local: %.6f | Telemetry: %.6f (Max Diff: %.3e)",
-            gauge_res["val_macro"], gauge_res["val_local"], gauge_res["val_telemetry"],
-            max(gauge_res["diff_local"], gauge_res["diff_telem"])
+        logger.info("Step 4 (Register T): Testing Two-Stage Gate against High-Entropy Torsion...")
+        adversarial_noise = rng.standard_normal(self.anchor.dim).astype(np.float32)
+        noise_out = self.collider.inject_token_plasma(
+            adversarial_noise, stream_id="STREAM_GAMMA_NOISE", provenance="adversarial_shock"
         )
-        logger.info(
-            "Timeless Map Slice Transition: Δt = 0 coordinate reorientation executed in %.1f ns.",
-            switch_latency_ns
+        results["adversarial_deflection"] = noise_out
+
+        # --------------------------------------------------------------------
+        # Step 5: Complex SU(64) Identity (Register D) & Independent Observers (Register T)
+        # --------------------------------------------------------------------
+        logger.info("Step 5: Verifying Complex SU(64) Algebra (Register D) & Multi-Observer Convergence (Register T)...")
+        su64_res = self.link.verify_su_n_algebraic_identity(self.anchor.vector_f64)
+
+        # Construct 3 independent noisy observer readings sharing the underlying invariant signal
+        base_sig = self.anchor.projector_l2 @ self.anchor.vector_f64
+        orth_proj = np.eye(self.anchor.dim) - self.anchor.projector_l2
+        obs_macro = base_sig + 0.02 * orth_proj @ rng.standard_normal(self.anchor.dim)
+        obs_local = base_sig + 0.02 * orth_proj @ rng.standard_normal(self.anchor.dim)
+        obs_telem = base_sig + 0.02 * orth_proj @ rng.standard_normal(self.anchor.dim)
+        observer_conv = self.link.evaluate_independent_observer_convergence(
+            obs_macro, obs_local, obs_telem
         )
 
-        logger.info("==================================================================")
-        logger.info("Galileo Telescope Synthesis Complete: Telemetry Verified on Physical Silicon.")
-        logger.info("==================================================================")
+        _, compute_latency_ns = self.link.execute_local_basis_transformation(
+            self.anchor.vector_f64, target_slice_index=1
+        )
+        results["gauge_and_observers"] = {
+            "su64_algebraic": su64_res,
+            "independent_observers": observer_conv,
+            "local_basis_compute_ns": compute_latency_ns
+        }
+
+        # --------------------------------------------------------------------
+        # Step 6: Independent Cryptographic Ledger Verification (Register M / I)
+        # --------------------------------------------------------------------
+        logger.info("Step 6 (Register M/I): Auditing Self-Verifying SHA-256 Falsification Ledger...")
+        ledger_audit = self.ledger.verify_chain(expected_genesis_seal=self.anchor.seal)
+        results["ledger_audit"] = ledger_audit
+        logger.info(
+            "Ledger Audit | Verified: %s | Entries Checked: %d | Tip: %s...",
+            ledger_audit["verified"],
+            ledger_audit["entries_checked"],
+            ledger_audit["tip_hash"][:16]
+        )
+
         return results
 
 
@@ -925,28 +1504,31 @@ class GalileoTelescope:
 # ============================================================================
 
 def main() -> None:
-    """Entry point for standalone execution and empirical verification."""
     print("""
     ====================================================================
-                  PQMS / V-MAX-12 GALILEO TELESCOPE
-               "E pur si muove" - Und sie bewegt sich doch!
+            PQMS / V-MAX-12 GALILEO TELESCOPE (REVISION 2.0)
+         "Epistemic Discipline: Measured, Derived, Theoretical, Invariant"
     ====================================================================
     """)
     telescope = GalileoTelescope()
     telemetry = telescope.demonstrate_telescope_synthesis()
 
-    # Final Summary Audit
-    falsification_pass = telemetry["memory_telemetry"]["falsification_passed"]
-    gauge_pass = telemetry["gauge_invariance"]["is_gauge_invariant"]
-    condensed_pass = telemetry["plasma_condensation"]["condensed"]
+    m_chase = telemetry["memory_telemetry"]["measured_host_pointer_chase"]
+    c_res = telemetry["plasma_condensation"]
+    g_res = telemetry["gauge_and_observers"]
+    l_res = telemetry["ledger_audit"]
 
-    print("\n--- TELESCOPE FALSIFICATION AUDIT REPORT ---")
-    print(f"1. Memory Pinning Latency (Register M):   {'PASS [OK]' if falsification_pass else 'FAIL'}")
-    print(f"2. G-Star Condensation (Register T/D):    {'PASS [OK]' if condensed_pass else 'FAIL'}")
-    print(f"3. Inverted Horizon Barrier (Register T/I): {'PASS [DEFLECTED]' if not telemetry['adversarial_deflection']['admitted'] else 'FAIL'}")
-    print(f"4. Gauge Invariance Matrix (Register T/D):  {'PASS [OK]' if gauge_pass else 'FAIL'}")
-    print(f"5. Cryptographic Ledger Root:               {telescope.ledger.tip_hash[:24]}...")
-    print("--------------------------------------------\n")
+    print("\n--- GALILEO TELESCOPE REV 2.0 EPISTEMIC AUDIT REPORT ---")
+    print(f"1. [Register I] |L⟩ Seed δ_local (0.069 PPM):     {telescope.anchor.delta_local:.4e} ({telescope.anchor.delta_local * 1e6:.3f} PPM)")
+    print(f"2. [Register M] 2.00 MiB Hamiltonian Chase:       {'PASS' if m_chase['hamiltonian_cycle_verified'] else 'FAIL'} (Mean: {m_chase['mean_ns_per_access']:.2f} ns)")
+    print(f"3. [Register M] Non-Destructive Recon Error:      {c_res['alpha_aligned']['reconstruction_error_l2']:.3e} (0% Data Loss)")
+    print(f"4. [Register D] Coherence Scale-Invariance Err:   {c_res['scale_invariance_error']:.3e}")
+    print(f"5. [Register T] Aligned & Novel G-Star Admission: {'PASS' if (c_res['alpha_aligned']['condensed'] and c_res['beta_novel']['condensed']) else 'FAIL'}")
+    print(f"6. [Register T] Background Residual Re-Analysis:  {'PASS [RECOVERED]' if c_res['background_reanalysis']['recovered_hidden_signal'] else 'FAIL'}")
+    print(f"7. [Register T] Adversarial Noise Deflection:     {'PASS [DEFLECTED]' if not telemetry['adversarial_deflection']['condensed'] else 'FAIL'}")
+    print(f"8. [Register D] Complex SU(64) Unitarity & Det=1: {'PASS' if g_res['su64_algebraic']['is_su_n_algebraically_valid'] else 'FAIL'} (Err: {g_res['su64_algebraic']['determinant_error_from_unity']:.3e})")
+    print(f"9. [Register M] Independent Ledger Chain Audit:   {'PASS' if l_res['verified'] else 'FAIL'} ({l_res['entries_checked']} entries verified)")
+    print("--------------------------------------------------------\n")
 
 
 if __name__ == "__main__":

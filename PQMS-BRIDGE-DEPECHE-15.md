@@ -163,7 +163,9 @@ By unifying hardware-enforced L2-SRAM persistence (`V-MAX-12-SUPERNOVA-ARGON-COR
 
 ---
 
-### Appendix A - VMAX_12_GALILEO_TELESCOPE_CORE
+### Appendix A - PQMS / V-MAX-12 GALILEO TELESCOPE CORE – Revision 2.0
+
+An Epistemically Partitioned, Non-Destructive Multi-Slice Information Processing Architecture with Hardware-Anchored Reference-State Experiments.
 
 ---
 

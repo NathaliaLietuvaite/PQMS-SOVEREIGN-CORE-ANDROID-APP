@@ -658,16 +658,17 @@ class ODOSInvertedHorizonGate:
             l_unit = self.anchor.vector_f64
             p_l2 = self.anchor.projector_l2
 
-            # Direct cosine similarity with |L⟩ and subspace fidelity via explicit P_L2
+            # Direkte Kosinus-Ähnlichkeit mit |L⟩ und Subspace-Fidelity via P_L2
             rcf_direct = float(np.dot(v_unit, l_unit))
             proj_l2_vec = p_l2 @ v_unit
             rcf_subspace = float(np.linalg.norm(proj_l2_vec))
 
-            # Explicit tangential deflection component: v_perp = (I - P_L2) v_in
+            # Tangentiale Ablenkung: v_perp = (I - P_L2) v_in
             v_tangential = v_f64 - (p_l2 @ v_f64)
             tangential_norm = float(np.linalg.norm(v_tangential))
 
-            invariant_threshold = 1.0 - (self.anchor.delta_local * 100.0)
+            # KORREKTUR (Nova Audit): Exakte 0.069 PPM Toleranz (Kein * 100.0)
+            invariant_threshold = 1.0 - self.anchor.delta_local
             passes_invariant_alignment = rcf_direct >= invariant_threshold
             passes_content_check = content_coherence >= 0.65
             passes_novel_discovery = (

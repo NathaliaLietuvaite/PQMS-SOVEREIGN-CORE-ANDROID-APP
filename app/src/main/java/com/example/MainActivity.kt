@@ -1382,6 +1382,7 @@ class SwarmViewModel : ViewModel() {
     val seventhSenseEngine = Mod137SeventhSenseEngine()
     val epistemicNavigator = Mod138EpistemicNavigator()
     val coreGuard = Mod139CoreGuard()
+    val depeche15Engine = Depeche15MobileEngine(viewModelScope)
 
     override fun onCleared() {
         super.onCleared()
@@ -3145,7 +3146,8 @@ fun SovereignCoreApp(
                 7 -> NavigationDashboard(
                     seventhSenseEngine = viewModel.seventhSenseEngine,
                     epistemicNavigator = viewModel.epistemicNavigator,
-                    coreGuard = viewModel.coreGuard
+                    coreGuard = viewModel.coreGuard,
+                    depeche15Engine = viewModel.depeche15Engine
                 )
             }
         }
@@ -3419,11 +3421,12 @@ fun SwarmDashboard(viewModel: SwarmViewModel) {
             onOpenFullMcr = { viewModel.selectTab(6) }
         )
 
-        // MOD-137 / MOD-138 / MOD-139 NAVIGATION & CORE GUARD QUICK CARD (Appendix N, O, P)
+        // MOD-137 / MOD-138 / MOD-139 / DEPECHE 14-15 NAVIGATION & CORE GUARD QUICK CARD
         EpistemicNavigationQuickCard(
             seventhSenseEngine = viewModel.seventhSenseEngine,
             epistemicNavigator = viewModel.epistemicNavigator,
             coreGuard = viewModel.coreGuard,
+            depeche15Engine = viewModel.depeche15Engine,
             onOpenFullNav = { viewModel.selectTab(7) }
         )
 

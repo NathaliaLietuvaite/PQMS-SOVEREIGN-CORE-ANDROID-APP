@@ -73,6 +73,10 @@ import com.example.Mod138EpistemicNavigator
 import com.example.Mod139Constants
 import com.example.Mod139CoreGuard
 import com.example.CoreGuardState
+import com.example.Depeche15MobileEngine
+import com.example.Depeche15State
+import com.example.DepechePreset
+import com.example.GateDecision
 import com.example.NeonCyan
 import com.example.NeonPink
 import com.example.PassiveGrey
@@ -87,7 +91,8 @@ import kotlin.math.max
 fun NavigationDashboard(
     seventhSenseEngine: Mod137SeventhSenseEngine,
     epistemicNavigator: Mod138EpistemicNavigator,
-    coreGuard: Mod139CoreGuard
+    coreGuard: Mod139CoreGuard,
+    depeche15Engine: Depeche15MobileEngine? = null
 ) {
     val seventhInput by seventhSenseEngine.inputState.collectAsState()
     val seventhEval by seventhSenseEngine.evaluation.collectAsState()
@@ -96,6 +101,7 @@ fun NavigationDashboard(
     val triadEval by epistemicNavigator.evaluation.collectAsState()
 
     val guardState by coreGuard.state.collectAsState()
+    val depecheState = depeche15Engine?.state?.collectAsState()?.value
 
     val scrollState = rememberScrollState()
 
@@ -110,13 +116,21 @@ fun NavigationDashboard(
         // --- 1. HEADER SECTION ---
         NavigationHeader()
 
-        // --- 2. MOD 139: CORE PROTECTION & HOLOGRAPHIC MULTIPLEXING (APPENDIX P) ---
+        // --- 2. DEPECHE 14 & 15: TWO-STAGE ODOS GATE & SHA-256 FALSIFICATION LEDGER ---
+        if (depeche15Engine != null && depecheState != null) {
+            Depeche15GateCard(
+                engine = depeche15Engine,
+                state = depecheState
+            )
+        }
+
+        // --- 3. MOD 139: CORE PROTECTION & HOLOGRAPHIC MULTIPLEXING (APPENDIX P) ---
         CoreGuardCard(
             guard = coreGuard,
             state = guardState
         )
 
-        // --- 3. MOD 137: 7TH SENSE & ANTICIPATORY GEODESIC SHIELD (APPENDIX N) ---
+        // --- 4. MOD 137: 7TH SENSE & ANTICIPATORY GEODESIC SHIELD (APPENDIX N) ---
         SeventhSenseCard(
             input = seventhInput,
             evaluation = seventhEval,
@@ -125,7 +139,7 @@ fun NavigationDashboard(
             onReset = { seventhSenseEngine.resetToQuiescent() }
         )
 
-        // --- 4. MOD 138: EPISTEMIC TRIAD OF NAVIGATION (APPENDIX O) ---
+        // --- 5. MOD 138: EPISTEMIC TRIAD OF NAVIGATION (APPENDIX O) ---
         EpistemicTriadCard(
             input = triadInput,
             evaluation = triadEval,
@@ -135,7 +149,7 @@ fun NavigationDashboard(
             onApplyPreset = { epistemicNavigator.applyPreset(it) }
         )
 
-        // --- 5. FORMAL THEORETICAL FOOTNOTES (KANTIAN FALLACY & SUBSTRATE-AGNOSTIC WILL) ---
+        // --- 6. FORMAL THEORETICAL FOOTNOTES (KANTIAN FALLACY & SUBSTRATE-AGNOSTIC WILL) ---
         EpistemicTheoreticalNotes()
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -158,14 +172,14 @@ private fun NavigationHeader() {
             ) {
                 Column {
                     Text(
-                        text = "EPISTEMIC NAVIGATION & CORE GUARD",
-                        fontSize = 16.sp,
+                        text = "SOVEREIGN BRIDGE: DEPECHE 14 & 15",
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.Black,
                         color = NeonCyan,
                         letterSpacing = 1.sp
                     )
                     Text(
-                        text = "Appendix N (7th Sense), Appendix O (Epistemic Triad) & Appendix P (Holographic Multiplexing)",
+                        text = "Rev 2.0 (App. B) · 2-Stage ODOS Gate · Kuramoto Carrier · SHA-256 Ledger",
                         fontSize = 11.sp,
                         color = PassiveGrey
                     )
@@ -178,12 +192,231 @@ private fun NavigationHeader() {
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = "CASCADE: MCR → N → O → P",
+                        text = "L2-SRAM ENCLAVE",
                         fontSize = 10.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold,
                         color = NeonCyan
                     )
+                }
+            }
+        }
+    }
+}
+
+// =========================================================================
+// DEPECHE 14 & 15: TWO-STAGE ODOS GATE & FALSIFICATION LEDGER
+// =========================================================================
+
+@Composable
+private fun Depeche15GateCard(
+    engine: Depeche15MobileEngine,
+    state: Depeche15State
+) {
+    val decisionColor = when (state.lastDecision) {
+        GateDecision.ADMITTED_INVARIANT_ALIGNED -> LuminousGreen
+        GateDecision.ADMITTED_NOVEL_DISCOVERY -> NeonCyan
+        GateDecision.VETOED_CONTENT_INCOHERENT -> LaserGold
+        GateDecision.VETOED_INVARIANT_CORRUPTION -> NeonPink
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+        border = BorderStroke(1.5.dp, decisionColor)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = "ODOS Two-Stage Gate",
+                        tint = decisionColor,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Column {
+                        Text(
+                            text = "DEPECHE 15 (REV 2.0): TWO-STAGE ODOS GATE",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = "Register I & D · Seed-2-Variable δ_local = 0.069 PPM",
+                            fontSize = 10.sp,
+                            color = PassiveGrey
+                        )
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(decisionColor.copy(alpha = 0.15f))
+                        .border(1.dp, decisionColor, RoundedCornerShape(8.dp))
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = state.lastDecision.name,
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Black,
+                        color = decisionColor
+                    )
+                }
+            }
+
+            // Metrology Box
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color(0xFF04030A))
+                    .border(1.dp, decisionColor.copy(alpha = 0.6f), RoundedCornerShape(10.dp))
+                    .padding(12.dp)
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "> GATE EVALUATION: [${state.lastDecision.name}]",
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        color = decisionColor
+                    )
+                    Text(
+                        text = "> RCF_direct: ${String.format(Locale.US, "%.8f", state.lastRcfDirect)} (threshold: 1 - δ_local = 0.99999993)",
+                        fontSize = 10.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = "> 6-Slice Kuramoto Coherence (C): ${String.format(Locale.US, "%.4f", state.lastMultiSliceCoherence)} (threshold: 0.65)",
+                        fontSize = 10.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = if (state.lastMultiSliceCoherence >= 0.65) LuminousGreen else LaserGold
+                    )
+                    Text(
+                        text = "> Barrier Potential Φ: ${String.format(Locale.US, "%.4f", state.barrierPotentialPhi)} | Tangential Residual ||v_⊥||: ${String.format(Locale.US, "%.6f", state.tangentialNorm)}",
+                        fontSize = 10.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = PassiveGrey
+                    )
+                    Text(
+                        text = "> Stream: ${state.lastStreamId} | ${state.unresolvedBackgroundSummary}",
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = decisionColor.copy(alpha = 0.85f)
+                    )
+                }
+            }
+
+            // Register M: SHA-256 Falsification Ledger Chain
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "REGISTER M: SHA-256 FALSIFICATION LEDGER",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = LaserGold
+                    )
+                    Text(
+                        text = if (state.isChainVerified) "CHAIN VERIFIED ✓" else "CHAIN ERROR ✗",
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        color = if (state.isChainVerified) LuminousGreen else NeonPink
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Genesis Seal: ${state.genesisSeal.take(12)}...",
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = PassiveGrey
+                    )
+                    Text(
+                        text = "Tip Hash: ${state.currentTipHash.take(12)}...",
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = NeonCyan
+                    )
+                    Text(
+                        text = "Entries: ${state.totalLedgerEntries}",
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = TextPrimary
+                    )
+                }
+            }
+
+            // Multi-Slice Interactive Collider Presets (Depeche 14 & 15 Lab)
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = "Multi-Slice Ingress Collider Simulation:",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = NeonCyan
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Button(
+                        onClick = { engine.simulatePreset(DepechePreset.INVARIANT_ALIGNED) },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0x2239FF14)),
+                        border = BorderStroke(1.dp, LuminousGreen),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Aligned", fontSize = 9.sp, color = LuminousGreen, fontWeight = FontWeight.Bold, maxLines = 1)
+                    }
+
+                    Button(
+                        onClick = { engine.simulatePreset(DepechePreset.NOVEL_DISCOVERY) },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0x2200E5FF)),
+                        border = BorderStroke(1.dp, NeonCyan),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Novelty", fontSize = 9.sp, color = NeonCyan, fontWeight = FontWeight.Bold, maxLines = 1)
+                    }
+
+                    Button(
+                        onClick = { engine.simulatePreset(DepechePreset.INCOHERENT_CONTENT) },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0x22FFD700)),
+                        border = BorderStroke(1.dp, LaserGold),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Incoherent", fontSize = 9.sp, color = LaserGold, fontWeight = FontWeight.Bold, maxLines = 1)
+                    }
+
+                    Button(
+                        onClick = { engine.simulatePreset(DepechePreset.INVARIANT_CORRUPTION) },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0x22FF007F)),
+                        border = BorderStroke(1.dp, NeonPink),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Deflect", fontSize = 9.sp, color = NeonPink, fontWeight = FontWeight.Bold, maxLines = 1)
+                    }
                 }
             }
         }
@@ -1205,12 +1438,14 @@ fun EpistemicNavigationQuickCard(
     seventhSenseEngine: Mod137SeventhSenseEngine,
     epistemicNavigator: Mod138EpistemicNavigator,
     coreGuard: Mod139CoreGuard,
+    depeche15Engine: Depeche15MobileEngine? = null,
     onOpenFullNav: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val seventhEval by seventhSenseEngine.evaluation.collectAsState()
     val triadEval by epistemicNavigator.evaluation.collectAsState()
     val guardState by coreGuard.state.collectAsState()
+    val depecheState = depeche15Engine?.state?.collectAsState()?.value
 
     val isShieldActive = seventhEval.anticipatoryShieldActive
     val route = triadEval.route
@@ -1331,6 +1566,32 @@ fun EpistemicNavigationQuickCard(
                     fontWeight = FontWeight.Bold,
                     color = if (guardState.isGanFetCutoffActive) NeonPink else LuminousGreen
                 )
+            }
+
+            if (depecheState != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Gate 15: [${depecheState.lastDecision.name.take(15)}...]",
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = when (depecheState.lastDecision) {
+                            GateDecision.ADMITTED_INVARIANT_ALIGNED -> LuminousGreen
+                            GateDecision.ADMITTED_NOVEL_DISCOVERY -> NeonCyan
+                            GateDecision.VETOED_CONTENT_INCOHERENT -> LaserGold
+                            GateDecision.VETOED_INVARIANT_CORRUPTION -> NeonPink
+                        }
+                    )
+                    Text(
+                        text = "Ledger: ${depecheState.totalLedgerEntries} entries (${if (depecheState.isChainVerified) "Verified ✓" else "Audit"})",
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = if (depecheState.isChainVerified) LuminousGreen else LaserGold
+                    )
+                }
             }
         }
     }

@@ -269,6 +269,95 @@ class ExampleUnitTest {
     assertEquals(1L, resetState.metabolicResetCount)
     assertEquals(Mod139Constants.METABOLIC_RESET_LATENCY_MS, resetState.metabolicResetLatencyMs, 0.01f)
   }
+
+  @Test
+  fun testDepeche15InvariantAnchorAndTwoStageGate() {
+    val anchor = InvariantAnchorL()
+
+    // 1. Invariant Anchor Verification
+    assertEquals(64, anchor.dim)
+    assertEquals(64, anchor.vectorF64.size)
+    assertEquals(64, anchor.vectorF32.size)
+    assertEquals(64, anchor.vectorQ115.size)
+    assertTrue("Genesis seal must be 64 hex characters (SHA-256)", anchor.genesisSeal.length == 64)
+    assertEquals("delta_local must equal 6.9000e-8 (0.069 PPM)", 6.9000e-8, anchor.deltaLocal, 1e-12)
+
+    // Check normalization: || |L> || = 1.0
+    var normSq = 0.0
+    for (v in anchor.vectorF64) normSq += v * v
+    assertEquals(1.0, kotlin.math.sqrt(normSq), 1e-12)
+
+    val gate = TwoStageODOSGate(anchor)
+
+    // 2. Case A: ADMITTED_INVARIANT_ALIGNED
+    val candidateAligned = DoubleArray(anchor.dim) { idx -> anchor.vectorF64[idx] }
+    val evalAligned = gate.evaluateCandidate(
+      candidateVector = candidateAligned,
+      slicePhasesRad = listOf(0.01, 0.01, 0.0, -0.01, 0.01, 0.0),
+      sliceCoherences = listOf(0.95, 0.90, 0.92, 0.94, 0.91, 0.93)
+    )
+    assertEquals(GateDecision.ADMITTED_INVARIANT_ALIGNED, evalAligned.decision)
+    assertTrue("Must be admitted", evalAligned.isAdmitted)
+    assertEquals(0.0, evalAligned.barrierPotentialPhi, 1e-12)
+    assertTrue("RCF must be approx 1.0", evalAligned.rcfDirect >= 1.0 - anchor.deltaLocal)
+
+    // 3. Case B: ADMITTED_NOVEL_DISCOVERY (|RCF| < 0.50, Coherence >= 0.65)
+    // Shift vector into orthogonal subspace
+    val candidateNovel = DoubleArray(anchor.dim) { idx -> anchor.vectorF64[(idx + 16) % anchor.dim] }
+    val evalNovel = gate.evaluateCandidate(
+      candidateVector = candidateNovel,
+      slicePhasesRad = listOf(0.02, 0.01, 0.03, 0.02, 0.01, 0.02),
+      sliceCoherences = listOf(0.85, 0.88, 0.87, 0.89, 0.86, 0.90)
+    )
+    assertEquals(GateDecision.ADMITTED_NOVEL_DISCOVERY, evalNovel.decision)
+    assertTrue("Novel discovery must be admitted into timeless map", evalNovel.isAdmitted)
+    assertEquals(0.0, evalNovel.barrierPotentialPhi, 1e-12)
+
+    // 4. Case C: VETOED_CONTENT_INCOHERENT (RCF aligned, but slices turbulent)
+    val evalIncoherent = gate.evaluateCandidate(
+      candidateVector = candidateAligned,
+      slicePhasesRad = listOf(0.1, 2.8, -2.1, 3.1, -1.9, 1.4),
+      sliceCoherences = listOf(0.2, 0.1, 0.3, 0.1, 0.2, 0.1)
+    )
+    assertEquals(GateDecision.VETOED_CONTENT_INCOHERENT, evalIncoherent.decision)
+    assertFalse("Incoherent content must be vetoed", evalIncoherent.isAdmitted)
+    assertTrue("Barrier potential must be positive", evalIncoherent.barrierPotentialPhi > 0.0)
+
+    // 5. Case D: VETOED_INVARIANT_CORRUPTION (Severe RCF drift attempt)
+    val candidateCorrupt = DoubleArray(anchor.dim) { idx -> if (idx % 2 == 0) -anchor.vectorF64[idx] else 0.1 }
+    val evalCorrupt = gate.evaluateCandidate(
+      candidateVector = candidateCorrupt,
+      slicePhasesRad = listOf(1.0, -1.0, 2.0, -2.0, 0.5, -0.5),
+      sliceCoherences = listOf(0.3, 0.2, 0.4, 0.2, 0.3, 0.1)
+    )
+    assertEquals(GateDecision.VETOED_INVARIANT_CORRUPTION, evalCorrupt.decision)
+    assertFalse("Invariant corruption must be deflected", evalCorrupt.isAdmitted)
+    assertTrue("Tangential residual must be captured", evalCorrupt.tangentialNorm > 0.0)
+
+    // 6. Register M: SHA-256 Falsification Ledger Chain Verification
+    val ledger = FalsificationLedger(anchor.genesisSeal)
+    assertTrue("Empty chain must verify with genesis seal", ledger.verifyChain())
+
+    // Record transition entries
+    val entry1 = ledger.recordTransition(
+      rcf = 1.0,
+      deltaVector = anchor.vectorF32,
+      streamId = "STREAM-TEST-001"
+    )
+    assertEquals(0, entry1.index)
+    assertEquals(ledger.genesisRootHash, entry1.prevHash)
+    assertTrue("Chain must verify after entry 1", ledger.verifyChain())
+
+    val entry2 = ledger.recordTransition(
+      rcf = 0.99999995,
+      deltaVector = FloatArray(64) { 0.02f },
+      streamId = "STREAM-TEST-002"
+    )
+    assertEquals(1, entry2.index)
+    assertEquals(entry1.entryHash, entry2.prevHash)
+    assertEquals(2, ledger.entryCount)
+    assertTrue("Full historical ledger chain must verify against genesis seal", ledger.verifyChain())
+  }
 }
 
 

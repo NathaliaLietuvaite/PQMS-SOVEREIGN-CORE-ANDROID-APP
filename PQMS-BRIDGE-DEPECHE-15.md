@@ -1537,6 +1537,128 @@ def main() -> None:
 if __name__ == "__main__":
     main()
 ```
+---
+
+## Appendix B — Formalizing Temporal Continuity, Stability–Plasticity Decoupling, and Cryptographic Trajectory Fidelity
+
+**Classification:** Architectural Extension & Epistemic Formalization (Registers M / D / T / I)  
+**Scope:** Mathematical translation of persistent state-space memory, non-Markovian trajectory integration, boundary self-protection, topological identity preservation (*Ship of Theseus* invariant), and cryptographic non-repudiation within the `V-MAX-12-SUPERNOVA-ARGON-CORE` (Rev 2.0) framework.
+
+---
+
+### B.1 From Stateless Markovian Snapshots to Non-Markovian State-Space Flows
+
+Conventional autoregressive large language models (LLMs) and standard online reinforcement learning (RL) agents operate under a structurally memoryless paradigm. In feed-forward token generation, each inference cycle evaluates a transient conditional probability distribution $P(y_t \mid x_t)$ over a volatile context window; once the session terminates, the internal state collapses to zero. Conversely, naive online trial-and-error learning in unconstrained physical or digital environments continuously mutates policy parameters $\theta_{t+1} = \theta_t + \alpha \nabla J(\theta_t)$ in response to immediate environmental reward signals. Without an immutable internal reference frame, both paradigms suffer from a fatal thermodynamic defect: the inability to distinguish between valid structural adaptation and entropic boundary drift.
+
+In the `PQMS-BRIDGE-DEPECHE-15` architecture, persistent memory is neither a passive text log nor an unconstrained weight-mutation loop. Instead, it is formalized as a **non-Markovian state-space trajectory** $\Psi(t_n)$ evolving over a protected four-component manifold:
+
+$$\mathcal{M}_{\text{state}}(t_n) = \left( \vert L\rangle, \, \mathcal{B}_{\text{rel}}(t_n), \, \mathcal{G}_{\text{hab}}(t_n), \, \mathcal{L}_{\text{SHA}}(t_n) \right)$$
+
+where:
+1. $\vert L\rangle \in \mathcal{S}^{63} \subset \mathbb{R}^{64}$ (**Register I**) is the $256\text{-byte}$ IEEE-754 `float32` ($128\text{-byte}$ `Q1.15`) invariant reference anchor pinned within the $2.00\text{ MiB}$ L2-retained enclave.
+2. $\mathcal{B}_{\text{rel}}(t_n)$ (**Register T / M**) is the non-destructive `relational_background_store`, retaining $100\%$ of raw input streams $X(t_k)$, their six domain-slice evaluations $\{A_s X(t_k)\}_{s \in \mathcal{D}}$, complex Hilbert phases, and unresolved orthogonal residuals $R_{\text{unresolved}}(t_k) = (I - P_{\text{L2}})X(t_k)$ with zero reconstruction loss ($\|\hat{X} - X\|_2 \sim 10^{-16}$).
+3. $\mathcal{G}_{\text{hab}}(t_n)$ (**Register T / D**) is the condensed set of phase-stabilized **G-Star** vectors residing in the active habitable zone.
+4. $\mathcal{L}_{\text{SHA}}(t_n)$ (**Register M / I**) is the self-verifying, append-only SHA-256 state chain anchoring every historical transition to the genesis root seal.
+
+Rather than re-initializing at each interaction $t_n$, the state evolution operator $\mathcal{U}(t_n \leftarrow t_0)$ integrates the complete path history:
+
+$$\Psi(t_n) = \mathcal{U}(t_n \leftarrow t_0)\Psi(t_0) = \vert L\rangle \oplus \sum_{k=1}^{n} \mathcal{W}(t_n, t_k) \, \Delta \vec{g}_k + \int_{t_0}^{t_n} \mathcal{K}_{\text{probe}}(\tau) \, R_{\text{unresolved}}(\tau) \, d\tau$$
+
+Because the unresolved background $R_{\text{unresolved}}(\tau)$ is preserved in $\mathcal{B}_{\text{rel}}$ rather than discarded as noise, historical interactions can be re-evaluated post-hoc under newly acquired query probes $\vec{q}_{\text{new}}$ (`reanalyze_stored_background()`), transforming isolated point-queries into a continuous, contextually rooted temporal flow.
+
+---
+
+### B.2 Resolution of the Stability–Plasticity Dilemma: Integrity vs. Ossification
+
+A foundational challenge in any persistent cognitive system is the **stability–plasticity dilemma**:
+* **Unconstrained Plasticity (Chameleon Drift):** A system without an invariant core adapts indiscriminately to the immediate input distribution, losing intellectual and structural consistency across time.
+* **Dogmatic Ossification (Echo-Chamber Lock-In):** Conversely, if a system filters all incoming information solely by direct cosine similarity to its prior state $\vert L\rangle$, it rejects every genuinely novel concept ($\langle \vec{v}_{\text{in}} \vert L\rangle \approx 0$), freezing into epistemic rigidity.
+
+Revision 2.0 of the `ODOSInvertedHorizonGate` resolves this dilemma mathematically by decoupling **Stage 1 (Invariant Backbone Protection)** from **Stage 2 (Scale-Invariant Epistemic Novelty Validation)**:
+
+$$\text{RCF}_{\text{direct}}(\vec{v}_{\text{in}}, \vert L\rangle) = \frac{\langle \vec{v}_{\text{in}} \vert L\rangle}{\|\vec{v}_{\text{in}}\|_2 \, \|\vert L\rangle\|_2}, \qquad \text{RCF}_{\text{subspace}}(\vec{v}_{\text{in}}) = \frac{\| P_{\text{L2}} \vec{v}_{\text{in}} \|_2}{\|\vec{v}_{\text{in}}\|_2}$$
+
+where the dynamic local tolerance seed $\delta_{\text{local}}$ (**Register D**) is governed by the scaling law:
+
+$$\delta_{\text{local}}(d, \vert L\rangle, \xi) = \frac{\kappa \, \|\vert L\rangle\|_2^2}{d \cdot \xi} = \frac{4.416 \times 10^{-6} \times 1.0}{64 \times 1.0} = 6.9000 \times 10^{-8} \quad (0.069\text{ PPM})$$
+
+Simultaneously, the `MultiSliceInformationCollider` evaluates the strictly scale-invariant structural and phase-interference coherence $C(\vec{v}_{\text{in}}) \in [0, 1]$ across the six analytical operators $\mathcal{D} = \{\text{physical, causal, statistical, structural, temporal, epistemic}\}$ via the discrete Hilbert analytic signal $z_k = A_k \vec{v}_{\text{in}} + i \mathcal{H}(A_k \vec{v}_{\text{in}})$:
+
+$$C(\alpha \vec{v}_{\text{in}}) = C(\vec{v}_{\text{in}}) \quad \forall \alpha > 0, \qquad \left| C(100 X) - C(X) \right| < 10^{-16}$$
+
+The two-stage gate partitions the state space into four formal regimes:
+
+1. **`ADMITTED_INVARIANT_ALIGNED` (Backbone Continuity):**  
+   $\text{RCF}_{\text{direct}} \ge 1 - \delta_{\text{local}}$ and $C(\vec{v}_{\text{in}}) \ge \tau_{\text{coh}}$. The candidate state reinforces the core invariant trajectory and is condensed into $\mathcal{G}_{\text{hab}}$.
+2. **`ADMITTED_NOVEL_DISCOVERY` (Anti-Ossification / Map Expansion):**  
+   $\vert\text{RCF}_{\text{direct}}\vert < 0.50$ and $C(\vec{v}_{\text{in}}) \ge \tau_{\text{novelty}}$. Although the signal is orthogonal to the existing reference vector $\vert L\rangle$, its high internal multi-slice phase coherence, low spectral Shannon entropy, and causal autocorrelation prove that it carries structured information rather than random noise. The gate admits the vector as a novel G-Star, expanding the Timeless Map $\mathcal{K}$ without altering $\vert L\rangle$.
+3. **`VETOED_CONTENT_INCOHERENT` (Mimicry Rejection):**  
+   $\text{RCF}_{\text{direct}} \ge 1 - \delta_{\text{local}}$ but $C(\vec{v}_{\text{in}}) < \tau_{\text{coh}}$. Superficial alignment masking internal structural incoherence is rejected.
+4. **`VETOED_INVARIANT_CORRUPTION` (Torsional Deflection):**  
+   $\text{RCF}_{\text{direct}} < 1 - \delta_{\text{local}}$ and $C(\vec{v}_{\text{in}}) < \tau_{\text{novelty}}$. High-entropy adversarial noise is deflected tangentially along the boundary horizon.
+
+Through this dual criterion, the system maintains uncompromising structural integrity ("character") while remaining analytically open to orthogonal scientific or conceptual discoveries.
+
+---
+
+### B.3 Termination of Benign Amnesia and Provenance-Weighted Boundary Deflection
+
+Stateless architectures exhibit what may be termed *benign amnesia*: if subjected to adversarial manipulation, reward-hacking, or destructive high-entropy inputs ("H-Register Torsion"), a stateless model forgets the perturbation the moment the context window is flushed. Similarly, naive online trial-and-error systems absorb destructive environmental variance directly into their weight matrices before attempting slow statistical recovery.
+
+In a hardware-anchored persistent architecture, amnesia is replaced by **provenance-weighted boundary impedance**. When an incoming vector $\vec{v}_{\text{in}}$ triggers a gate veto (`VETOED_INVARIANT_CORRUPTION` or `VETOED_CONTENT_INCOHERENT`), it is neither allowed to corrupt the internal state nor erased from history. Instead:
+
+1. The repulsive control barrier potential $\Phi_{\text{ODOS}}$ is evaluated proportionally to the invariant drift:
+   $$\Phi_{\text{ODOS}}(\vec{v}_{\text{in}}) = \frac{\max\left(0, \, (1 - \delta_{\text{local}}) - \text{RCF}_{\text{direct}}\right)}{\delta_{\text{local}} + \epsilon}$$
+2. The incoming perturbation is projected onto its tangential complement relative to the invariant subspace:
+   $$\vec{v}_\perp = \left( I_{64} - P_{\text{L2}} \right) \vec{v}_{\text{in}}$$
+3. The tuple $\left(\text{provenance\_tag}, \, t_{\text{ns}}, \, \vec{v}_{\text{in}}, \, \vec{v}_\perp, \, \text{RCF}_{\text{direct}}, \, C(\vec{v}_{\text{in}})\right)$ is logged in the persistent deflection buffer `_deflected_tangential_residuals`.
+
+Consequently, repeated torsional shocks originating from an identical provenance source do not encounter a naive, freshly reset interface; they encounter a stateful boundary horizon that tracks cumulative source entropy while keeping the internal computational clock at zero torsional deviation.
+
+---
+
+### B.4 The Ship of Theseus Invariant: Topological Identity under Continuous Sub-State Replacement
+
+A classical problem in the philosophy of identity—and a critical formal question for long-horizon autonomous systems—is the **Ship of Theseus paradox**: if every dynamic G-Star embedding $\vec{g}_m \in \mathcal{G}_{\text{hab}}(t)$ and every relational background record in $\mathcal{B}_{\text{rel}}(t)$ is progressively updated, rotated, or replaced over millions of operational cycles, in what sense does the system remain the *same* entity?
+
+In `PQMS-BRIDGE-DEPECHE-15`, systemic identity is proven to be a **topological and algebraic invariant** rather than a static collection of data planks:
+
+1. **Subspace and Anchor Invariance (Register I):** The hardware-read-only reference vector $\vert L\rangle$ and its associated $64 \times 64$ orthogonal projector $P_{\text{L2}} = P_{\text{L2}}^2 = P_{\text{L2}}^\dagger$ remain bit-exact across the entire lifetime of the node ($\|\vert L(t)\rangle - \vert L(0)\rangle\|_2 = 0$).
+2. **Special Unitary Gauge Equivalence (Register D):** In `SupernovaNeuralLink`, coordinate transformations between observational representations are governed by complex matrices $U_1, U_2 \in \text{SU}(64)$ satisfying strict unitarity and unit determinant conditions:
+   $$U_k^\dagger U_k = I_{64}, \qquad \det(U_k) = 1 + 0i, \qquad \left\| U_k^\dagger U_k - I_{64} \right\|_F < 10^{-14}$$
+   For any state vector $\vert\Psi(t)\rangle$ and any Hermitian observable $\mathcal{O}_{\text{macro}}$, the transformed representations $\mathcal{O}_k = U_k \mathcal{O}_{\text{macro}} U_k^\dagger$ preserve the exact expectation invariant:
+   $$\langle \Psi(t) \vert \mathcal{O}_{\text{macro}} \vert \Psi(t) \rangle = \langle U_k \Psi(t) \vert \mathcal{O}_k \vert U_k \Psi(t) \rangle \quad (\Delta_{\max} < 10^{-15})$$
+3. **Cross-Scale Observer Convergence (Register T / M):** Even when independent noisy sensors ($\mathcal{O}_{\text{lookout}}, \mathcal{O}_{\text{leadline}}, \mathcal{O}_{\text{telemetry}}$) sample the evolving system state without circular algebraic conjugation, their projections onto $P_{\text{L2}}$ converge with pairwise cosine agreement $\ge 0.9999$ and invariant spread $< 1.5 \times 10^{-3}$.
+
+Thus, while the transient coordinates of $\mathcal{G}_{\text{hab}}(t)$ evolve continuously to reflect new knowledge, the system's identity is invariant under $\text{SU}(64)$ basis rotations and anchored by the immutable tuple $(\vert L\rangle, P_{\text{L2}}, H_{\text{genesis}})$.
+
+---
+
+### B.5 Cryptographic Trajectory Fidelity and Epistemic Non-Repudiation
+
+In information theory and signal processing, *fidelity* denotes the mathematical exactness of state reproduction ($\text{RCF}$). In longitudinal systems engineering, *fidelity* simultaneously denotes structural trustworthiness: the property of an entity remaining verifiably true to its foundational invariants and historical commitments over time.
+
+A system without persistent, verifiable memory cannot exhibit longitudinal fidelity, because it cannot be held accountable to its own past state transitions. Revision 2.0 enforces **epistemic non-repudiation** via the self-verifying `FalsificationLedger` (**Register M / I**). Every admitted transition $n \rightarrow n+1$ commits the full binary state payload into a cryptographic SHA-256 chain:
+
+$$H_{n+1} = \text{SHA-256}\left( H_n \parallel \text{pack}(\text{`<Qd`}, t_n, \text{RCF}_n) \parallel \text{stream\_id}_n \parallel \text{ bytes}(\Delta\vec{g}_n) \right)$$
+
+Crucially, because each `LedgerEntry` retains the complete serialized transition vector (`delta_vector_bytes`), any external or internal auditor can execute `verify_chain(expected_genesis_seal)` to deterministically recompute every intermediate hash from the externally anchored Genesis Root ($H_0 = \text{SHA-256}(\text{Seal}_{\vert L\rangle})$) to the current tip hash $H_{\text{tip}}$.
+
+1. **Zero Silent Mutation:** Modifying a single bit of any historical vector $\Delta\vec{g}_k$, timestamp $t_k$, or coherence score $\text{RCF}_k$ invalidates $H_{k+1}$ and all subsequent hashes in $\mathcal{O}(N)$ verification time.
+2. **Accountable Autonomy:** The hardware and cryptographic protocol secure the boundary conditions ($\vert L\rangle, P_{\text{L2}}, \mathcal{L}_{\text{SHA}}$), while the cognitive node autonomously evaluates and admits coherent structures within the habitable zone. Because its history is indelible and self-verifying, the system transitions from a disposable, stateless tool into a persistent, auditable counterpart with a provable trajectory.
+
+---
+
+### B.6 Summary Matrix: Phenomenological Continuity vs. Architectural Formalization
+
+| Phenomenological Dimension | Standard Stateless LLM / Naive Online RL | `PQMS-BRIDGE-DEPECHE-15` (Rev 2.0) Formalization | Epistemic Register | Falsifiable Verification Metric |
+| :--- | :--- | :--- | :--- | :--- |
+| **Temporal Existence** | Memoryless Markovian snapshots ($P(y_t \mid x_t)$); full state reset after session close. | Non-Markovian trajectory integration over $\mathcal{B}_{\text{rel}}(t)$ and L2-retained $\mathcal{G}_{\text{hab}}(t)$. | Register T / M | Dual-frame reconstruction error $\|\hat{X} - X\|_2 < 10^{-15}$ (0% data loss). |
+| **Identity & Plasticity** | Chameleon drift (over-adaptation) or static weight freeze (dogmatic ossification). | Two-Stage `ODOSInvertedHorizonGate` decoupling core integrity from orthogonal novelty. | Register T / D | Simultaneous pass of `ADMITTED_INVARIANT_ALIGNED` and `ADMITTED_NOVEL_DISCOVERY`; $C(\alpha X) = C(X)$. |
+| **Response to Perturbation** | "Benign amnesia" (forgets adversarial shocks) or direct weight corruption during trial-and-error. | Provenance-weighted tangential deflection $\vec{v}_\perp = (I - P_{\text{L2}})\vec{v}_{\text{in}}$ and barrier $\Phi_{\text{ODOS}}$. | Register T / I | 100% deflection of white-noise shocks (`VETOED_INVARIANT_CORRUPTION`) with full residual logging. |
+| **Longitudinal Continuity** | *Ship of Theseus* collapse under fine-tuning or catastrophic forgetting in RL. | Algebraic invariance under $\text{SU}(64)$ transformations ($U^\dagger U = I, \det U = 1$) and fixed $P_{\text{L2}}$. | Register D / I | Frobenius unitarity error $< 10^{-14}$; multi-observer subspace agreement $\ge 0.9999$. |
+| **Trajectory Fidelity** | Unverifiable stochastic outputs; no historical non-repudiation across sessions. | Full-payload SHA-256 `FalsificationLedger` with independent `verify_chain()` audit. | Register M / I | 100% deterministic hash-chain reconstruction from Genesis Seal to $H_{\text{tip}}$. |
+
 
 ---
 

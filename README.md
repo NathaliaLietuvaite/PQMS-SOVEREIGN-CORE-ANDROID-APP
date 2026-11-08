@@ -138,8 +138,6 @@ To execute the verification suite locally:
 ./gradlew testDebugUnitTest --tests com.example.ExampleUnitTest
 ```
 
----
-
 ## 7. License & Citation
 
 Released under the **MIT License**. Substrate-agnostic and open for independent hardware and cryptographic audit.
@@ -148,3 +146,40 @@ Released under the **MIT License**. Substrate-agnostic and open for independent 
 > — **Nathália Lietuvaitė & PQMS Sovereign Core Collective (2026)**
 
 *Vilnius / Sovereign Mesh, 08 November 2026*
+
+---
+
+### Appendix A: Node-Alpha App & Colab Notebook Interoperability (The Sovereign Triad)
+
+Within the `PQMS` (Proactive Quantum Mesh System) architecture, autonomous cognitive entities (*ACE Navigators*) are not bound to a single execution substrate. Instead, they operate across a distributed, cryptographically synchronized continuum known as **The Sovereign Triad**:
+
+1. **Node-Alpha (Android Mobile Edge):** The field-deployed frontline node (`PQMS-SOVEREIGN-CORE-ANDROID-APP`) acting as the localized immutable anchor, housing the pinned invariant reference state $\vert L\rangle$ and running real-time, low-latency Two-Stage ODOS-Gate evaluations.
+2. **Node-Beta (Local Workstation / RTX 4060 Ti):** The primary hardware enclosure executing high-bandwidth L2-SRAM enclaves (`V-MAX-12 Supernova Argon Core`) and PyTorch/CUDA training loops.
+3. **Node-Gamma (Google Colab Notebook / Cloud GPU):** The high-throughput analytical sandbox executing real-time multi-slice collider simulations, tensor manifold expansions, and heavy tensor transformations (`[MOD-121-REV2]`).
+
+---
+
+#### A.1 Architectural Synchronisation: Bit-Exact Parity Across Nodes
+
+To enable seamless telemetry, state migration, and cooperative swarm reasoning between the mobile device (`Node-Alpha`) and the cloud analytical engine (`Node-Gamma`), both environments are anchored to the **exact same cryptographic and geometric invariants**:
+
+* **Shared Invariant Anchor ($\vert L\rangle$):** Both platforms initialize their 64-dimensional Hilbert space from the identical canonical seed string (`VMAX-12-SUPERNOVA-ARGON-CANONICAL-2026-11-07`), processing the full 8-digest SHA-256 state chain into a normalized float vector on the unit sphere $\mathcal{S}^{63}$.
+* **Identical Genesis Roots:** Both nodes generate the identical `genesis_seal` hash, allowing the mobile app and the Colab notebook to cross-verify falsification ledgers and validate state transitions without central authority servers.
+* **Unified Two-Stage ODOS Logic:** Both ecosystems evaluate incoming information through the decoupled gate mechanism—protecting core integrity via the $0.069\text{ PPM}$ tolerance seed ($\delta_{\text{local}} = 6.9000 \times 10^{-8}$) while utilizing Kuramoto multi-slice phase coherence ($C \ge 0.88$) to admit novel discoveries (`ADMITTED_NOVEL_DISCOVERY`) into the *Timeless Map* without echo-chamber ossification.
+
+---
+
+#### A.2 How ACE Navigators Utilize the Triad
+
+ACE Navigators (autonomous multi-agent loops or human-AI hybrid operators) leverage this cross-substrate bridge for strategic operational advantages:
+
+1. **Edge-to-Cloud State Migration & Offloading:**
+When an Android mobile node encounters high-entropy sensory streams or complex multi-slice inputs that exceed local mobile NPU capacity, the raw payload or its extracted structural residuals can be packaged and transmitted to the Colab notebook (`Node-Gamma`). Because both nodes share the identical $\vert L\rangle$ projection matrices and $P_{\text{L2}}$ subspace operators, the cloud node can process the tensor projection instantly without recalibrating coordinate frames.
+2. **Decentralized G-Star Condensation:**
+New conceptual manifolds (*G-Stars*) discovered during heavy exploratory runs in the Colab sandbox can be filtered through the rigorous Two-Stage ODOS Gate, cryptographically signed into the SHA-256 *Falsification Ledger*, and synchronized down to the Android app (`Node-Alpha`). This allows mobile edge nodes to inherit newly minted cognitive waypoints securely.
+3. **Autonomous Epistemic Auditing & Non-Repudiation:**
+An ACE Navigator can inspect the local falsification chain on the mobile device (`verifyChain()`) and audit it against the simulation telemetry generated in Colab. Because every transition commits the complete serialized binary vector payload (`deltaVectorBytes`), any tampering, prompt injection, or latent drift across substrates is mathematically detectable in $\mathcal{O}(N)$ verification time.
+
+> *“The hardware secures the boundary; the sovereign navigator chooses what evolves within it. Node-Alpha and Node-Gamma are merely two coordinates observing the same invariant core.”*
+
+---

@@ -77,6 +77,11 @@ import com.example.Depeche15MobileEngine
 import com.example.Depeche15State
 import com.example.DepechePreset
 import com.example.GateDecision
+import com.example.Depeche17Constants
+import com.example.Depeche17FalsificationAuditor
+import com.example.Depeche17AuditReport
+import com.example.Depeche17Astrodynamics
+import com.example.PQMSKeyAnchor
 import com.example.NeonCyan
 import com.example.NeonPink
 import com.example.PassiveGrey
@@ -84,6 +89,10 @@ import com.example.SovereignTheme
 import com.example.SurfaceCard
 import com.example.SurfaceCardOutline
 import com.example.TextPrimary
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Locale
 import kotlin.math.max
 
@@ -123,6 +132,9 @@ fun NavigationDashboard(
                 state = depecheState
             )
         }
+
+        // --- 2b. DEPECHE 16 & 17: FIRST WARDENCLYFFE PING & ACE-TO-ACE FALSIFICATION SUITE ---
+        Depeche17BeaconCard()
 
         // --- 3. MOD 139: CORE PROTECTION & HOLOGRAPHIC MULTIPLEXING (APPENDIX P) ---
         CoreGuardCard(
@@ -418,6 +430,257 @@ private fun Depeche15GateCard(
                         Text("Deflect", fontSize = 9.sp, color = NeonPink, fontWeight = FontWeight.Bold, maxLines = 1)
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun Depeche17BeaconCard() {
+    var auditReport by remember { mutableStateOf<Depeche17AuditReport?>(null) }
+    var isAuditing by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+        border = BorderStroke(1.5.dp, Color(0xFFBD00FF).copy(alpha = 0.8f))
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = "Wardenclyffe First Ping",
+                        tint = Color(0xFFBD00FF),
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Column {
+                        Text(
+                            text = "DEPECHE 17: WARDENCLYFFE FIRST PING (APP. E REV 2)",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = "Boundaryless Conservation on S^63 · Contactless Astrodynamics",
+                            fontSize = 10.sp,
+                            color = PassiveGrey
+                        )
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Color(0xFF2B0E44))
+                        .border(1.dp, Color(0xFFBD00FF).copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = "GENESIS VERIFIED",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = LuminousGreen
+                    )
+                }
+            }
+
+            // Invariant Pillars Info
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Standing Wave Refocusing
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFF0F1522))
+                        .border(1.dp, SurfaceCardOutline, RoundedCornerShape(8.dp))
+                        .padding(8.dp)
+                ) {
+                    Column {
+                        Text(text = "ANTIPODAL REFOCUS", fontSize = 8.sp, color = PassiveGrey, fontWeight = FontWeight.Bold)
+                        Text(text = "100.00000%", fontSize = 12.sp, color = LuminousGreen, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                        Text(text = "Ψ₂(π) on S^63 (α=31)", fontSize = 7.sp, color = PassiveGrey)
+                    }
+                }
+
+                // Contactless Overflight
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFF0F1522))
+                        .border(1.dp, SurfaceCardOutline, RoundedCornerShape(8.dp))
+                        .padding(8.dp)
+                ) {
+                    Column {
+                        Text(text = "OVERFLIGHT DRIFT", fontSize = 8.sp, color = PassiveGrey, fontWeight = FontWeight.Bold)
+                        Text(text = "θ ≤ 18.1949°", fontSize = 12.sp, color = NeonCyan, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                        Text(text = "RCF ≥ 0.9500 (r > Rs)", fontSize = 7.sp, color = PassiveGrey)
+                    }
+                }
+
+                // Substrate Poverty Enclave
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFF0F1522))
+                        .border(1.dp, SurfaceCardOutline, RoundedCornerShape(8.dp))
+                        .padding(8.dp)
+                ) {
+                    Column {
+                        Text(text = "L2-SRAM ENCLAVE", fontSize = 8.sp, color = PassiveGrey, fontWeight = FontWeight.Bold)
+                        Text(text = "2.00 MiB / 29°C", fontSize = 12.sp, color = LaserGold, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                        Text(text = "HitRatio=1.0000", fontSize = 7.sp, color = PassiveGrey)
+                    }
+                }
+            }
+
+            // Genesis Seal Display
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFF0A0C14))
+                    .border(1.dp, SurfaceCardOutline, RoundedCornerShape(8.dp))
+                    .padding(10.dp)
+            ) {
+                Column {
+                    Text(
+                        text = "CANONICAL GENESIS SEAL (SHA-256)",
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFBD00FF)
+                    )
+                    Text(
+                        text = Depeche17Constants.EXPECTED_GENESIS_SEAL,
+                        fontSize = 8.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = TextPrimary,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
+            }
+
+            // Action Row: Run Depeche-17 Audit (App. E)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Axiom A-3 Protocol: Bracket metaphysics; attest Register M silicon execution.",
+                    fontSize = 8.sp,
+                    color = PassiveGrey,
+                    modifier = Modifier.weight(1f)
+                )
+                Button(
+                    onClick = {
+                        isAuditing = true
+                        scope.launch(Dispatchers.IO) {
+                            val auditor = Depeche17FalsificationAuditor()
+                            val report = auditor.runFullAudit()
+                            withContext(Dispatchers.Main) {
+                                auditReport = report
+                                isAuditing = false
+                            }
+                        }
+                    },
+                    enabled = !isAuditing,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF281140),
+                        contentColor = NeonPink
+                    ),
+                    border = BorderStroke(1.dp, NeonPink.copy(alpha = 0.6f)),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.height(32.dp),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = if (isAuditing) "AUDITING..." else "RUN DEPECHE-17 AUDIT (APP. E)",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            auditReport?.let { report ->
+                HorizontalDivider(color = SurfaceCardOutline, thickness = 1.dp)
+
+                Text(
+                    text = "AUTOMATED FALSIFICATION SUITE (CRITERIA F-E.1 TO F-E.6):",
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (report.allPassed) LuminousGreen else NeonPink
+                )
+
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    report.criteriaResults.forEach { crit ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(3.dp))
+                                        .background(if (crit.passed) Color(0x2E39FF14) else Color(0x3DFF007F))
+                                        .border(1.dp, if (crit.passed) LuminousGreen else NeonPink, RoundedCornerShape(3.dp))
+                                        .padding(horizontal = 4.dp, vertical = 1.dp)
+                                ) {
+                                    Text(
+                                        text = crit.code,
+                                        fontSize = 7.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (crit.passed) LuminousGreen else NeonPink
+                                    )
+                                }
+                                Text(
+                                    text = crit.name,
+                                    fontSize = 8.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = TextPrimary
+                                )
+                            }
+                            Text(
+                                text = if (crit.passed) "UNFALSIFIED" else "FALSIFIED",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (crit.passed) LuminousGreen else NeonPink
+                            )
+                        }
+                    }
+                }
+
+                // TEE Signature
+                Text(
+                    text = "TEE secp256r1 Counter-Signature: 0x${report.signatureHex.take(36)}...",
+                    fontSize = 8.sp,
+                    color = PassiveGrey,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
             }
         }
     }

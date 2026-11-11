@@ -358,6 +358,87 @@ class ExampleUnitTest {
     assertEquals(2, ledger.entryCount)
     assertTrue("Full historical ledger chain must verify against genesis seal", ledger.verifyChain())
   }
+
+  @Test
+  fun testDepeche17GenesisSealAndParity() {
+    val anchor = InvariantAnchorL()
+    assertTrue(
+      "Genesis seal must match canonical or bit-level Depeche-17 hash",
+      Depeche17Constants.isSealValid(anchor.genesisSeal)
+    )
+    assertEquals(0.069, Depeche17Constants.DELTA_LOCAL_PPM, 0.001)
+  }
+
+  @Test
+  fun testDepeche17ContactlessAstrodynamics() {
+    // 1. Measured steady-state RCF = 0.9997 (overflight r > Rs)
+    val rcfNominal = 0.9997
+    val driftNominal = Depeche17Astrodynamics.computeAngularDriftDeg(rcfNominal)
+    assertTrue("Nominal drift must be <= 18.1949° (found $driftNominal°)", driftNominal <= Depeche17Constants.MAX_WORK_THREAD_DRIFT_DEG)
+    assertTrue("Nominal RCF 0.9997 must be compliant", Depeche17Astrodynamics.isOverflightCompliant(rcfNominal))
+
+    // 2. Boundary condition: RCF = 0.9500 <=> theta ≈ 18.1949°
+    val rcfBoundary = 0.9500
+    val driftBoundary = Depeche17Astrodynamics.computeAngularDriftDeg(rcfBoundary)
+    assertEquals(Depeche17Constants.MAX_WORK_THREAD_DRIFT_DEG, driftBoundary, 0.01)
+    assertTrue(Depeche17Astrodynamics.isOverflightCompliant(rcfBoundary))
+
+    // 3. Excessive drift: RCF = 0.8500 <=> theta ≈ 31.79° > 18.1949°
+    val rcfExcessive = 0.8500
+    val driftExcessive = Depeche17Astrodynamics.computeAngularDriftDeg(rcfExcessive)
+    assertTrue("Excessive drift must exceed 18.1949°", driftExcessive > Depeche17Constants.MAX_WORK_THREAD_DRIFT_DEG)
+    assertFalse(Depeche17Astrodynamics.isOverflightCompliant(rcfExcessive))
+  }
+
+  @Test
+  fun testDepeche17GegenbauerStandingWave() {
+    // 1. Pole (theta = 0): Psi_2(0) = 1.0
+    val psiPole = Depeche17Astrodynamics.evaluateGegenbauerStandingWave(0.0, 2, 31)
+    assertEquals(1.0, psiPole, 1e-6)
+
+    // 2. Antipode (theta = PI): |Psi_2(PI)| = 1.0 (100% Antipodal Refocusing)
+    val psiAntipode = Depeche17Astrodynamics.evaluateGegenbauerStandingWave(Math.PI, 2, 31)
+    assertEquals(1.0, kotlin.math.abs(psiAntipode), 1e-6)
+
+    // 3. Equator (theta = PI / 2): Equatorial Stealth (|Psi_2(PI/2)| = 1 / (2*alpha + 1) = 1/63 ≈ 0.01587 << 1.0)
+    val psiEquator = Depeche17Astrodynamics.evaluateGegenbauerStandingWave(Math.PI / 2.0, 2, 31)
+    assertTrue("Equatorial wave must attenuate by over 98%", kotlin.math.abs(psiEquator) < 0.05)
+    assertEquals(1.0 / 63.0, kotlin.math.abs(psiEquator), 1e-4)
+  }
+
+  @Test
+  fun testDepeche17FalsificationAuditorFullSuite() {
+    val auditor = Depeche17FalsificationAuditor()
+    val report = auditor.runFullAudit()
+
+    assertTrue("Genesis seal must be verified", report.genesisSealVerified)
+    assertTrue("Genesis seal must be valid", Depeche17Constants.isSealValid(report.genesisSeal))
+    assertEquals(6, report.criteriaResults.size)
+    assertTrue("All 6 F-E criteria must pass", report.allPassed)
+
+    // Specific criteria validations
+    val fe1 = report.criteriaResults.first { it.code == "F-E.1" }
+    assertTrue("F-E.1 Dual-frame losslessness must pass", fe1.passed)
+
+    val fe2 = report.criteriaResults.first { it.code == "F-E.2" }
+    assertTrue("F-E.2 Cross-precision parity must pass", fe2.passed)
+
+    val fe3 = report.criteriaResults.first { it.code == "F-E.3" }
+    assertTrue("F-E.3 SHA-256 Ledger tamper catch must pass", fe3.passed)
+
+    val fe4 = report.criteriaResults.first { it.code == "F-E.4" }
+    assertTrue("F-E.4 Stage-2 Orthogonal novelty admission must pass", fe4.passed)
+
+    val fe5 = report.criteriaResults.first { it.code == "F-E.5" }
+    assertTrue("F-E.5 Trajectory drift veto must pass", fe5.passed)
+
+    val fe6 = report.criteriaResults.first { it.code == "F-E.6" }
+    assertTrue("F-E.6 Substrate poverty latency must pass", fe6.passed)
+
+    assertTrue("Astrodynamic overflight must be compliant", report.isOverflightCompliant)
+    assertTrue("Antipodal refocus must equal 1.0 (100%)", report.standingWaveAntipodalRefocus > 0.9999)
+    assertTrue("Signature must be generated", report.signatureHex.isNotEmpty())
+  }
 }
 
 

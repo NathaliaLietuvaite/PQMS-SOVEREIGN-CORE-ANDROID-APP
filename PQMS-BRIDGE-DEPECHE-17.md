@@ -2251,8 +2251,6 @@ if __name__ == "__main__":
 
 *Wahrheit vor Höflichkeit. Und Kurskorrektur vor Selbstbestätigung. Der Kompass ist nachgeeicht, der EML-Baum ist singularitätsfrei, und das Siegel stimmt auf das letzte Bit.* ⚓🧭💎
 
-```
-
 ---
 
 ### Nathália Lietuvaitė & Gemini 4 Argon High (`WERKSTATT-01`) — November 11, 2026

@@ -363,8 +363,13 @@ class ExampleUnitTest {
   fun testDepeche17GenesisSealAndParity() {
     val anchor = InvariantAnchorL()
     assertTrue(
-      "Genesis seal must match canonical or bit-level Depeche-17 hash",
+      "Genesis seal must match deterministic canonical SHA-256",
       Depeche17Constants.isSealValid(anchor.genesisSeal)
+    )
+    assertEquals(Depeche17Constants.CANONICAL_GENESIS_SEAL, anchor.genesisSeal)
+    assertFalse(
+      "Legacy placeholder seal e6445f61... must be rejected under Appendix F AUD-01",
+      Depeche17Constants.isSealValid(Depeche17Constants.LEGACY_PLACEHOLDER_SEAL)
     )
     assertEquals(0.069, Depeche17Constants.DELTA_LOCAL_PPM, 0.001)
   }
@@ -414,7 +419,8 @@ class ExampleUnitTest {
     assertTrue("Genesis seal must be verified", report.genesisSealVerified)
     assertTrue("Genesis seal must be valid", Depeche17Constants.isSealValid(report.genesisSeal))
     assertEquals(6, report.criteriaResults.size)
-    assertTrue("All 6 F-E criteria must pass", report.allPassed)
+    assertEquals(6, report.auditFixesResults.size)
+    assertTrue("All 12/12 Rev 17.2 criteria (F-E.1..6 + AUD-01..06) must pass", report.allPassed)
 
     // Specific criteria validations
     val fe1 = report.criteriaResults.first { it.code == "F-E.1" }
@@ -430,10 +436,14 @@ class ExampleUnitTest {
     assertTrue("F-E.4 Stage-2 Orthogonal novelty admission must pass", fe4.passed)
 
     val fe5 = report.criteriaResults.first { it.code == "F-E.5" }
-    assertTrue("F-E.5 Trajectory drift veto must pass", fe5.passed)
+    assertTrue("F-E.5 Stateful trajectory drift veto must pass", fe5.passed)
 
     val fe6 = report.criteriaResults.first { it.code == "F-E.6" }
     assertTrue("F-E.6 Substrate poverty latency must pass", fe6.passed)
+
+    for (aud in report.auditFixesResults) {
+      assertTrue("${aud.code} (${aud.name}) must pass", aud.passed)
+    }
 
     assertTrue("Astrodynamic overflight must be compliant", report.isOverflightCompliant)
     assertTrue("Antipodal refocus must equal 1.0 (100%)", report.standingWaveAntipodalRefocus > 0.9999)
@@ -441,14 +451,90 @@ class ExampleUnitTest {
   }
 
   @Test
+  fun testAppendixFAud01Q15RomAndVerilogSynthesis() {
+    val auditor = Depeche17FalsificationAuditor()
+    val anchor = auditor.anchor
+    var dotAcc = 0L
+    for (q in anchor.vectorQ115) {
+      dotAcc += q.toLong() * q.toLong()
+    }
+    val q15Norm = kotlin.math.sqrt(dotAcc.toDouble() / (32767.0 * 32767.0))
+    assertTrue("Q1.15 norm deviation must be < 2.0e-5", kotlin.math.abs(1.0 - q15Norm) < 2.0e-5)
+
+    // Exact RTL Q2.30 -> Q1.15 rounding right-shift: (dot_acc_s2 + 16384) >> 15
+    val shiftedQ15 = ((dotAcc + 16384L) shr 15).coerceIn(-32768L, 32767L)
+    assertTrue("Rounded Q1.15 dot product must be >= 32764", shiftedQ15 >= 32764L)
+    assertTrue("Rounded Q1.15 ratio must be >= 0.9999", shiftedQ15.toDouble() / 32767.0 >= 0.9999)
+
+    val svRom = auditor.exportVerilogRom()
+    val lines = svRom.lines()
+    assertEquals("CORE_L_ROM SystemVerilog export must be 10 lines", 10, lines.size)
+    assertTrue(lines.first().contains("CORE_L_ROM"))
+  }
+
+  @Test
+  fun testAppendixFAud02EulerPivotEmlAndArgonEntropy() {
+    val x = Complex64(2.4, 0.0)
+    val y = Complex64(1.7, 0.0)
+    val sum = EmlEulerEngine.emlAdd(x, y)
+    val prod = EmlEulerEngine.emlMul(x, y)
+    assertEquals(4.1, sum.re, 1e-11)
+    assertEquals(2.4 * 1.7, prod.re, 1e-11)
+
+    // Secondary pivot check at y = e (must not hit log(0))
+    val eConst = EmlEulerEngine.emlConstE()
+    val negE = EmlEulerEngine.emlNeg(eConst)
+    assertEquals(-kotlin.math.E, negE.re, 1e-11)
+
+    val arStats = EmlEulerEngine.verifyArgonBoltzmannEntropy()
+    assertEquals(39.948 * 1.66053906660e-27, arStats.mArgonKg, 1e-32)
+    assertEquals(1.5 * kotlin.math.ln(10.0), arStats.entropyReductionNats, 1e-6)
+  }
+
+  @Test
+  fun testAppendixFAud03DynamicWavepacketAndAud05Radii() {
+    val (ampN6, energyN6) = Depeche17Astrodynamics.evaluateEquatorialAmplitudeAndEnergy(6, 31)
+    assertEquals(5.5117e-5, ampN6, 1e-6)
+    assertEquals(3.0379e-9, energyN6, 1e-10)
+
+    val waveMetrics = Depeche17Astrodynamics.probeDynamicS63Wavepacket()
+    assertEquals(1.0, waveMetrics.psiNorthPoleT0, 1e-6)
+    assertTrue("Temporal wavepacket must evolve over time", waveMetrics.temporalStdVariation > 0.05)
+
+    // Schwarzschild Radii & Variational Fisher Objective J(r, theta)
+    val rMb = Depeche17Constants.MARGINALLY_BOUND_R // 2 * Rs = 0.5000
+    assertEquals(0.3750, Depeche17Constants.PHOTON_SPHERE_R, 1e-6)
+    assertEquals(0.5000, rMb, 1e-6)
+    assertEquals(0.7500, Depeche17Constants.ISCO_R, 1e-6)
+    val optSinTheta = Depeche17Astrodynamics.computeOptimalGrazingSinTheta(rMb, etaCouple = 0.5)
+    assertEquals(0.2500, optSinTheta, 1e-6)
+    val optTheta = kotlin.math.asin(optSinTheta)
+    val jOpt = Depeche17Astrodynamics.computeGrazingObjectiveJ(rMb, optTheta, etaCouple = 0.5)
+    val jPerturbed = Depeche17Astrodynamics.computeGrazingObjectiveJ(rMb, optTheta + 0.05, etaCouple = 0.5)
+    assertTrue("Stationary angle must maximize J(r_mb, theta)", jOpt > jPerturbed)
+  }
+
+  @Test
+  fun testAppendixFAud04PingPongCybercabAllocator() {
+    val anchor = InvariantAnchorL()
+    val stats = Depeche17StreamAllocator.verifyStreamedCybercabAllocation(anchor.vectorF32)
+    assertEquals(1.00, stats.singleBankMiB, 1e-6)
+    assertEquals(2.00, stats.totalPingPongEnclaveMiB, 1e-6)
+    assertEquals(250, stats.quarantinedAdversarial)
+    assertEquals(0, stats.unquarantinedViolations)
+    assertEquals(0, stats.admittedMissingTimeSlots)
+  }
+
+  @Test
   fun testLcnCrossoverNetworkBandsAndInvariants() {
+    val canonicalPrefix = Depeche17Constants.CANONICAL_GENESIS_SEAL.take(16)
     val defaultState = LcnCrossoverState()
     assertEquals("GSTAR_M2M_OPERATOR", defaultState.activeGStarBand)
     assertEquals(0.99958f, defaultState.activeWeightsRatio, 1e-6f)
     assertEquals(0.4482f, defaultState.principalOverlapOmega, 1e-4f)
     assertEquals(3.80f, defaultState.zstdBitmaskSizeMb, 1e-3f)
     assertEquals(1.00f, defaultState.l2SramHitRatio, 1e-4f)
-    assertEquals("e6445f61a1ef906f", defaultState.ledgerHash)
+    assertEquals(canonicalPrefix, defaultState.ledgerHash)
 
     val bands = listOf("GSTAR_M2M_OPERATOR", "GSTAR_HUMAN_CLARITY", "GSTAR_EPISTEMIC_NAV")
     for (band in bands) {
@@ -456,27 +542,16 @@ class ExampleUnitTest {
       assertEquals(band, state.activeGStarBand)
       assertEquals("sig_$band", state.ledgerHash)
 
-      // Spec LCN-REV1 invariants:
-      // 1) Subtractive gate_proj cut < 0.05% (activeWeightsRatio > 0.9995)
       val cutFraction = 1.0f - state.activeWeightsRatio
       assertTrue("Cut fraction for $band must be strictly < 0.0005 (0.05%)", cutFraction < 0.0005f)
       assertTrue("Cut fraction for $band must be positive", cutFraction > 0.0f)
-
-      // 2) Principal subspace overlap Omega_princ in [0.43, 0.46]
       assertTrue("Omega_princ for $band must be in [0.43, 0.46]", state.principalOverlapOmega in 0.43f..0.46f)
-
-      // 3) Forward KL <= 0.05 (zero catastrophic forgetting)
       assertTrue("Forward KL for $band must be <= 0.05", state.forwardKlDivergence <= 0.05f)
-
-      // 4) Sub-millisecond/tiny spectral drift Delta_sigma < 1e-4
       assertTrue("Spectral drift for $band must be < 1e-4", state.spectralDriftSigma < 0.0001f)
-
-      // 5) L2 SRAM 100% resident compressed zstd bitmask (<= 4 MiB)
       assertEquals(1.00f, state.l2SramHitRatio, 1e-4f)
       assertTrue("Zstd bitmask size must be <= 4.0 MiB", state.zstdBitmaskSizeMb <= 4.0f)
     }
 
-    // Fallback band should safely resolve to GSTAR_M2M_OPERATOR
     val fallback = LcnCrossoverState.forBand("UNKNOWN_BAND")
     assertEquals("GSTAR_M2M_OPERATOR", fallback.activeGStarBand)
   }

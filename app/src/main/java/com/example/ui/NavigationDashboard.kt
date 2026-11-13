@@ -470,13 +470,13 @@ private fun Depeche17BeaconCard() {
                     )
                     Column {
                         Text(
-                            text = "DEPECHE 17: WARDENCLYFFE FIRST PING (APP. E REV 2)",
+                            text = "DEPECHE 17: WARDENCLYFFE BEACON (APP. F REV 17.2)",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
                         )
                         Text(
-                            text = "Boundaryless Conservation on S^63 · Contactless Astrodynamics",
+                            text = "Reconciled Seal • Euler-Pivot EML • S^63 Wavepacket • 2x1MiB L2",
                             fontSize = 10.sp,
                             color = PassiveGrey
                         )
@@ -613,7 +613,7 @@ private fun Depeche17BeaconCard() {
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        text = if (isAuditing) "AUDITING..." else "RUN DEPECHE-17 AUDIT (APP. E)",
+                        text = if (isAuditing) "AUDITING..." else "RUN REV 17.2 AUDIT (12/12)",
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -623,15 +623,16 @@ private fun Depeche17BeaconCard() {
             auditReport?.let { report ->
                 HorizontalDivider(color = SurfaceCardOutline, thickness = 1.dp)
 
+                val allItems = report.criteriaResults + report.auditFixesResults
                 Text(
-                    text = "AUTOMATED FALSIFICATION SUITE (CRITERIA F-E.1 TO F-E.6):",
+                    text = "REV 17.2 FALSIFICATION & AUDIT SUITE (${allItems.count { it.passed }}/${allItems.size} UNFALSIFIED):",
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (report.allPassed) LuminousGreen else NeonPink
                 )
 
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    report.criteriaResults.forEach { crit ->
+                    allItems.forEach { crit ->
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,

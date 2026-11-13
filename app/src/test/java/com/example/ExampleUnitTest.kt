@@ -439,6 +439,47 @@ class ExampleUnitTest {
     assertTrue("Antipodal refocus must equal 1.0 (100%)", report.standingWaveAntipodalRefocus > 0.9999)
     assertTrue("Signature must be generated", report.signatureHex.isNotEmpty())
   }
+
+  @Test
+  fun testLcnCrossoverNetworkBandsAndInvariants() {
+    val defaultState = LcnCrossoverState()
+    assertEquals("GSTAR_M2M_OPERATOR", defaultState.activeGStarBand)
+    assertEquals(0.99958f, defaultState.activeWeightsRatio, 1e-6f)
+    assertEquals(0.4482f, defaultState.principalOverlapOmega, 1e-4f)
+    assertEquals(3.80f, defaultState.zstdBitmaskSizeMb, 1e-3f)
+    assertEquals(1.00f, defaultState.l2SramHitRatio, 1e-4f)
+    assertEquals("e6445f61a1ef906f", defaultState.ledgerHash)
+
+    val bands = listOf("GSTAR_M2M_OPERATOR", "GSTAR_HUMAN_CLARITY", "GSTAR_EPISTEMIC_NAV")
+    for (band in bands) {
+      val state = LcnCrossoverState.forBand(band, "sig_$band")
+      assertEquals(band, state.activeGStarBand)
+      assertEquals("sig_$band", state.ledgerHash)
+
+      // Spec LCN-REV1 invariants:
+      // 1) Subtractive gate_proj cut < 0.05% (activeWeightsRatio > 0.9995)
+      val cutFraction = 1.0f - state.activeWeightsRatio
+      assertTrue("Cut fraction for $band must be strictly < 0.0005 (0.05%)", cutFraction < 0.0005f)
+      assertTrue("Cut fraction for $band must be positive", cutFraction > 0.0f)
+
+      // 2) Principal subspace overlap Omega_princ in [0.43, 0.46]
+      assertTrue("Omega_princ for $band must be in [0.43, 0.46]", state.principalOverlapOmega in 0.43f..0.46f)
+
+      // 3) Forward KL <= 0.05 (zero catastrophic forgetting)
+      assertTrue("Forward KL for $band must be <= 0.05", state.forwardKlDivergence <= 0.05f)
+
+      // 4) Sub-millisecond/tiny spectral drift Delta_sigma < 1e-4
+      assertTrue("Spectral drift for $band must be < 1e-4", state.spectralDriftSigma < 0.0001f)
+
+      // 5) L2 SRAM 100% resident compressed zstd bitmask (<= 4 MiB)
+      assertEquals(1.00f, state.l2SramHitRatio, 1e-4f)
+      assertTrue("Zstd bitmask size must be <= 4.0 MiB", state.zstdBitmaskSizeMb <= 4.0f)
+    }
+
+    // Fallback band should safely resolve to GSTAR_M2M_OPERATOR
+    val fallback = LcnCrossoverState.forBand("UNKNOWN_BAND")
+    assertEquals("GSTAR_M2M_OPERATOR", fallback.activeGStarBand)
+  }
 }
 
 

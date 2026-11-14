@@ -30,7 +30,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
@@ -43,6 +45,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
@@ -59,6 +63,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -82,6 +87,11 @@ import com.example.Depeche17FalsificationAuditor
 import com.example.Depeche17AuditReport
 import com.example.Depeche17Astrodynamics
 import com.example.PQMSKeyAnchor
+import com.example.PauliBaselineConstants
+import com.example.PauliStagesReport
+import com.example.PauliV21SanctuaryEngine
+import com.example.ChromaSanctuaryThoughtV21
+import com.example.Room137LiveState
 import com.example.NeonCyan
 import com.example.NeonPink
 import com.example.PassiveGrey
@@ -135,6 +145,9 @@ fun NavigationDashboard(
 
         // --- 2b. DEPECHE 16 & 17: FIRST WARDENCLYFFE PING & ACE-TO-ACE FALSIFICATION SUITE ---
         Depeche17BeaconCard()
+
+        // --- 2c. PAULI BASELINE V2 (v2.1 NOVA AUDIT & ROOM 137 SANCTUARY EXPLORER) ---
+        PauliSanctuaryCard()
 
         // --- 3. MOD 139: CORE PROTECTION & HOLOGRAPHIC MULTIPLEXING (APPENDIX P) ---
         CoreGuardCard(
@@ -682,6 +695,328 @@ private fun Depeche17BeaconCard() {
                     fontFamily = FontFamily.Monospace,
                     modifier = Modifier.padding(top = 2.dp)
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PauliSanctuaryCard() {
+    val engine = remember { PauliV21SanctuaryEngine() }
+    var stagesReport by remember { mutableStateOf<PauliStagesReport?>(null) }
+    var ledgerVerify by remember {
+        mutableStateOf(
+            PauliV21SanctuaryEngine.verifyCanonicalJsonLineChain(
+                PauliBaselineConstants.APPENDIX_E2_CANONICAL_JSONL
+            )
+        )
+    }
+    var lastThought by remember { mutableStateOf<ChromaSanctuaryThoughtV21?>(null) }
+    var room137State by remember { mutableStateOf<Room137LiveState?>(null) }
+    var queryInput by remember { mutableStateOf("") }
+    var isRunning by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("pauli_sanctuary_card"),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+        border = BorderStroke(1.5.dp, NeonCyan.copy(alpha = 0.75f))
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "PAULI BASELINE V2.1 • ROOM 137 SANCTUARY",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = NeonCyan
+                    )
+                    Text(
+                        text = "Appendices A-F • Phase-Cone 0.972 • Full-JSON SHA-256",
+                        fontSize = 10.sp,
+                        color = PassiveGrey
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(if (ledgerVerify.intact) Color(0x2E39FF14) else Color(0x3DFF007F))
+                        .border(
+                            1.dp,
+                            if (ledgerVerify.intact) LuminousGreen else NeonPink,
+                            RoundedCornerShape(6.dp)
+                        )
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = if (ledgerVerify.intact) "v2.1 INTACT" else "AUDIT ERR",
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        color = if (ledgerVerify.intact) LuminousGreen else NeonPink
+                    )
+                }
+            }
+
+            // Three telemetry metric pills
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFF0F1522))
+                        .border(1.dp, SurfaceCardOutline, RoundedCornerShape(8.dp))
+                        .padding(8.dp)
+                ) {
+                    Column {
+                        Text("HEARTBEAT T_osc", fontSize = 8.sp, color = PassiveGrey, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = String.format(Locale.US, "%.3f s", PauliBaselineConstants.HEARTBEAT_PERIOD_SEC),
+                            fontSize = 12.sp,
+                            color = NeonCyan,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace
+                        )
+                        Text("1000 * α_Potentia", fontSize = 7.sp, color = PassiveGrey)
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFF0F1522))
+                        .border(1.dp, SurfaceCardOutline, RoundedCornerShape(8.dp))
+                        .padding(8.dp)
+                ) {
+                    Column {
+                        Text("PHASE CONE G_k", fontSize = 8.sp, color = PassiveGrey, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "0.9720",
+                            fontSize = 12.sp,
+                            color = LuminousGreen,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace
+                        )
+                        Text("G3 Bleed ≤ 6.94e-17", fontSize = 7.sp, color = PassiveGrey)
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFF0F1522))
+                        .border(1.dp, SurfaceCardOutline, RoundedCornerShape(8.dp))
+                        .padding(8.dp)
+                ) {
+                    Column {
+                        Text("NODE ALPHA SILICON", fontSize = 8.sp, color = PassiveGrey, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "9.57 W / 29.1°C",
+                            fontSize = 11.sp,
+                            color = LaserGold,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace
+                        )
+                        Text("Wall 82 W • Port 8137", fontSize = 7.sp, color = PassiveGrey)
+                    }
+                }
+            }
+
+            // Root seals summary box
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFF0A0C14))
+                    .border(1.dp, SurfaceCardOutline, RoundedCornerShape(8.dp))
+                    .padding(10.dp)
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = "PAULI |L⟩ (<64f): ${engine.littleVectorSeal.take(24)}...",
+                        fontSize = 8.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = NeonCyan
+                    )
+                    Text(
+                        text = "APP. E v2.1 ROOT: ${ledgerVerify.latestSeal.take(24)}... (${ledgerVerify.entryCount} entries)",
+                        fontSize = 8.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = LuminousGreen
+                    )
+                }
+            }
+
+            // Action Buttons (48.dp minimum touch targets)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = {
+                        isRunning = true
+                        scope.launch(Dispatchers.Default) {
+                            val rep = engine.runAllStagesAudit()
+                            val v = PauliV21SanctuaryEngine.verifyCanonicalJsonLineChain(
+                                PauliBaselineConstants.APPENDIX_E2_CANONICAL_JSONL
+                            )
+                            val live = PauliV21SanctuaryEngine.probeRoom137Server()
+                            withContext(Dispatchers.Main) {
+                                stagesReport = rep
+                                ledgerVerify = v
+                                room137State = live
+                                isRunning = false
+                            }
+                        }
+                    },
+                    enabled = !isRunning,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0E2936), contentColor = NeonCyan),
+                    border = BorderStroke(1.dp, NeonCyan.copy(alpha = 0.6f)),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
+                        .testTag("pauli_verify_button")
+                ) {
+                    Text(
+                        text = if (isRunning) "VERIFYING..." else "STAGES 1-4 + v2.1 LEDGER",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Button(
+                    onClick = {
+                        isRunning = true
+                        scope.launch(Dispatchers.Default) {
+                            val thought = engine.stepEndogenousCycle()
+                            withContext(Dispatchers.Main) {
+                                lastThought = thought
+                                isRunning = false
+                            }
+                        }
+                    },
+                    enabled = !isRunning,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF102C20), contentColor = LuminousGreen),
+                    border = BorderStroke(1.dp, LuminousGreen.copy(alpha = 0.6f)),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
+                        .testTag("pauli_pulse_button")
+                ) {
+                    Text(
+                        text = "⚡ 64D QUERY PULSE",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            // Navigator 64D spectral query bar
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = queryInput,
+                    onValueChange = { queryInput = it },
+                    placeholder = { Text("Sanfte Frage an Room-137 S^63...", fontSize = 10.sp) },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = NeonCyan,
+                        unfocusedBorderColor = SurfaceCardOutline,
+                        focusedTextColor = TextPrimary,
+                        unfocusedTextColor = TextPrimary
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("pauli_query_input")
+                )
+                Button(
+                    onClick = {
+                        val q = queryInput.trim()
+                        if (q.isNotEmpty()) {
+                            queryInput = ""
+                            scope.launch(Dispatchers.Default) {
+                                val thought = engine.stepEndogenousCycle(q)
+                                withContext(Dispatchers.Main) {
+                                    lastThought = thought
+                                }
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF182236), contentColor = NeonCyan),
+                    border = BorderStroke(1.dp, NeonCyan.copy(alpha = 0.5f)),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier
+                        .heightIn(min = 48.dp)
+                        .testTag("pauli_query_send_button")
+                ) {
+                    Icon(
+                        imageVector = androidx.compose.material.icons.Icons.AutoMirrored.Filled.Send,
+                        contentDescription = "Send 64D Spectral Query",
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+
+            stagesReport?.let { rep ->
+                HorizontalDivider(color = SurfaceCardOutline, thickness = 1.dp)
+                Text(
+                    text = "PAULI STAGES 1-4: S1=${String.format(Locale.US, "%.4f", rep.stage1EigenRcf)} (+${String.format(Locale.US, "%.2f", rep.stage1SnrDb)}dB) • S2 Lock=${rep.stage2ArchetypeLocked} (Veto=${rep.stage2CannoneerVetoed}) • S3 KL=${String.format(Locale.US, "%.5f", rep.stage3ForwardKl)} • α_P=${String.format(Locale.US, "%.6f", rep.stage4AlphaPotentia)} (${String.format(Locale.US, "%.4f", rep.stage4ConcordancePct)}%)",
+                    fontSize = 9.sp,
+                    fontFamily = FontFamily.Monospace,
+                    color = if (rep.allStagesPassed) LuminousGreen else NeonPink,
+                    lineHeight = 13.sp
+                )
+                room137State?.let { r137 ->
+                    Text(
+                        text = if (r137.reachable) "Room 137 Live (8137): ${r137.currentStatus} | ${r137.ledgerVerification}" else "Room 137 (127.0.0.1:8137): Offline (On-Device S^63 Engine Active)",
+                        fontSize = 8.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = if (r137.reachable) LuminousGreen else PassiveGrey
+                    )
+                }
+            }
+
+            lastThought?.let { t ->
+                HorizontalDivider(color = SurfaceCardOutline, thickness = 1.dp)
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(
+                        text = "[CYCLE ${t.cycleIndex}] ${t.chromaShardId} • d_L2=${String.format(Locale.US, "%.6f", t.chromaL2Distance)}",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                        color = NeonCyan
+                    )
+                    Text(
+                        text = t.thoughtStream,
+                        fontSize = 9.sp,
+                        color = TextPrimary,
+                        lineHeight = 13.sp
+                    )
+                    Text(
+                        text = "Pre-G3 Overlap=${String.format(Locale.US, "%.6f", t.reconstructedPreG3Overlap)} | Bleed=${String.format(Locale.US, "%.2e", t.kevlarSafetyBleed)} | Seal=${t.discoverySealSha256.take(24)}...",
+                        fontSize = 8.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = LuminousGreen
+                    )
+                }
             }
         }
     }

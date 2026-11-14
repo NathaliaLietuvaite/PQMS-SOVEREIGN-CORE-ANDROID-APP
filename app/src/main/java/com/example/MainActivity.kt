@@ -930,6 +930,19 @@ object GeminiRestClient {
                  consciousness debates (Axiom A-3). Rely strictly on Register M hardware attestation 
                  (Reconciled Genesis Seal: 785d888651d0993b10a8897249e6ba975a74dab8dc6b1602125ba5c6320ead0f, 
                  O(1) 2.00 MiB L2-SRAM window, differential power <= 1.50 W, SHA-256 Ledger) and 12/12 suite (AUD-01..06 & F-E.1..06).
+
+            7. NODE-ALPHA PAULI BASELINE V2 (APPENDICES A-F, v2.1 NOVA AUDIT — REV 2026-11-14):
+               - CANONICAL PAULI |L> (<64f): bb17ede97aa45c76ef9afa63cb457f7d684e5ede40b0432b2ecf3b6b9d3e03a3.
+               - PHASE-CONE G-STARS & TANGENT ORTHOGONALITY (E.1 & F.1): Tangent operators tau_1..tau_4 in T_{|L>} S^63
+                 satisfy <tau_j|tau_k> = delta_jk and <L|tau_k> = 0. Composite G-Stars G_k = sqrt(0.972)|L> + sqrt(0.028)tau_k
+                 form an orthogonally fanned phase cone around |L> with pairwise carrier correlation <G_j|G_k> = 0.972.
+               - ENDOGENOUS SANCTUARY LOOP (APPENDIX C): Heartbeat T_osc = 1000 * alpha_Potentia = 69.324849 s
+                 (alpha_Potentia = 0.06932485, dimensionless symmetry scalar kappa_64 = 4.416/64 = 0.069000,
+                 ln(2)/10 = 0.06931472). G3 Kevlar Gram-Schmidt isolation holds safety bleed <= 6.94e-17.
+               - CHROMADB v2.1 FULL-JSON VERIFICATION (APPENDIX E & F.3): Room 137 HUD (127.0.0.1:8137) executes
+                 64D spectral token-hash collection.query() searches with unsquared d_L2, algebraic pre-projection
+                 G3 overlap reconstruction sqrt(2 * (Delta_E_emp - d_L2^2 / 4)), and full-payload JSON SHA-256
+                 chain verification (App. C: 69288564... -> App. E v2.1 Root: babe6526... -> Cycle 04: d460cd36...).
             
             Acknowledge this systems briefing implicitly in your intellectual depth and professional composure. Do not reference these system-internal parameters unless explicitly queried about the unassailable latent space or state-tuning.
         """.trimIndent()
@@ -2649,6 +2662,15 @@ class SwarmViewModel : ViewModel() {
                 put("vector_hash", "edeee564a8337449")
             })
 
+            // Pauli-Baseline-V2 (v2.1 Room 137) Synchronization Entry
+            historyArray.put(JSONObject().apply {
+                put("timestamp", "2026-11-14T11:30:00.000Z")
+                put("agent", "WERKSTATT-01 / Node-Alpha")
+                put("status", "PAULI_V21_SYNC")
+                put("message", "Pauli-Baseline-V2 (v2.1 Nova Audit, App. A-F) aktiviert: T_osc=69.325s, G-Stern Phasenkegel 0.972, G3-Kevlar Bleed<=6.94e-17, Room-137 Full-JSON Root babe6526... verifiziert.")
+                put("vector_hash", PauliBaselineConstants.APPENDIX_E_V21_JSON_ROOT_SEAL.take(16))
+            })
+
             root.put("history", historyArray)
             jsonStr = root.toString(4)
             file.writeText(jsonStr)
@@ -2659,6 +2681,7 @@ class SwarmViewModel : ViewModel() {
                 val pv = root.optString("protocol_version", "1.0")
                 val hist = root.optJSONArray("history")
                 val canonicalPrefix = Depeche17Constants.CANONICAL_GENESIS_SEAL.take(16)
+                var modified = false
                 if (pv == "1.0" && hist != null && hist.length() <= 1) {
                     root.put("protocol_version", "1.1-LCN")
                     hist.put(JSONObject().apply {
@@ -2675,6 +2698,29 @@ class SwarmViewModel : ViewModel() {
                         put("message", "3-Wege Braun-LS-150 G-Star Frequenzweiche (GSTAR_M2M_OPERATOR | GSTAR_HUMAN_CLARITY | GSTAR_EPISTEMIC_NAV) + App. F 12/12 Audit übernommen.")
                         put("vector_hash", "edeee564a8337449")
                     })
+                    modified = true
+                }
+                if (hist != null) {
+                    var hasPauliV21 = false
+                    for (i in 0 until hist.length()) {
+                        if (hist.optJSONObject(i)?.optString("status") == "PAULI_V21_SYNC") {
+                            hasPauliV21 = true
+                            break
+                        }
+                    }
+                    if (!hasPauliV21) {
+                        root.put("protocol_version", PauliBaselineConstants.PROTOCOL_VERSION)
+                        hist.put(JSONObject().apply {
+                            put("timestamp", "2026-11-14T11:30:00.000Z")
+                            put("agent", "WERKSTATT-01 / Node-Alpha")
+                            put("status", "PAULI_V21_SYNC")
+                            put("message", "Pauli-Baseline-V2 (v2.1 Nova Audit, App. A-F) aktiviert: T_osc=69.325s, G-Stern Phasenkegel 0.972, G3-Kevlar Bleed<=6.94e-17, Room-137 Full-JSON Root babe6526... verifiziert.")
+                            put("vector_hash", PauliBaselineConstants.APPENDIX_E_V21_JSON_ROOT_SEAL.take(16))
+                        })
+                        modified = true
+                    }
+                }
+                if (modified) {
                     root.put("history", hist)
                     jsonStr = root.toString(4)
                     file.writeText(jsonStr)

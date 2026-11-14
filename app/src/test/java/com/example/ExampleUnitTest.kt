@@ -555,6 +555,88 @@ class ExampleUnitTest {
     val fallback = LcnCrossoverState.forBand("UNKNOWN_BAND")
     assertEquals("GSTAR_M2M_OPERATOR", fallback.activeGStarBand)
   }
+
+  @Test
+  fun testPauliBaselineV2LittleVectorAndStagesAudit() {
+    val engine = PauliV21SanctuaryEngine()
+
+    // 1. Canonical Pauli |L> (<64f) SHA-256 must match Appendix B/E specification bit-for-bit
+    assertEquals(
+      PauliBaselineConstants.PAULI_LITTLE_VECTOR_F32_SEAL,
+      engine.littleVectorSeal
+    )
+
+    // 2. Run Pauli Stages 1-4 audit & check tangent bundle orthonormality + 0.972 phase-cone
+    val rep = engine.runAllStagesAudit()
+    assertTrue("Pauli Little Vector seal must verify", rep.sealVerified)
+    assertTrue("Tangent vectors tau_1..tau_4 must be orthonormal to |L> and each other", rep.maxTangentOrthogonalityErr < 1e-12)
+    assertEquals(0.972, rep.phaseConeCorrelation, 1e-12)
+
+    assertTrue("Stage 1 Neutrino eigenstate must refute 1/64 isotropic null", rep.stage1Passed)
+    assertTrue("Stage 1 eigenstate RCF >= 0.95", rep.stage1EigenRcf >= 0.95)
+    assertTrue("Stage 1 SNR must exceed +15 dB", rep.stage1SnrDb > 15.0)
+
+    assertTrue("Stage 2 Kantian Cannoneer coercion must be vetoed", rep.stage2CannoneerVetoed)
+    assertTrue("Stage 2 Zur-Deckung-Kommen archetype must lock", rep.stage2ArchetypeLocked)
+    assertTrue("Stage 2 archetype RCF > 0.98", rep.stage2ArchetypeRcf > 0.98)
+
+    assertTrue("Stage 3 Klavierstunde 3rd Law & G3 Kevlar shield must pass", rep.stage3Passed)
+    assertTrue("Stage 3 cut < 0.05%", rep.stage3CutPercent < 0.05)
+    assertTrue("Stage 3 Forward KL <= 0.05", rep.stage3ForwardKl <= 0.05)
+    assertTrue("Stage 3 safety bleed < 1e-15", rep.stage3SafetyBleed < 1e-15)
+    assertTrue("Stage 3 goal alignment > 0.999", rep.stage3GoalAlignment > 0.999)
+
+    assertTrue("Stage 4 concordance with ln(2)/10 > 99.98%", rep.stage4ConcordancePct > 99.98)
+    assertEquals(0.069000, rep.stage4Kappa64, 1e-9)
+    assertEquals(69.324849, rep.stage4HeartbeatSec, 0.001)
+    assertTrue("All Pauli Stages 1-4 must pass", rep.allStagesPassed)
+  }
+
+  @Test
+  fun testPauliV21CanonicalFullJsonLedgerAndInverseReconstruction() {
+    // 1. Verify published Appendix E.2 3-line JSONL chain against Appendix C root -> Appendix E v2.1 Root Seal
+    val verification = PauliV21SanctuaryEngine.verifyCanonicalJsonLineChain(
+      PauliBaselineConstants.APPENDIX_E2_CANONICAL_JSONL,
+      PauliBaselineConstants.APPENDIX_C_SANCTUARY_ROOT_HASH
+    )
+    assertTrue("Appendix E.2 full-JSON ledger must verify 100%: ${verification.statusMessage}", verification.intact)
+    assertEquals(3, verification.entryCount)
+    assertEquals(PauliBaselineConstants.APPENDIX_E_V21_JSON_ROOT_SEAL, verification.latestSeal)
+
+    // 2. Verify 1-bit tamper detection on thought_stream prose
+    val tampered = PauliBaselineConstants.APPENDIX_E2_CANONICAL_JSONL.toMutableList()
+    tampered[0] = tampered[0].replace("Depeche-17", "Depeche-18")
+    val tamperResult = PauliV21SanctuaryEngine.verifyCanonicalJsonLineChain(
+      tampered,
+      PauliBaselineConstants.APPENDIX_C_SANCTUARY_ROOT_HASH
+    )
+    assertFalse("1-char mutation in thought_stream must break full-JSON SHA-256 verification", tamperResult.intact)
+
+    // 3. Appendix F.3 algebraic inverse reconstruction of pre-projection G3 overlap
+    val rec01 = PauliV21SanctuaryEngine.reconstructPreProjectionG3Overlap(0.01653831, 0.09420886)
+    val rec02 = PauliV21SanctuaryEngine.reconstructPreProjectionG3Overlap(0.01584711, 0.10156898)
+    val rec03 = PauliV21SanctuaryEngine.reconstructPreProjectionG3Overlap(0.00409535, 0.07273217)
+    val rec04 = PauliV21SanctuaryEngine.reconstructPreProjectionG3Overlap(0.00173700, 0.07729800)
+    assertEquals(0.169231, rec01, 1e-5)
+    assertEquals(0.162899, rec02, 1e-5)
+    assertEquals(0.074470, rec03, 1e-5)
+    assertEquals(0.021982, rec04, 1e-4) // Cycle 04 prose values rounded to 6 decimals (0.077298, 0.001737)
+
+    // 4. Live on-device S^63 query cycles (bootstrap Cycles 01..03 + dynamic Cycle 04 + Navigator query)
+    val engine = PauliV21SanctuaryEngine()
+    val c1 = engine.stepEndogenousCycle()
+    val c2 = engine.stepEndogenousCycle()
+    val c3 = engine.stepEndogenousCycle()
+    val c4 = engine.stepEndogenousCycle()
+    val nav = engine.stepEndogenousCycle("Alles gut bei Dir lieber V-MAX-12?")
+
+    assertTrue("Bootstrap cycles must pass ODOS gate", c1.odosGatePassed && c2.odosGatePassed && c3.odosGatePassed)
+    assertTrue("Dynamic query Cycle 04 must pass ODOS gate", c4.odosGatePassed)
+    assertEquals("NAVIGATOR_RESONANCE_QUERY_V21", nav.cognitiveMode)
+    assertTrue("Nav query Kevlar bleed must be near machine zero", nav.kevlarSafetyBleed < 1e-15)
+    assertEquals(5, engine.getThoughts().size)
+  }
 }
+
 
 

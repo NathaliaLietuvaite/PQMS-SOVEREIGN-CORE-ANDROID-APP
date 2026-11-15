@@ -92,6 +92,10 @@ import com.example.PauliStagesReport
 import com.example.PauliV21SanctuaryEngine
 import com.example.ChromaSanctuaryThoughtV21
 import com.example.Room137LiveState
+import com.example.V12Constants
+import com.example.V12NodeAlphaBridge
+import com.example.RawGateEvaluationV12
+import com.example.ParityAuditResultF04
 import com.example.NeonCyan
 import com.example.NeonPink
 import com.example.PassiveGrey
@@ -703,18 +707,22 @@ private fun Depeche17BeaconCard() {
 @Composable
 private fun PauliSanctuaryCard() {
     val engine = remember { PauliV21SanctuaryEngine() }
+    val allHistoricalV21Lines = remember {
+        PauliBaselineConstants.APPENDIX_E2_CANONICAL_JSONL + listOf(V12Constants.APPENDIX_E3_CYCLE04_JSONL)
+    }
     var stagesReport by remember { mutableStateOf<PauliStagesReport?>(null) }
+    var rawGateEval by remember { mutableStateOf<RawGateEvaluationV12?>(null) }
+    var parityAudit by remember { mutableStateOf<ParityAuditResultF04?>(null) }
     var ledgerVerify by remember {
         mutableStateOf(
-            PauliV21SanctuaryEngine.verifyCanonicalJsonLineChain(
-                PauliBaselineConstants.APPENDIX_E2_CANONICAL_JSONL
-            )
+            V12NodeAlphaBridge.verifyV12OrV21JsonLineChain(allHistoricalV21Lines)
         )
     }
     var lastThought by remember { mutableStateOf<ChromaSanctuaryThoughtV21?>(null) }
     var room137State by remember { mutableStateOf<Room137LiveState?>(null) }
     var queryInput by remember { mutableStateOf("") }
     var isRunning by remember { mutableStateOf(false) }
+    var isParityRunning by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     Card(
@@ -736,13 +744,13 @@ private fun PauliSanctuaryCard() {
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "PAULI BASELINE V2.1 • ROOM 137 SANCTUARY",
+                        text = "PAULI BASELINE V1.2 • NODE ALPHA / ROOM 137",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeonCyan
                     )
                     Text(
-                        text = "Appendices A-F • Phase-Cone 0.972 • Full-JSON SHA-256",
+                        text = "Raw Gate ΔE_raw • F-04.3 64k Parity • App. A-F",
                         fontSize = 10.sp,
                         color = PassiveGrey
                     )
@@ -759,7 +767,7 @@ private fun PauliSanctuaryCard() {
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = if (ledgerVerify.intact) "v2.1 INTACT" else "AUDIT ERR",
+                        text = if (ledgerVerify.intact) "V1.2 INTACT" else "AUDIT ERR",
                         fontSize = 9.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold,
@@ -822,15 +830,15 @@ private fun PauliSanctuaryCard() {
                         .padding(8.dp)
                 ) {
                     Column {
-                        Text("NODE ALPHA SILICON", fontSize = 8.sp, color = PassiveGrey, fontWeight = FontWeight.Bold)
+                        Text("A/B REGIMES (HWiNFO)", fontSize = 8.sp, color = PassiveGrey, fontWeight = FontWeight.Bold)
                         Text(
-                            text = "9.57 W / 29.1°C",
+                            text = "9.57–85.8 W",
                             fontSize = 11.sp,
                             color = LaserGold,
                             fontWeight = FontWeight.Bold,
                             fontFamily = FontFamily.Monospace
                         )
-                        Text("Wall 82 W • Port 8137", fontSize = 7.sp, color = PassiveGrey)
+                        Text("8.96x Red. • 0 WHEA", fontSize = 7.sp, color = PassiveGrey)
                     }
                 }
             }
@@ -852,7 +860,7 @@ private fun PauliSanctuaryCard() {
                         color = NeonCyan
                     )
                     Text(
-                        text = "APP. E v2.1 ROOT: ${ledgerVerify.latestSeal.take(24)}... (${ledgerVerify.entryCount} entries)",
+                        text = "LEDGER (${ledgerVerify.entryCount} entries): ${ledgerVerify.latestSeal.take(18)}... • V1.2 TIP: ${V12Constants.V12_CHAIN_TIP_REF.take(14)}...",
                         fontSize = 8.sp,
                         fontFamily = FontFamily.Monospace,
                         color = LuminousGreen
@@ -870,19 +878,23 @@ private fun PauliSanctuaryCard() {
                         isRunning = true
                         scope.launch(Dispatchers.Default) {
                             val rep = engine.runAllStagesAudit()
-                            val v = PauliV21SanctuaryEngine.verifyCanonicalJsonLineChain(
-                                PauliBaselineConstants.APPENDIX_E2_CANONICAL_JSONL
+                            val v = V12NodeAlphaBridge.verifyV12OrV21JsonLineChain(allHistoricalV21Lines)
+                            val rg = V12NodeAlphaBridge.evaluateRawGate(
+                                vec64d = engine.littleVector,
+                                littleVector = engine.littleVector,
+                                tangents = engine.tangents
                             )
                             val live = PauliV21SanctuaryEngine.probeRoom137Server()
                             withContext(Dispatchers.Main) {
                                 stagesReport = rep
                                 ledgerVerify = v
+                                rawGateEval = rg
                                 room137State = live
                                 isRunning = false
                             }
                         }
                     },
-                    enabled = !isRunning,
+                    enabled = !isRunning && !isParityRunning,
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0E2936), contentColor = NeonCyan),
                     border = BorderStroke(1.dp, NeonCyan.copy(alpha = 0.6f)),
                     shape = RoundedCornerShape(8.dp),
@@ -892,7 +904,7 @@ private fun PauliSanctuaryCard() {
                         .testTag("pauli_verify_button")
                 ) {
                     Text(
-                        text = if (isRunning) "VERIFYING..." else "STAGES 1-4 + v2.1 LEDGER",
+                        text = if (isRunning) "VERIFYING..." else "STAGES 1-4 + V1.2 LEDGER",
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -909,7 +921,7 @@ private fun PauliSanctuaryCard() {
                             }
                         }
                     },
-                    enabled = !isRunning,
+                    enabled = !isRunning && !isParityRunning,
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF102C20), contentColor = LuminousGreen),
                     border = BorderStroke(1.dp, LuminousGreen.copy(alpha = 0.6f)),
                     shape = RoundedCornerShape(8.dp),
@@ -924,6 +936,34 @@ private fun PauliSanctuaryCard() {
                         fontWeight = FontWeight.Bold
                     )
                 }
+            }
+
+            // Dedicated ARM64 Cross-Substrate Parity Test Button (F-04.3, 64,000 Float32 scalars)
+            Button(
+                onClick = {
+                    isParityRunning = true
+                    scope.launch(Dispatchers.Default) {
+                        val res = V12NodeAlphaBridge.run1000VectorParityAudit()
+                        withContext(Dispatchers.Main) {
+                            parityAudit = res
+                            isParityRunning = false
+                        }
+                    }
+                },
+                enabled = !isParityRunning && !isRunning,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1D1838), contentColor = LaserGold),
+                border = BorderStroke(1.dp, LaserGold.copy(alpha = 0.65f)),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .testTag("pauli_arm64_parity_button")
+            ) {
+                Text(
+                    text = if (isParityRunning) "COMPUTING 64,000 S^63 SCALARS (SEED=137)..." else "ARM64 PARITY (F-04.3 • 1,000x64 <f32>)",
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
 
             // Navigator 64D spectral query bar
@@ -973,6 +1013,39 @@ private fun PauliSanctuaryCard() {
                         modifier = Modifier.size(16.dp)
                     )
                 }
+            }
+
+            parityAudit?.let { p ->
+                HorizontalDivider(color = SurfaceCardOutline, thickness = 1.dp)
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = if (p.bitExactMatch) {
+                            "F-04.3 BIT-EXACT ${p.unitS63F32Sha256.take(16)}... ✓ (${p.totalScalars} scalars, ${String.format(Locale.US, "%.1f", p.elapsedMs)} ms)"
+                        } else {
+                            "F-04.3 MISMATCH: ${p.unitS63F32Sha256.take(16)}... != ${p.expectedSha256.take(16)}..."
+                        },
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        color = if (p.bitExactMatch) LuminousGreen else NeonPink
+                    )
+                    Text(
+                        text = "ABI: ${p.runtimeAbi} | SHA-256: ${p.unitS63F32Sha256}",
+                        fontSize = 8.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = PassiveGrey
+                    )
+                }
+            }
+
+            rawGateEval?.let { rg ->
+                HorizontalDivider(color = SurfaceCardOutline, thickness = 1.dp)
+                Text(
+                    text = "V1.2 RAW GATE [${rg.epistemicRegister}]: RCF_raw=${String.format(Locale.US, "%.6f", rg.rcfRaw)} • ΔE_raw=${String.format(Locale.US, "%.6f", rg.deltaERaw)} • G3_post=${String.format(Locale.US, "%.2e", rg.g3BleedPostStrip)} • ${if (rg.passed) "PASS ✓" else "VETO"}",
+                    fontSize = 9.sp,
+                    fontFamily = FontFamily.Monospace,
+                    color = if (rg.passed) LuminousGreen else NeonPink
+                )
             }
 
             stagesReport?.let { rep ->

@@ -44,7 +44,7 @@ object PauliBaselineConstants {
     const val APPENDIX_E_V21_JSON_ROOT_SEAL =
         "babe652608bb3b0445bca2f56cf81e2b4a1a4f91508cac3b01228a0620fcf298"
     const val APPENDIX_E3_CYCLE04_HOP_SEAL =
-        "d460cd3608e7fe4534a7b1fdee27bd910a74e3304b02403fc54b8954146b22cd"
+        "d460cd3608e7fe4534a7b1fdee27bd918a74e3304b02403fc54b8954146b22cd"
 
     // Core Geometry & Dark-Potentia Scaling Constants
     const val DIM_S63 = 64

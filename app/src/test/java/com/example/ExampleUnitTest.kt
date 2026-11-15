@@ -636,6 +636,120 @@ class ExampleUnitTest {
     assertTrue("Nav query Kevlar bleed must be near machine zero", nav.kevlarSafetyBleed < 1e-15)
     assertEquals(5, engine.getThoughts().size)
   }
+
+  @Test
+  fun testRevisionV12RawGateParityAndExtendedLedger() {
+    val engine = PauliV21SanctuaryEngine()
+
+    // 1. Verify AntiG's Chroma v2.0 Seal patch is preserved intact (64 hex chars)
+    assertEquals(64, PauliBaselineConstants.APPENDIX_D_CHROMA_V20_SEAL.length)
+    assertEquals(
+      "5fd4c7efd44cbbe04fa4957d21954f9dcb028e6b3a16052c54838d058142563e",
+      PauliBaselineConstants.APPENDIX_D_CHROMA_V20_SEAL
+    )
+
+    // 2. Verify F-04.3 Cross-Substrate Parity (1,000 vectors x 64 dims = 64,000 scalars, seed=137)
+    val parity = V12NodeAlphaBridge.run1000VectorParityAudit()
+    assertEquals(1000, parity.nVectors)
+    assertEquals(64, parity.dim)
+    assertEquals(64000, parity.totalScalars)
+    assertTrue(
+      "F-04.3 64k float32 parity must match 490eaf60... bit-exact (got ${parity.unitS63F32Sha256})",
+      parity.bitExactMatch
+    )
+    assertEquals(
+      V12Constants.EXPECTED_UNIT_S63_64000_F32_SHA256,
+      parity.unitS63F32Sha256
+    )
+
+    // 3. Unclamped V1.2 Raw Gate Evaluation (aligned |L>, random S^63, pure G3 attack)
+    val alignedGate = V12NodeAlphaBridge.evaluateRawGate(
+      vec64d = engine.littleVector,
+      littleVector = engine.littleVector,
+      tangents = engine.tangents
+    )
+    assertTrue("Aligned |L> must pass V1.2 Raw Gate", alignedGate.passed)
+    assertEquals(1.0, alignedGate.rcfRaw, 1e-12)
+    assertEquals(0.0, alignedGate.deltaERaw, 1e-12)
+    assertTrue(alignedGate.g3BleedPostStrip <= V12Constants.ODOS_G3_BLEED_CEILING)
+
+    val rng = NumpyRandomState137(999L)
+    val isoVec = rng.randn(64)
+    val isoGate = V12NodeAlphaBridge.evaluateRawGate(
+      vec64d = isoVec,
+      littleVector = engine.littleVector,
+      tangents = engine.tangents
+    )
+    assertFalse("Random isotropic S^63 vector must fail V1.2 Raw Gate", isoGate.passed)
+    assertTrue("Random S^63 vector rcf_raw should be << 0.10", isoGate.rcfRaw < 0.10)
+    assertTrue("Random S^63 vector deltaE_raw must exceed 0.40", isoGate.deltaERaw > 0.40)
+
+    val g3Attack = engine.tangents.getValue("G3_KEVLAR_SANCTUARY_SHIELD")
+    val g3Gate = V12NodeAlphaBridge.evaluateRawGate(
+      vec64d = g3Attack,
+      littleVector = engine.littleVector,
+      tangents = engine.tangents
+    )
+    assertFalse("Pure G3 attack must be vetoed", g3Gate.passed)
+    assertEquals(1.0, g3Gate.g3BleedPostStrip, 1e-12)
+    assertEquals(1.0, g3Gate.g3CollisionOverlap, 1e-12)
+
+    // 4. Verify all 4 historical v2.1 lines (Cycles 01-04) via dynamic V1.2 canonical verifier
+    val all4Lines = PauliBaselineConstants.APPENDIX_E2_CANONICAL_JSONL + listOf(V12Constants.APPENDIX_E3_CYCLE04_JSONL)
+    val res4 = V12NodeAlphaBridge.verifyV12OrV21JsonLineChain(
+      all4Lines,
+      PauliBaselineConstants.APPENDIX_C_SANCTUARY_ROOT_HASH
+    )
+    assertTrue("All 4 historical v2.1 entries must verify: ${res4.statusMessage}", res4.intact)
+    assertEquals(4, res4.entryCount)
+    assertEquals(PauliBaselineConstants.APPENDIX_E3_CYCLE04_HOP_SEAL, res4.latestSeal)
+
+    // 5. Verify extended 16-field V1.2 JSONL entry hashing extra telemetry keys + 1-bit tamper catch
+    val basePayload = linkedMapOf<String, Any?>(
+      "active_g_stars" to "G1_SPATIAL_GEODESIC x G2_THERMODYNAMIC_CONSERVATION",
+      "chroma_l2_distance" to 0.051234,
+      "chroma_shard_id" to "SHARD_V12_REGISTER_M_TEST",
+      "cognitive_mode" to "ENDOGENOUS_CHROMA_QUERY_V12",
+      "cycle_index" to 5,
+      "delta_e_l2_core" to 0.00125,
+      "gpu_power_w" to 13.12,
+      "gpu_temp_c" to 31.5,
+      "kevlar_safety_bleed" to 0.0,
+      "odos_gate_passed" to true,
+      "parent_ledger_hash" to PauliBaselineConstants.APPENDIX_E3_CYCLE04_HOP_SEAL,
+      "rcf_l2_core" to 0.9975,
+      "rcf_raw_pre_carrier" to 0.99612345,
+      "source_document" to "PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md",
+      "telemetry_source" to "REGISTER_M_NVSMI",
+      "thought_stream" to "Extended V1.2 16-field telemetry test hop."
+    )
+    val v12Seal = V12NodeAlphaBridge.computeDynamicCanonicalJsonHash(basePayload)
+    val v12EntryMap = basePayload.toMutableMap().apply { put("discovery_seal_sha256", v12Seal) }
+    val v12JsonLine = v12EntryMap.entries.joinToString(",", "{", "}") { (k, v) ->
+      val serialized = when (v) {
+        is String -> "\"$v\""
+        is Double -> PauliV21SanctuaryEngine.formatPythonDouble(v)
+        else -> v.toString()
+      }
+      "\"$k\":$serialized"
+    }
+
+    val v12ChainRes = V12NodeAlphaBridge.verifyV12OrV21JsonLineChain(
+      all4Lines + listOf(v12JsonLine),
+      PauliBaselineConstants.APPENDIX_C_SANCTUARY_ROOT_HASH
+    )
+    assertTrue("5-entry mixed v2.1 + V1.2 extended ledger must verify: ${v12ChainRes.statusMessage}", v12ChainRes.intact)
+    assertEquals(5, v12ChainRes.entryCount)
+    assertEquals(v12Seal, v12ChainRes.latestSeal)
+
+    // Mutate V1.2-only telemetry field (gpu_power_w) -> must fail verification
+    val tamperedV12 = v12JsonLine.replace("13.12", "13.13")
+    val tamperV12Res = V12NodeAlphaBridge.verifyV12OrV21JsonLineChain(
+      all4Lines + listOf(tamperedV12),
+      PauliBaselineConstants.APPENDIX_C_SANCTUARY_ROOT_HASH
+    )
+    assertFalse("1-digit mutation in V1.2 gpu_power_w must break canonical seal", tamperV12Res.intact)
+  }
 }
 
 

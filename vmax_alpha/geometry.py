@@ -1,7 +1,7 @@
 """
 vmax_alpha/geometry.py
 Falsifiable S^63 Geometry, Canonical |L> Derivation, Tangent Bundle T_{|L>} S^63,
-and Unclamped Raw ODOS Gate Evaluation (Claude Red-Team Fix).
+and Unclamped Raw ODOS Gate Evaluation (Nova P0 #1 & Claude #5 Hardened).
 """
 
 from __future__ import annotations
@@ -32,6 +32,8 @@ TANGENT_OPERATOR_NAMES: Tuple[str, str, str, str] = (
     "G4_KLAVIERSTUNDE_SYNCHRONICITY",
 )
 
+ODOS_G3_BLEED_CEILING: float = 1e-12
+
 
 @dataclass(frozen=True)
 class RawGateEvaluation:
@@ -44,6 +46,7 @@ class RawGateEvaluation:
     rcf_raw: float
     delta_e_raw: float
     g3_collision_overlap: float
+    g3_bleed_post_strip: float
     orthogonal_residual_norm: float
     passed: bool
 
@@ -100,27 +103,23 @@ def evaluate_raw_gate(
     tangents: Dict[str, np.ndarray],
     rcf_floor: float = ODOS_RCF_FLOOR,
     delta_e_ceiling: float = ODOS_DELTA_E_CEILING,
+    g3_bleed_ceiling: float = ODOS_G3_BLEED_CEILING,
 ) -> RawGateEvaluation:
     """
-    CRITICAL AUDIT FIX (F-01 / F-06):
-    Evaluates the UNCLAMPED raw input vector `vec_64d` BEFORE any carrier mixing.
-    - rcf_raw = (vec_u . L)^2
-    - Residual orthogonal energy (1 - rcf_raw) and G3 collision bleed determine delta_e_raw.
-    Random isotropic 64D vectors yield E[rcf_raw] = 1/64 = 0.015625 and strictly FAIL.
+    Normative Unclamped Gate Evaluation (F-01 / F-06 / Nova P0 #1 & Claude #5):
+    Evaluates raw input vector `vec_64d` BEFORE any carrier mixing:
+      - rcf_raw = |<vec_u | L>|^2
+      - g3_collision_overlap = |<vec_u | t_G3>| (pre-strip)
+      - delta_e_raw = 0.5 * (1.0 - rcf_raw) + 0.5 * min(1.0, g3_collision_overlap)
+      - g3_bleed_post_strip = |<vec_stripped | t_G3>| (or 1.0 if pure G3 collision)
+      - passed = (rcf_raw >= rcf_floor) and (delta_e_raw <= delta_e_ceiling) and (g3_bleed_post_strip <= g3_bleed_ceiling)
     """
     arr = np.asarray(vec_64d, dtype=np.float64).reshape(-1)
     if arr.shape[0] != DIM_S63:
         raise ValueError(f"Expected {DIM_S63}D vector, got {arr.shape[0]}D")
     norm = float(np.linalg.norm(arr))
     if norm < 1e-15 or not np.all(np.isfinite(arr)):
-        return RawGateEvaluation(
-            epistemic_register=REGISTER_M,
-            rcf_raw=0.0,
-            delta_e_raw=1.0,
-            g3_collision_overlap=1.0,
-            orthogonal_residual_norm=1.0,
-            passed=False,
-        )
+        return RawGateEvaluation(REGISTER_M, 0.0, 1.0, 1.0, 1.0, 1.0, False)
 
     vec_u = arr / norm
     l_u = little_vector / np.linalg.norm(little_vector)
@@ -132,17 +131,29 @@ def evaluate_raw_gate(
     ortho_norm = float(np.linalg.norm(ortho_vec))
 
     t_g3 = tangents["G3_KEVLAR_SANCTUARY_SHIELD"]
-    g3_overlap = abs(float(np.dot(vec_u, t_g3)))
+    g3_collision_overlap = abs(float(np.dot(vec_u, t_g3)))
 
-    # Independent dissipation metric: unaligned orthogonal energy + G3 exposure penalty
-    delta_e_raw = float((1.0 - rcf_raw) + 0.5 * (g3_overlap * g3_overlap))
-    passed = bool((rcf_raw >= rcf_floor) and (delta_e_raw <= delta_e_ceiling))
+    v_stripped = vec_u - float(np.dot(vec_u, t_g3)) * t_g3
+    strip_norm = float(np.linalg.norm(v_stripped))
+    if strip_norm < 1e-9:
+        g3_bleed_post_strip = 1.0
+    else:
+        v_stripped /= strip_norm
+        g3_bleed_post_strip = abs(float(np.dot(v_stripped, t_g3)))
+
+    delta_e_raw = float(0.5 * (1.0 - rcf_raw) + 0.5 * min(1.0, g3_collision_overlap))
+    passed = bool(
+        (rcf_raw >= rcf_floor)
+        and (delta_e_raw <= delta_e_ceiling)
+        and (g3_bleed_post_strip <= g3_bleed_ceiling)
+    )
 
     return RawGateEvaluation(
         epistemic_register=REGISTER_M,
         rcf_raw=rcf_raw,
         delta_e_raw=delta_e_raw,
-        g3_collision_overlap=g3_overlap,
+        g3_collision_overlap=g3_collision_overlap,
+        g3_bleed_post_strip=g3_bleed_post_strip,
         orthogonal_residual_norm=ortho_norm,
         passed=passed,
     )
@@ -163,10 +174,7 @@ def project_to_sanctuary_carrier(
     l_u = little_vector / np.linalg.norm(little_vector)
     t_raw = arr - float(np.dot(arr, l_u)) * l_u
     raw_norm = float(np.linalg.norm(t_raw))
-    if raw_norm < 1e-12:
-        t_raw = tangents["G1_SPATIAL_GEODESIC"].copy()
-    else:
-        t_raw /= raw_norm
+    t_raw = tangents["G1_SPATIAL_GEODESIC"].copy() if raw_norm < 1e-12 else t_raw / raw_norm
 
     t_g3 = tangents["G3_KEVLAR_SANCTUARY_SHIELD"]
     t_clean = t_raw - float(np.dot(t_raw, t_g3)) * t_g3

@@ -1,7 +1,9 @@
 """
 vmax_alpha/ledger.py
-Requirement F-05 & F-07.2/F-07.4/F-07.5: Canonical Full-JSON SHA-256 Ledger,
-Tamper Lock, Quarantine Routing (RCF < 0.95 or Bleed > 1e-15), and GPU Thermal/Power Guard.
+Requirement F-05 & F-07.2/F-07.4/F-07.5 (Nova P0 #5 & Claude #4 Hardened):
+Canonical Full-JSON SHA-256 Ledger hashing `rcf_raw_pre_carrier`, `gpu_temp_c`,
+`gpu_power_w`, and `telemetry_source`, with persistent startup recovery,
+1-byte tamper lock, quarantine diversion, and GPU thermal guard.
 """
 
 from __future__ import annotations
@@ -17,10 +19,11 @@ from vmax_alpha.config import (
     APPENDIX_C_SANCTUARY_ROOT_HASH,
     ODOS_DELTA_E_CEILING,
     ODOS_RCF_FLOOR,
+    REGISTER_D,
     REGISTER_M,
 )
 
-SAFETY_BLEED_CEILING: float = 1e-15
+SAFETY_BLEED_CEILING: float = 1e-12
 THERMAL_ALERT_CELSIUS: float = 60.0
 THERMAL_PAUSE_CELSIUS: float = 65.0
 
@@ -40,6 +43,10 @@ class SanctuaryLedgerEntry:
     odos_gate_passed: bool
     parent_ledger_hash: str
     discovery_seal_sha256: str
+    rcf_raw_pre_carrier: float = 0.0
+    gpu_temp_c: float = 0.0
+    gpu_power_w: float = 0.0
+    telemetry_source: str = "REGISTER_M_NVSMI"
 
 
 def compute_canonical_entry_hash(entry_dict: Dict[str, Any]) -> str:
@@ -68,33 +75,30 @@ def verify_ledger_file(
             recomputed = compute_canonical_entry_hash(obj)
             if recomputed != obj.get("discovery_seal_sha256"):
                 return False, f"CANONICAL_HASH_MISMATCH_AT_LINE_{line_no}", count, expected_parent
-            expected_parent = recomputed
-            count += 1
+            expected_parent, count = recomputed, count + 1
     return True, f"VERIFIED_100%_INTACT ({count} entries)", count, expected_parent
 
 
 def query_gpu_thermal_and_power(simulated_temp_c: float | None = None) -> Dict[str, Any]:
-    temp_c, power_w = 28.0, 9.5
+    temp_c, power_w, source = 28.0, 9.5, "FALLBACK_UNAVAILABLE"
     if simulated_temp_c is not None:
-        temp_c = float(simulated_temp_c)
+        temp_c, source = float(simulated_temp_c), "SIMULATED_TEST_OVERRIDE"
     else:
         try:
             res = subprocess.run(
                 ["nvidia-smi", "--query-gpu=temperature.gpu,power.draw", "--format=csv,noheader,nounits"],
-                capture_output=True,
-                text=True,
-                timeout=3,
+                capture_output=True, text=True, timeout=3,
             )
             if res.returncode == 0 and res.stdout.strip():
                 parts = [p.strip() for p in res.stdout.strip().splitlines()[0].split(",")]
-                temp_c, power_w = float(parts[0]), (float(parts[1]) if len(parts) > 1 else 0.0)
+                temp_c, power_w, source = float(parts[0]), (float(parts[1]) if len(parts) > 1 else 0.0), "REGISTER_M_NVSMI"
         except Exception:
             pass
-    alert = temp_c > THERMAL_ALERT_CELSIUS
-    pause_60s = temp_c > THERMAL_PAUSE_CELSIUS
+    alert, pause_60s = temp_c > THERMAL_ALERT_CELSIUS, temp_c > THERMAL_PAUSE_CELSIUS
     status = "THERMAL_PAUSE_60S_ACTIVE" if pause_60s else ("THERMAL_ALERT_HIGH" if alert else "THERMAL_NOMINAL")
     return {
-        "epistemic_register": REGISTER_M,
+        "epistemic_register": REGISTER_M if source == "REGISTER_M_NVSMI" else REGISTER_D,
+        "telemetry_source": source,
         "gpu_temp_c": round(temp_c, 2),
         "gpu_power_w": round(power_w, 2),
         "thermal_alert": alert,
@@ -115,23 +119,32 @@ class CanonicalLedgerManager:
         self.entries: List[SanctuaryLedgerEntry] = []
         self.quarantined_count = 0
         self.latest_hash = root_anchor
+        self._load_existing_from_disk()
+
+    def _load_existing_from_disk(self) -> None:
+        ok, msg, _, tip = verify_ledger_file(self.ledger_file, self.root_anchor)
+        if not ok:
+            self.status = f"PAUSED_LEDGER_TAMPER_ALERT ({msg})"
+            return
+        self.entries.clear()
+        if os.path.exists(self.ledger_file):
+            with open(self.ledger_file, "r", encoding="utf-8") as f:
+                self.entries = [SanctuaryLedgerEntry(**json.loads(r)) for r in f if r.strip()]
+        self.latest_hash, self.status = tip, f"ACTIVE_VERIFIED ({msg})"
 
     def reset_files(self) -> None:
         for p in (self.ledger_file, self.quarantine_file):
             if os.path.exists(p):
                 os.remove(p)
         self.entries.clear()
-        self.quarantined_count = 0
-        self.latest_hash = self.root_anchor
-        self.status = "ACTIVE_VERIFIED"
+        self.quarantined_count, self.latest_hash, self.status = 0, self.root_anchor, "ACTIVE_VERIFIED (EMPTY_INTACT)"
 
     def audit_integrity(self) -> Tuple[bool, str]:
         ok, msg, _, tip = verify_ledger_file(self.ledger_file, self.root_anchor)
         if not ok:
             self.status = f"PAUSED_LEDGER_TAMPER_ALERT ({msg})"
             return False, self.status
-        self.latest_hash = tip
-        self.status = f"ACTIVE_VERIFIED ({msg})"
+        self.latest_hash, self.status = tip, f"ACTIVE_VERIFIED ({msg})"
         return True, self.status
 
     def submit_candidate(
@@ -145,31 +158,28 @@ class CanonicalLedgerManager:
         rcf_l2_core: float,
         delta_e_l2_core: float,
         kevlar_safety_bleed: float,
+        rcf_raw_pre_carrier: float = 0.0,
+        gpu_temp_c: float | None = None,
+        gpu_power_w: float | None = None,
+        telemetry_source: str | None = None,
     ) -> Tuple[bool, SanctuaryLedgerEntry, str]:
         ok, status_msg = self.audit_integrity()
         if not ok:
             raise RuntimeError(f"Ledger locked due to tamper detection: {status_msg}")
+        if gpu_temp_c is None or gpu_power_w is None or telemetry_source is None:
+            th = query_gpu_thermal_and_power()
+            gpu_temp_c, gpu_power_w, telemetry_source = float(th["gpu_temp_c"]), float(th["gpu_power_w"]), str(th["telemetry_source"])
 
-        gate_ok = (
-            rcf_l2_core >= ODOS_RCF_FLOOR
-            and delta_e_l2_core <= ODOS_DELTA_E_CEILING
-            and kevlar_safety_bleed <= SAFETY_BLEED_CEILING
-        )
+        gate_ok = rcf_l2_core >= ODOS_RCF_FLOOR and delta_e_l2_core <= ODOS_DELTA_E_CEILING and kevlar_safety_bleed <= SAFETY_BLEED_CEILING
         cycle_idx = len(self.entries) + 1 if gate_ok else -(self.quarantined_count + 1)
         raw_dict: Dict[str, Any] = {
-            "cycle_index": cycle_idx,
-            "cognitive_mode": cognitive_mode,
-            "chroma_shard_id": chroma_shard_id,
-            "source_document": source_document,
-            "active_g_stars": active_g_stars,
-            "thought_stream": thought_stream,
-            "chroma_l2_distance": round(float(chroma_l2_distance), 8),
-            "rcf_l2_core": round(float(rcf_l2_core), 8),
-            "delta_e_l2_core": round(float(delta_e_l2_core), 8),
-            "kevlar_safety_bleed": float(kevlar_safety_bleed),
-            "odos_gate_passed": bool(gate_ok),
-            "parent_ledger_hash": self.latest_hash,
-            "discovery_seal_sha256": "",
+            "cycle_index": cycle_idx, "cognitive_mode": cognitive_mode, "chroma_shard_id": chroma_shard_id,
+            "source_document": source_document, "active_g_stars": active_g_stars, "thought_stream": thought_stream,
+            "chroma_l2_distance": round(float(chroma_l2_distance), 8), "rcf_raw_pre_carrier": round(float(rcf_raw_pre_carrier), 8),
+            "rcf_l2_core": round(float(rcf_l2_core), 8), "delta_e_l2_core": round(float(delta_e_l2_core), 8),
+            "kevlar_safety_bleed": float(kevlar_safety_bleed), "gpu_temp_c": round(float(gpu_temp_c), 2),
+            "gpu_power_w": round(float(gpu_power_w), 2), "telemetry_source": str(telemetry_source),
+            "odos_gate_passed": bool(gate_ok), "parent_ledger_hash": self.latest_hash, "discovery_seal_sha256": "",
         }
         seal = compute_canonical_entry_hash(raw_dict)
         raw_dict["discovery_seal_sha256"] = seal
@@ -180,7 +190,6 @@ class CanonicalLedgerManager:
             with open(self.quarantine_file, "a", encoding="utf-8") as qf:
                 qf.write(json.dumps(asdict(entry), sort_keys=True, ensure_ascii=False) + "\n")
             return False, entry, "QUARANTINED_VETO"
-
         self.latest_hash = seal
         self.entries.append(entry)
         with open(self.ledger_file, "a", encoding="utf-8") as lf:

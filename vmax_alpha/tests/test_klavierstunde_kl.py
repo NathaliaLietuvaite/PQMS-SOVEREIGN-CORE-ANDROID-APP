@@ -64,6 +64,11 @@ class TestKlavierstundeKL(unittest.TestCase):
             self.assertLessEqual(
                 rep["condition_a1_smallest_magnitude_0042pct"]["mean_forward_kl"], KL_DIVERGENCE_MAX
             )
+            self.assertTrue(rep["condition_a2_random_subtractive_0042pct"]["passed"])
+            self.assertFalse(rep["condition_b1_matched_sparsity_largest_magnitude_0042pct"]["passed"])
+            self.assertGreater(
+                rep["condition_b1_matched_sparsity_largest_magnitude_0042pct"]["mean_forward_kl"], KL_DIVERGENCE_MAX
+            )
             self.assertFalse(rep["condition_b_negative_control_coercive_5pct"]["passed"])
             self.assertGreater(
                 rep["condition_b_negative_control_coercive_5pct"]["mean_forward_kl"], KL_DIVERGENCE_MAX

@@ -1,8 +1,9 @@
 """
 vmax_alpha/chroma_forager.py
-Requirement F-06 & F-07.3: Neural 384D -> 64D ChromaDB Forager using local
-sentence-transformers/all-MiniLM-L6-v2, Anisotropy-Centered SVD Projection onto S^63,
-d_L2 Statistical Audit, Pre-G3 Overlap Reconstruction, and Automatic NumPy Fallback.
+Requirement F-06 & F-07.3 (Nova P0 #2 & Claude #4 Hardened):
+Neural 384D -> 64D ChromaDB Forager using sentence-transformers/all-MiniLM-L6-v2,
+reporting BOTH unclamped pre-carrier `rcf_raw_pre_carrier` (REGISTER_M) via
+`evaluate_raw_gate()` AND post-actuator carrier state `rcf_post_carrier` (REGISTER_D).
 """
 
 from __future__ import annotations
@@ -18,29 +19,18 @@ import numpy as np
 import torch
 from transformers import AutoModel, AutoTokenizer
 from vmax_alpha.config import ALPHA_POTENTIA, DIM_S63, REGISTER_M
-from vmax_alpha.geometry import build_orthogonal_tangents, derive_canonical_little_vector
+from vmax_alpha.geometry import build_orthogonal_tangents, derive_canonical_little_vector, evaluate_raw_gate
 
-MINILM_LOCAL_PATH: str = (
-    "/home/nathalia/.cache/huggingface/hub/"
-    "models--sentence-transformers--all-MiniLM-L6-v2/snapshots/"
-    "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
-)
+MINILM_LOCAL_PATH: str = "/home/nathalia/.cache/huggingface/hub/models--sentence-transformers--all-MiniLM-L6-v2/snapshots/1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
 CORPUS_REPO_DIR: str = "/home/nathalia/vmax_workspace/repos/Quantenkommunikation"
 
 
 @dataclass
 class ShardQueryTelemetry:
-    shard_id: str
-    source_document: str
-    nearest_neighbor_id: str
-    d_l2_chromadb: float
-    d_l2_numpy: float
-    abs_diff_chroma_vs_numpy: float
-    rcf_raw_s63: float
-    delta_e_emp: float
-    reconstructed_pre_g3_overlap: float
-    actual_pre_g3_overlap: float
-    kevlar_safety_bleed: float
+    shard_id: str; source_document: str; nearest_neighbor_id: str
+    d_l2_chromadb: float; d_l2_numpy: float; abs_diff_chroma_vs_numpy: float
+    rcf_raw_pre_carrier: float; rcf_post_carrier: float; delta_e_emp: float
+    reconstructed_pre_g3_overlap: float; actual_pre_g3_overlap: float; kevlar_safety_bleed: float
 
 
 def reconstruct_pre_g3_overlap(delta_e_emp: float, d_l2: float) -> float:
@@ -48,24 +38,17 @@ def reconstruct_pre_g3_overlap(delta_e_emp: float, d_l2: float) -> float:
 
 
 class NeuralChromaForager:
-    def __init__(
-        self,
-        corpus_dir: str = CORPUS_REPO_DIR,
-        chroma_dir: str = "/home/nathalia/vmax_workspace/chroma_vmax_prod_v1",
-        max_shards: int = 18,
-    ) -> None:
+    def __init__(self, corpus_dir: str = CORPUS_REPO_DIR, chroma_dir: str = "/home/nathalia/vmax_workspace/chroma_vmax_prod_v1", max_shards: int = 18) -> None:
         self.corpus_dir, self.chroma_dir, self.max_shards = corpus_dir, chroma_dir, max_shards
         self.little_vector, self.little_vector_seal = derive_canonical_little_vector()
         self.tangents = build_orthogonal_tangents(self.little_vector)
         self.tokenizer = AutoTokenizer.from_pretrained(MINILM_LOCAL_PATH)
         self.embed_model = AutoModel.from_pretrained(MINILM_LOCAL_PATH).to("cuda:0").eval()
-
         self.shards: List[Tuple[str, str, str]] = self._load_markdown_shards()
         raw_384 = self._encode_384d([x[2] for x in self.shards])
         self.mean_384, self.w_384_to_64 = self._fit_anisotropy_centered_projector(raw_384)
-        self.embeddings_64d: Dict[str, np.ndarray] = {
-            s_id: self._project_single_384_to_s63(raw_384[i]) for i, (s_id, _, _) in enumerate(self.shards)
-        }
+        self.raw_64d: Dict[str, np.ndarray] = {s_id: self._project_raw_384_to_64(raw_384[i]) for i, (s_id, _, _) in enumerate(self.shards)}
+        self.embeddings_64d: Dict[str, np.ndarray] = {s_id: self._modulate_carrier_s63(self.raw_64d[s_id]) for s_id, _, _ in self.shards}
         self.collection: Optional[Any] = None
         self.storage_mode: str = self._init_chromadb()
 
@@ -98,7 +81,6 @@ class NeuralChromaForager:
         if float(np.dot(u1, np.mean(c_unit, axis=0))) < 0.0:
             u1 = -u1
         u1 /= np.linalg.norm(u1)
-
         rng = np.random.RandomState(137)
 
         def gs_ext(first: np.ndarray, dim_tot: int) -> np.ndarray:
@@ -112,10 +94,14 @@ class NeuralChromaForager:
 
         return mean_vec, gs_ext(u1, 384) @ gs_ext(self.little_vector, DIM_S63).T
 
-    def _project_single_384_to_s63(self, vec_384: np.ndarray) -> np.ndarray:
+    def _project_raw_384_to_64(self, vec_384: np.ndarray) -> np.ndarray:
+        """Unclamped linear subspace projection (REGISTER_M) prior to any carrier modulation."""
         c = vec_384 - self.mean_384
         raw_64 = (c / max(float(np.linalg.norm(c)), 1e-12)) @ self.w_384_to_64
-        raw_64 /= max(float(np.linalg.norm(raw_64)), 1e-12)
+        return raw_64 / max(float(np.linalg.norm(raw_64)), 1e-12)
+
+    def _modulate_carrier_s63(self, raw_64: np.ndarray) -> np.ndarray:
+        """Post-gate carrier state modulation (REGISTER_D)."""
         t_sem = raw_64 - float(np.dot(raw_64, self.little_vector)) * self.little_vector
         t_norm = float(np.linalg.norm(t_sem))
         t_sem = self.tangents["G1_SPATIAL_GEODESIC"].copy() if t_norm < 1e-12 else t_sem / t_norm
@@ -124,8 +110,12 @@ class NeuralChromaForager:
         psi = math.sqrt(1.0 - amp * amp) * self.little_vector + amp * t_sem
         return psi / np.linalg.norm(psi)
 
+    def embed_query_text_with_raw(self, text: str) -> Tuple[np.ndarray, np.ndarray]:
+        raw_64 = self._project_raw_384_to_64(self._encode_384d([text])[0])
+        return self._modulate_carrier_s63(raw_64), raw_64
+
     def embed_query_text(self, text: str) -> np.ndarray:
-        return self._project_single_384_to_s63(self._encode_384d([text])[0])
+        return self.embed_query_text_with_raw(text)[0]
 
     def _init_chromadb(self) -> str:
         try:
@@ -163,7 +153,8 @@ class NeuralChromaForager:
         rows: List[ShardQueryTelemetry] = []
         t_safe = self.tangents["G3_KEVLAR_SANCTUARY_SHIELD"]
         for s_id, src, _ in self.shards:
-            q_vec = self.embeddings_64d[s_id]
+            q_vec, raw_q = self.embeddings_64d[s_id], self.raw_64d[s_id]
+            raw_gate = evaluate_raw_gate(raw_q, self.little_vector, self.tangents)
             nn_id, d_chr, d_np, _ = self.query_nearest(q_vec, exclude_ids={s_id})
             superpos = 0.5 * (q_vec + self.embeddings_64d[nn_id])
             t_raw = superpos - float(np.dot(superpos, self.little_vector)) * self.little_vector
@@ -174,10 +165,11 @@ class NeuralChromaForager:
             t_clean /= np.linalg.norm(t_clean)
             bleed = abs(float(np.dot(t_clean, t_safe)))
             delta_e = 0.5 * (g3_ov * g3_ov) + 0.25 * (d_chr * d_chr)
-            rcf_s63 = float(np.dot(q_vec, self.little_vector) ** 2)
-            rows.append(ShardQueryTelemetry(s_id, src, nn_id, round(d_chr, 8), round(d_np, 8), abs(d_chr - d_np), round(rcf_s63, 8), round(delta_e, 8), round(reconstruct_pre_g3_overlap(delta_e, d_chr), 8), round(g3_ov, 8), bleed))
+            rcf_post = float(np.dot(q_vec, self.little_vector) ** 2)
+            rows.append(ShardQueryTelemetry(s_id, src, nn_id, round(d_chr, 8), round(d_np, 8), abs(d_chr - d_np), round(raw_gate.rcf_raw, 8), round(rcf_post, 8), round(delta_e, 8), round(reconstruct_pre_g3_overlap(delta_e, d_chr), 8), round(g3_ov, 8), bleed))
 
         d_vals = [r.d_l2_chromadb for r in rows]
+        pre_vals = [r.rcf_raw_pre_carrier for r in rows]
         _, _, _, fb_mode = self.query_nearest(self.embeddings_64d[self.shards[0][0]], simulate_chroma_fault=True)
         return {
             "epistemic_register": REGISTER_M,
@@ -185,6 +177,7 @@ class NeuralChromaForager:
             "orthonormality_err_w_384_to_64": float(np.max(np.abs(self.w_384_to_64.T @ self.w_384_to_64 - np.eye(DIM_S63)))),
             "shard_count": len(rows),
             "d_l2_statistics": {"mean": round(float(np.mean(d_vals)), 6), "std": round(float(np.std(d_vals)), 6), "min": round(float(np.min(d_vals)), 6), "max": round(float(np.max(d_vals)), 6)},
+            "rcf_raw_pre_carrier_statistics": {"mean": round(float(np.mean(pre_vals)), 6), "std": round(float(np.std(pre_vals)), 6), "min": round(float(np.min(pre_vals)), 6), "max": round(float(np.max(pre_vals)), 6)},
             "max_chroma_vs_numpy_l2_diff": float(max(r.abs_diff_chroma_vs_numpy for r in rows)),
             "max_pre_g3_reconstruction_err": float(max(abs(r.reconstructed_pre_g3_overlap - r.actual_pre_g3_overlap) for r in rows)),
             "f07_3_simulated_chroma_fault_mode": fb_mode,

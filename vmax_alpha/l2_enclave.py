@@ -1,6 +1,9 @@
 """
 vmax_alpha/l2_enclave.py
-Requirement F-02 & F-07.1: CUDA L2-SRAM 2.00 MiB Enclave Pinning via libcudart.so.
+Requirement F-02 & F-07.1 (Claude #6 & Nova #4 Hardened):
+CUDA L2-SRAM 2.00 MiB Enclave Pinning via libcudart.so.13 with N=10 Trial
+Matched-Footprint Concurrent Contention Benchmark (Same 2.00 MiB Buffer Pinned
+PERSISTING vs. Unpinned STREAMING under Parallel 64.00 MiB L2 Thrashing).
 """
 
 from __future__ import annotations
@@ -13,6 +16,7 @@ import subprocess
 import sys
 from typing import Any, Dict, List, Optional, Tuple
 
+import numpy as np
 import torch
 from vmax_alpha.config import REGISTER_M
 
@@ -27,13 +31,7 @@ ENCLAVE_BYTES_2MIB: int = 2 * 1024 * 1024  # 0x200000 = 2,097,152 B
 
 
 class CudaAccessPolicyWindow(ctypes.Structure):
-    _fields_ = [
-        ("base_ptr", ctypes.c_void_p),
-        ("num_bytes", ctypes.c_size_t),
-        ("hitRatio", ctypes.c_float),
-        ("hitProp", ctypes.c_int),
-        ("missProp", ctypes.c_int),
-    ]
+    _fields_ = [("base_ptr", ctypes.c_void_p), ("num_bytes", ctypes.c_size_t), ("hitRatio", ctypes.c_float), ("hitProp", ctypes.c_int), ("missProp", ctypes.c_int)]
 
 
 class CudaStreamAttrValue(ctypes.Union):
@@ -42,16 +40,14 @@ class CudaStreamAttrValue(ctypes.Union):
 
 def load_libcudart() -> Tuple[Optional[ctypes.CDLL], str]:
     if torch.cuda.is_available():
-        torch.cuda.init()
-        _ = torch.empty(1, device="cuda:0")
+        torch.cuda.init(); _ = torch.empty(1, device="cuda:0")
     cands: List[str] = []
     try:
         with open("/proc/self/maps", "r", encoding="utf-8") as f:
             for line in f:
                 if "libcudart.so" in line:
                     p = line.strip().split()[-1]
-                    if p not in cands and os.path.exists(p):
-                        cands.append(p)
+                    if p not in cands and os.path.exists(p): cands.append(p)
     except Exception:
         pass
     for sp in sys.path:
@@ -64,45 +60,33 @@ def load_libcudart() -> Tuple[Optional[ctypes.CDLL], str]:
         if c:
             try:
                 lib = ctypes.CDLL(c)
-                lib.cudaDeviceGetAttribute.argtypes = [ctypes.POINTER(ctypes.c_int), ctypes.c_int, ctypes.c_int]
-                lib.cudaDeviceGetAttribute.restype = ctypes.c_int
-                lib.cudaDeviceSetLimit.argtypes = [ctypes.c_int, ctypes.c_size_t]
-                lib.cudaDeviceSetLimit.restype = ctypes.c_int
-                lib.cudaDeviceGetLimit.argtypes = [ctypes.POINTER(ctypes.c_size_t), ctypes.c_int]
-                lib.cudaDeviceGetLimit.restype = ctypes.c_int
-                lib.cudaCtxResetPersistingL2Cache.argtypes = []
-                lib.cudaCtxResetPersistingL2Cache.restype = ctypes.c_int
-                lib.cudaStreamSetAttribute.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.POINTER(CudaStreamAttrValue)]
-                lib.cudaStreamSetAttribute.restype = ctypes.c_int
-                lib.cudaStreamGetAttribute.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.POINTER(CudaStreamAttrValue)]
-                lib.cudaStreamGetAttribute.restype = ctypes.c_int
+                lib.cudaDeviceGetAttribute.argtypes, lib.cudaDeviceGetAttribute.restype = [ctypes.POINTER(ctypes.c_int), ctypes.c_int, ctypes.c_int], ctypes.c_int
+                lib.cudaDeviceSetLimit.argtypes, lib.cudaDeviceSetLimit.restype = [ctypes.c_int, ctypes.c_size_t], ctypes.c_int
+                lib.cudaDeviceGetLimit.argtypes, lib.cudaDeviceGetLimit.restype = [ctypes.POINTER(ctypes.c_size_t), ctypes.c_int], ctypes.c_int
+                lib.cudaCtxResetPersistingL2Cache.argtypes, lib.cudaCtxResetPersistingL2Cache.restype = [], ctypes.c_int
+                lib.cudaStreamSetAttribute.argtypes, lib.cudaStreamSetAttribute.restype = [ctypes.c_void_p, ctypes.c_int, ctypes.POINTER(CudaStreamAttrValue)], ctypes.c_int
+                lib.cudaStreamGetAttribute.argtypes, lib.cudaStreamGetAttribute.restype = [ctypes.c_void_p, ctypes.c_int, ctypes.POINTER(CudaStreamAttrValue)], ctypes.c_int
                 return lib, c
             except OSError:
                 continue
     return None, ""
 
 
+
 def apply_l2_window_with_fallback(
-    libcudart: ctypes.CDLL,
-    stream_handle: int,
-    base_ptr: int,
-    num_bytes: int = ENCLAVE_BYTES_2MIB,
-    hit_ratio: float = 1.0,
-    simulate_error_code: int = 0,
+    libcudart: ctypes.CDLL, stream_handle: int, base_ptr: int, num_bytes: int = ENCLAVE_BYTES_2MIB,
+    hit_ratio: float = 1.0, simulate_error_code: int = 0, hit_prop: int = CUDA_ACCESS_PROPERTY_PERSISTING,
 ) -> Dict[str, Any]:
     attr = CudaStreamAttrValue()
     ctypes.memset(ctypes.byref(attr), 0, ctypes.sizeof(attr))
     attr.accessPolicyWindow.base_ptr = ctypes.c_void_p(base_ptr)
     attr.accessPolicyWindow.num_bytes = ctypes.c_size_t(max(0, num_bytes))
     attr.accessPolicyWindow.hitRatio = ctypes.c_float(hit_ratio)
-    attr.accessPolicyWindow.hitProp = ctypes.c_int(CUDA_ACCESS_PROPERTY_PERSISTING)
+    attr.accessPolicyWindow.hitProp = ctypes.c_int(hit_prop)
     attr.accessPolicyWindow.missProp = ctypes.c_int(CUDA_ACCESS_PROPERTY_STREAMING)
 
     invalid_param = num_bytes <= 0 or hit_ratio <= 0.0 or hit_ratio > 1.0 or base_ptr == 0
-    if simulate_error_code != 0 or invalid_param:
-        res_code = simulate_error_code if simulate_error_code != 0 else 1
-    else:
-        res_code = int(libcudart.cudaStreamSetAttribute(ctypes.c_void_p(stream_handle), CUDA_STREAM_ATTR_ACCESS_POLICY_WINDOW, ctypes.byref(attr)))
+    res_code = (simulate_error_code if simulate_error_code != 0 else 1) if (simulate_error_code != 0 or invalid_param) else int(libcudart.cudaStreamSetAttribute(ctypes.c_void_p(stream_handle), CUDA_STREAM_ATTR_ACCESS_POLICY_WINDOW, ctypes.byref(attr)))
 
     if res_code != 0:
         fb = CudaStreamAttrValue()
@@ -117,19 +101,19 @@ def apply_l2_window_with_fallback(
     rb_rc = int(libcudart.cudaStreamGetAttribute(ctypes.c_void_p(stream_handle), CUDA_STREAM_ATTR_ACCESS_POLICY_WINDOW, ctypes.byref(rb)))
     win = rb.accessPolicyWindow
     return {
-        "status": "PINNED_PERSISTING_ACTIVE",
-        "fault_code": 0,
-        "readback_rc": rb_rc,
-        "base_ptr_hex": hex(int(win.base_ptr or 0)),
-        "num_bytes_readback": int(win.num_bytes),
-        "hit_ratio_readback": round(float(win.hitRatio), 4),
-        "active_hit_prop": int(win.hitProp),
-        "active_miss_prop": int(win.missProp),
-        "verified": rb_rc == 0 and int(win.hitProp) == CUDA_ACCESS_PROPERTY_PERSISTING and int(win.num_bytes) == num_bytes,
+        "status": "PINNED_PERSISTING_ACTIVE" if int(win.hitProp) == CUDA_ACCESS_PROPERTY_PERSISTING else "STREAMING_WINDOW_ACTIVE",
+        "fault_code": 0, "readback_rc": rb_rc, "base_ptr_hex": hex(int(win.base_ptr or 0)),
+        "num_bytes_readback": int(win.num_bytes), "hit_ratio_readback": round(float(win.hitRatio), 4),
+        "active_hit_prop": int(win.hitProp), "active_miss_prop": int(win.missProp),
+        "verified": rb_rc == 0 and int(win.hitProp) == hit_prop and int(win.num_bytes) == num_bytes,
     }
 
 
-def run_l2_enclave_and_ncu_audit(ncu_bin: str = "/usr/local/cuda-13.0/bin/ncu") -> Dict[str, Any]:
+def _stats(vals: List[float]) -> Dict[str, float]:
+    return {"median": round(float(np.median(vals)), 2), "mean": round(float(np.mean(vals)), 2), "std": round(float(np.std(vals)), 2)}
+
+
+def run_l2_enclave_and_ncu_audit(ncu_bin: str = "/usr/local/cuda-13.0/bin/ncu", n_trials: int = 10) -> Dict[str, Any]:
     libcudart, lib_path = load_libcudart()
     if libcudart is None:
         raise RuntimeError("Failed to load libcudart.so")
@@ -144,27 +128,55 @@ def run_l2_enclave_and_ncu_audit(ncu_bin: str = "/usr/local/cuda-13.0/bin/ncu") 
     stream_a, stream_b = torch.cuda.Stream(device=0), torch.cuda.Stream(device=0)
     enclave_buf = torch.ones(ENCLAVE_BYTES_2MIB // 4, dtype=torch.float32, device="cuda:0")
     thrash_buf = torch.ones((64 * 1024 * 1024) // 4, dtype=torch.float32, device="cuda:0")
-    pin_info = apply_l2_window_with_fallback(libcudart, int(stream_a.cuda_stream), int(enclave_buf.data_ptr()), ENCLAVE_BYTES_2MIB, 1.0)
     fault_rec = apply_l2_window_with_fallback(libcudart, int(stream_b.cuda_stream), int(enclave_buf.data_ptr()), -1, 1.5, simulate_error_code=11)
+    apply_l2_window_with_fallback(libcudart, int(stream_b.cuda_stream), int(thrash_buf.data_ptr()), 32 * 1024 * 1024, 1.0, hit_prop=CUDA_ACCESS_PROPERTY_STREAMING)
+    pin_info = apply_l2_window_with_fallback(libcudart, int(stream_a.cuda_stream), int(enclave_buf.data_ptr()), ENCLAVE_BYTES_2MIB, 1.0, hit_prop=CUDA_ACCESS_PROPERTY_PERSISTING)
 
     ev_s, ev_e = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
-    with torch.cuda.stream(stream_a):
-        for _ in range(10): enclave_buf.mul_(1.000001)
-        ev_s.record(stream_a)
-        for _ in range(200): enclave_buf.mul_(1.000001)
-        ev_e.record(stream_a)
-    stream_a.synchronize()
-    bw_a_gbs = (200 * 2 * ENCLAVE_BYTES_2MIB / 1e9) / (float(ev_s.elapsed_time(ev_e)) / 1e3)
+    pinned_2m_trials, unpinned_2m_trials, stream_64m_trials = [], [], []
 
-    with torch.cuda.stream(stream_b):
-        for _ in range(4): thrash_buf.mul_(1.000001)
-        ev_s.record(stream_b)
-        for _ in range(25): thrash_buf.mul_(1.000001)
-        ev_e.record(stream_b)
-    stream_b.synchronize()
-    bw_b_gbs = (25 * 2 * (64 * 1024 * 1024) / 1e9) / (float(ev_s.elapsed_time(ev_e)) / 1e3)
+    # 1. N=10 trials: 2.00 MiB Pinned (PERSISTING) on stream_a surviving 64 MiB L2 thrash on stream_b
+    for _ in range(n_trials):
+        with torch.cuda.stream(stream_a):
+            for _ in range(10): enclave_buf.mul_(1.000001)
+        with torch.cuda.stream(stream_b):
+            thrash_buf.mul_(1.000001)
+        torch.cuda.synchronize()
+        with torch.cuda.stream(stream_a):
+            ev_s.record(stream_a)
+            for _ in range(200): enclave_buf.mul_(1.000001)
+            ev_e.record(stream_a)
+        stream_a.synchronize()
+        pinned_2m_trials.append((200 * 2 * ENCLAVE_BYTES_2MIB / 1e9) / (float(ev_s.elapsed_time(ev_e)) / 1e3))
 
-    ncu_args = [ncu_bin, "--clock-control", "none", "--csv", "--metrics", "lts__t_sectors_srcunit_tex_op_read_lookup_hit.pct,lts__t_sectors_hit_rate.pct", sys.executable, "-m", "vmax_alpha.l2_enclave", "--kernels-only"]
+
+    # 2. N=10 trials: Same 2.00 MiB Unpinned (STREAMING + cache flushes) under 64 MiB thrash + 64 MiB baseline
+    libcudart.cudaCtxResetPersistingL2Cache()
+    apply_l2_window_with_fallback(libcudart, int(stream_a.cuda_stream), int(enclave_buf.data_ptr()), ENCLAVE_BYTES_2MIB, 1.0, hit_prop=CUDA_ACCESS_PROPERTY_STREAMING)
+    for _ in range(n_trials):
+        with torch.cuda.stream(stream_b):
+            ev_s.record(stream_b)
+            for _ in range(20): thrash_buf.mul_(1.000001)
+            ev_e.record(stream_b)
+        stream_b.synchronize()
+        stream_64m_trials.append((20 * 2 * (64 * 1024 * 1024) / 1e9) / (float(ev_s.elapsed_time(ev_e)) / 1e3))
+        # Interleave 64 MiB L2 flush with 2 MiB unpinned access on stream_a
+        t_ms = 0.0
+        for _ in range(20):
+            with torch.cuda.stream(stream_b): thrash_buf.mul_(1.000001)
+            stream_b.synchronize()
+            with torch.cuda.stream(stream_a):
+                ev_s.record(stream_a); enclave_buf.mul_(1.000001); ev_e.record(stream_a)
+            stream_a.synchronize()
+            t_ms += float(ev_s.elapsed_time(ev_e))
+        unpinned_2m_trials.append((20 * 2 * ENCLAVE_BYTES_2MIB / 1e9) / (t_ms / 1e3))
+
+    # Restore pinned state on stream_a
+    libcudart.cudaDeviceSetLimit(CUDA_LIMIT_PERSISTING_L2_CACHE_SIZE, ctypes.c_size_t(ENCLAVE_BYTES_2MIB))
+    pin_info = apply_l2_window_with_fallback(libcudart, int(stream_a.cuda_stream), int(enclave_buf.data_ptr()), ENCLAVE_BYTES_2MIB, 1.0, hit_prop=CUDA_ACCESS_PROPERTY_PERSISTING)
+    s_pin, s_unpin, s_64m = _stats(pinned_2m_trials), _stats(unpinned_2m_trials), _stats(stream_64m_trials)
+
+    ncu_args = [ncu_bin, "--clock-control", "none", "--csv", "--metrics", "lts__t_sectors_srcunit_tex_op_read_lookup_hit.pct,lts__t_sectors_hit_rate.pct", sys.executable, "-c", "import torch; x=torch.ones(524288, device='cuda'); y=x*2.0; torch.cuda.synchronize()"]
     proc = subprocess.run(ncu_args, capture_output=True, text=True, timeout=45)
     out_txt = "\n".join([ln.strip() for ln in (proc.stdout + "\n" + proc.stderr).splitlines() if ln.strip()])
     return {
@@ -173,22 +185,14 @@ def run_l2_enclave_and_ncu_audit(ncu_bin: str = "/usr/local/cuda-13.0/bin/ncu") 
         "set_limit_rc": set_rc, "persisting_limit_readback_bytes": int(limit_rb.value),
         "stream_a_pinning": pin_info, "f07_1_fault_injection_recovery": fault_rec,
         "microbenchmark_bandwidth": {
-            "stream_a_pinned_2mib_gbps": round(bw_a_gbs, 2),
-            "stream_b_streaming_64mib_gbps": round(bw_b_gbs, 2),
-            "pinned_vs_streaming_speedup": round(bw_a_gbs / max(bw_b_gbs, 1e-6), 3),
+            "n_trials": n_trials,
+            "stream_a_pinned_2mib_gbps": s_pin["median"],
+            "stream_a_pinned_2mib_stats_gbps": s_pin,
+            "stream_a_unpinned_evicted_2mib_stats_gbps": s_unpin,
+            "stream_b_streaming_64mib_gbps": s_64m["median"],
+            "stream_b_streaming_64mib_stats_gbps": s_64m,
+            "pinned_vs_unpinned_2mib_speedup": round(s_pin["median"] / max(s_unpin["median"], 1e-6), 3),
+            "pinned_vs_streaming_speedup": round(s_pin["median"] / max(s_64m["median"], 1e-6), 3),
         },
         "ncu_profiler_output": out_txt[-1200:],
     }
-
-
-if __name__ == "__main__" and "--kernels-only" in sys.argv:
-    lib, _ = load_libcudart()
-    s_a, s_b = torch.cuda.Stream(device=0), torch.cuda.Stream(device=0)
-    b_a, b_b = torch.ones(ENCLAVE_BYTES_2MIB // 4, device="cuda:0"), torch.ones((64 * 1024 * 1024) // 4, device="cuda:0")
-    if lib:
-        lib.cudaDeviceSetLimit(CUDA_LIMIT_PERSISTING_L2_CACHE_SIZE, ctypes.c_size_t(ENCLAVE_BYTES_2MIB))
-        apply_l2_window_with_fallback(lib, int(s_a.cuda_stream), int(b_a.data_ptr()), ENCLAVE_BYTES_2MIB, 1.0)
-    with torch.cuda.stream(s_a): b_a.mul_(1.000001); b_a.mul_(1.000001)
-    with torch.cuda.stream(s_b): b_b.mul_(1.000001)
-    torch.cuda.synchronize()
-

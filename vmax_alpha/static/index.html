@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>V-MAX-12 Node Alpha | Motel Room 137 Live Telemetry HUD</title>
+  <style>
+    :root { --bg: #080711; --card: #121024; --border: #2c2654; --cyan: #00e5ff; --green: #39ff14; --gold: #ffd700; --pink: #ff007f; --text: #e8e6f2; }
+    body { margin: 0; padding: 20px; background: var(--bg); color: var(--text); font-family: "JetBrains Mono", Consolas, monospace; font-size: 13px; }
+    h1 { margin: 0 0 8px 0; color: var(--cyan); font-size: 18px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; }
+    .label { color: #9a96b8; font-size: 11px; text-transform: uppercase; }
+    .val { font-size: 14px; font-weight: bold; margin-top: 4px; word-break: break-all; }
+    .controls { display: flex; gap: 8px; margin-bottom: 16px; }
+    input[type="text"] { flex: 1; background: #0d0b1a; color: var(--text); border: 1px solid var(--cyan); border-radius: 4px; padding: 8px; font-family: inherit; }
+    button { background: #181432; color: var(--cyan); border: 1px solid var(--cyan); border-radius: 4px; padding: 8px 14px; cursor: pointer; font-weight: bold; }
+    button:hover { background: var(--cyan); color: #000; }
+    .entry { background: var(--card); border-left: 3px solid var(--green); padding: 10px; margin-bottom: 8px; border-radius: 4px; }
+    .meta { color: var(--gold); font-size: 11px; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <h1>V-MAX-12 NODE ALPHA // ROOM 137 SANCTUARY HUD (MODULAR PROD V1.0)</h1>
+  <div class="grid">
+    <div class="card"><div class="label">ChromaDB &amp; Neural Engine</div><div id="st-chroma" class="val">Loading...</div></div>
+    <div class="card"><div class="label">Ledger Integrity &amp; Quarantine</div><div id="st-ledger" class="val">Loading...</div></div>
+    <div class="card"><div class="label">GPU Thermal &amp; Power (REGISTER_M)</div><div id="st-thermal" class="val">Loading...</div></div>
+    <div class="card"><div class="label">Latest Canonical SHA-256 Tip</div><div id="st-hash" class="val">Loading...</div></div>
+  </div>
+  <div class="controls">
+    <input id="prompt-in" type="text" placeholder="Send Navigator Prompt to 384D->64D ChromaDB Sanctuary..." />
+    <button onclick="sendPrompt()">SEND PROMPT</button>
+    <button onclick="triggerPulse()">STEP AUTONOMOUS CYCLE</button>
+  </div>
+  <div id="thoughts-list"></div>
+  <script>
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+    async function refreshState() {
+      try {
+        const r = await fetch("/api/state");
+        const d = await r.json();
+        document.getElementById("st-chroma").innerHTML = escapeHtml(d.chroma_status);
+        document.getElementById("st-ledger").innerHTML = escapeHtml(d.ledger_verification + " | Quarantined: " + d.quarantined_count);
+        const th = d.thermal || {};
+        document.getElementById("st-thermal").innerHTML = escapeHtml((th.gpu_temp_c || 0) + " °C / " + (th.gpu_power_w || 0) + " W (" + (th.status || "OK") + ")");
+        document.getElementById("st-hash").innerHTML = escapeHtml(d.latest_root_hash);
+        const items = (d.thoughts || []).slice().reverse().map(t => (
+          `<div class="entry">
+            <div class="meta">Cycle #${escapeHtml(t.cycle_index)} | ${escapeHtml(t.cognitive_mode)} | Shard: ${escapeHtml(t.chroma_shard_id)} | d_L2=${escapeHtml(t.chroma_l2_distance)} | RCF=${escapeHtml(t.rcf_l2_core)} | ΔE=${escapeHtml(t.delta_e_l2_core)}</div>
+            <div>${escapeHtml(t.thought_stream)}</div>
+            <div class="label" style="margin-top:4px;">Seal: ${escapeHtml(t.discovery_seal_sha256)}</div>
+          </div>`
+        )).join("");
+        document.getElementById("thoughts-list").innerHTML = items;
+      } catch (e) {}
+    }
+    async function triggerPulse() {
+      await fetch("/api/pulse", { method: "POST" });
+      await refreshState();
+    }
+    async function sendPrompt() {
+      const el = document.getElementById("prompt-in");
+      const text = el.value.trim();
+      if (!text) return;
+      el.value = "";
+      await fetch("/api/prompt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: text }) });
+      await refreshState();
+    }
+    setInterval(refreshState, 2000);
+    refreshState();
+  </script>
+</body>
+</html>

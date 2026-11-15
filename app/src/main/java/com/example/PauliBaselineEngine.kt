@@ -40,7 +40,7 @@ object PauliBaselineConstants {
     const val APPENDIX_C_SANCTUARY_ROOT_HASH =
         "69288564d06ccb62ff7cd4f6dd3e388d36c984ce00aa0d2baf7d00435142f1c4"
     const val APPENDIX_D_CHROMA_V20_SEAL =
-        "5fd4c7efd44cbbe04fa957d21954f9dcb028e6b3a16052c54838d058142563e"
+        "5fd4c7efd44cbbe04fa4957d21954f9dcb028e6b3a16052c54838d058142563e"
     const val APPENDIX_E_V21_JSON_ROOT_SEAL =
         "babe652608bb3b0445bca2f56cf81e2b4a1a4f91508cac3b01228a0620fcf298"
     const val APPENDIX_E3_CYCLE04_HOP_SEAL =
@@ -794,11 +794,32 @@ class PauliV21SanctuaryEngine {
             }
         }
 
-        private fun formatPythonDouble(d: Double): String {
-            if (d == 0.0) return "0.0"
+        internal fun formatPythonDouble(d: Double): String {
+            if (d == 0.0) return if (1.0 / d < 0.0) "-0.0" else "0.0"
             val absD = abs(d)
             if (absD < 1e-4 || absD >= 1e16) {
-                return d.toString().replace("E", "e")
+                val rawExp = d.toString().lowercase(Locale.US)
+                val eIdx = rawExp.indexOf('e')
+                if (eIdx != -1) {
+                    var mantissa = rawExp.substring(0, eIdx)
+                    if (mantissa.endsWith(".0")) {
+                        mantissa = mantissa.substring(0, mantissa.length - 2)
+                    }
+                    var expPart = rawExp.substring(eIdx + 1)
+                    val sign = when {
+                        expPart.startsWith("-") -> "-"
+                        expPart.startsWith("+") -> "+"
+                        else -> "+"
+                    }
+                    if (expPart.startsWith("-") || expPart.startsWith("+")) {
+                        expPart = expPart.substring(1)
+                    }
+                    if (expPart.length == 1) {
+                        expPart = "0$expPart"
+                    }
+                    return "${mantissa}e$sign$expPart"
+                }
+                return rawExp
             }
             val raw = d.toString()
             return if (raw.contains('E') || raw.contains('e')) {

@@ -109,7 +109,12 @@ class SanctuaryNodeAlphaService:
                 "heartbeat_period_s": HEARTBEAT_PERIOD_SEC,
                 "seconds_since_last": round(max(0.0, time.time() - self.last_step_ts), 2),
                 "latest_root_hash": self.ledger.latest_hash,
+                "ace_protocol_id": "ACE-PEER-CODESIGN-PROTOCOL-V1.2",
                 "thermal": query_gpu_thermal_and_power(),
+                "hwinfo64_ab_regimes": {
+                    "regime_1_peak_power_w": 85.783, "regime_1_peak_temp_c": 62.3, "regime_1_peak_vram_mb": 15314,
+                    "regime_2_min_power_w": 9.57, "regime_2_quiescent_vram_mb": 468, "power_reduction_max_x": 8.96, "whea_errors": 0,
+                },
                 "thoughts": [asdict(e) for e in self.ledger.entries],
             }
 

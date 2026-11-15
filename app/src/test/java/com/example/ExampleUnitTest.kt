@@ -724,6 +724,11 @@ class ExampleUnitTest {
       "thought_stream" to "Extended V1.2 16-field telemetry test hop."
     )
     val v12Seal = V12NodeAlphaBridge.computeDynamicCanonicalJsonHash(basePayload)
+    assertEquals(
+      "Cycle 05 16-field canonical SHA-256 must match AntiG Python golden digest bit-exact",
+      V12Constants.CYCLE05_TEST_16FIELD_SEAL,
+      v12Seal
+    )
     val v12EntryMap = basePayload.toMutableMap().apply { put("discovery_seal_sha256", v12Seal) }
     val v12JsonLine = v12EntryMap.entries.joinToString(",", "{", "}") { (k, v) ->
       val serialized = when (v) {
@@ -749,6 +754,64 @@ class ExampleUnitTest {
       PauliBaselineConstants.APPENDIX_C_SANCTUARY_ROOT_HASH
     )
     assertFalse("1-digit mutation in V1.2 gpu_power_w must break canonical seal", tamperV12Res.intact)
+  }
+
+  @Test
+  fun testAceSyncLedgerContractParity() {
+    val candidates = listOf(
+      java.io.File("../bridge/ACE_SYNC_LEDGER.json"),
+      java.io.File("bridge/ACE_SYNC_LEDGER.json")
+    )
+    val contractFile = candidates.firstOrNull { it.exists() }
+    assertNotNull("bridge/ACE_SYNC_LEDGER.json must exist in workspace root", contractFile)
+
+    @Suppress("UNCHECKED_CAST")
+    val root = MiniJson.parse(contractFile!!.readText(Charsets.UTF_8)) as Map<String, Any?>
+    assertEquals(V12Constants.ACE_PROTOCOL_ID, root["protocol_id"])
+    assertEquals(V12Constants.PROTOCOL_VERSION, root["protocol_version"])
+
+    @Suppress("UNCHECKED_CAST")
+    val golden = root["golden_vectors_sha256"] as Map<String, Any?>
+    assertEquals(
+      PauliBaselineConstants.PAULI_LITTLE_VECTOR_F32_SEAL,
+      golden["canonical_little_vector_f32_seal"]
+    )
+    assertEquals(
+      V12Constants.EXPECTED_UNIT_S63_64000_F32_SHA256,
+      golden["f04_3_unit_s63_64000_f32_seed137"]
+    )
+    assertEquals(
+      PauliBaselineConstants.APPENDIX_C_SANCTUARY_ROOT_HASH,
+      golden["appendix_c_sanctuary_root_hash"]
+    )
+    assertEquals(
+      PauliBaselineConstants.APPENDIX_D_CHROMA_V20_SEAL,
+      golden["appendix_d_chroma_v20_seal"]
+    )
+    assertEquals(
+      PauliBaselineConstants.GENESIS_SEAL_REV17_2,
+      golden["genesis_seal_rev17_2"]
+    )
+    assertEquals(
+      PauliBaselineConstants.APPENDIX_E_V21_JSON_ROOT_SEAL,
+      golden["appendix_e_v21_cycle03_root_seal"]
+    )
+    assertEquals(
+      PauliBaselineConstants.APPENDIX_E3_CYCLE04_HOP_SEAL,
+      golden["appendix_e3_cycle04_hop_seal"]
+    )
+    assertEquals(
+      V12Constants.CYCLE05_TEST_16FIELD_SEAL,
+      golden["v12_unit_test_cycle05_16field_seal"]
+    )
+    assertEquals(
+      V12Constants.V12_CHAIN_TIP_REF,
+      golden["v12_room137_live_chain_tip_4entries"]
+    )
+
+    @Suppress("UNCHECKED_CAST")
+    val openItems = root["open_review_items"] as List<Any?>
+    assertEquals("All ACE co-design audit items must be closed", 0, openItems.size)
   }
 }
 

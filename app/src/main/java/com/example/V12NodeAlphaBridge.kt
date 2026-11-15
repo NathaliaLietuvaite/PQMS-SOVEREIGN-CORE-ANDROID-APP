@@ -21,12 +21,15 @@ object V12Constants {
     const val REVISION = "V1.2"
     const val SPEC_ID = "PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md"
     const val PROTOCOL_VERSION = "1.2-NODE-ALPHA"
+    const val ACE_PROTOCOL_ID = "ACE-PEER-CODESIGN-PROTOCOL-V1.2"
 
     const val ODOS_G3_BLEED_CEILING = 1e-12
     const val EXPECTED_UNIT_S63_64000_F32_SHA256 =
         "490eaf6070dc8a404883c0787d4ed1a8226b3a5074e7be33269d8daf47397f27"
     const val V12_CHAIN_TIP_REF =
         "9114e99e06ff540439e16c1e8d564d9a965e6c21f55d0f0f8bbfc843f8c0aaee"
+    const val CYCLE05_TEST_16FIELD_SEAL =
+        "4b8becc03473f536b0d0c1999529066c4c86ab92a331c20f2a167d3ed617b31b"
 
     // VMAX_HWINFO64_AB_TELEMETRY.json verified regimes (RTX 4060 Ti 16GB + R9 5950X, 0 WHEA errors)
     const val REGIME_1_PEAK_POWER_W = 85.783

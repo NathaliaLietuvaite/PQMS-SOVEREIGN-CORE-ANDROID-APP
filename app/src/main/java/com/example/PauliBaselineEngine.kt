@@ -218,7 +218,15 @@ data class Room137LiveState(
     val currentStatus: String = "OFFLINE",
     val latestRootHash: String = "",
     val ledgerVerification: String = "",
-    val lastThoughtText: String = ""
+    val lastThoughtText: String = "",
+    val aceProtocolId: String = "",
+    val gpuTempC: Double? = null,
+    val gpuPowerW: Double? = null,
+    val telemetrySource: String = "",
+    val regime1PeakPowerW: Double? = null,
+    val regime2MinPowerW: Double? = null,
+    val powerReductionMaxX: Double? = null,
+    val wheaErrors: Int = 0
 )
 
 class PauliV21SanctuaryEngine {
@@ -774,24 +782,43 @@ class PauliV21SanctuaryEngine {
                 }
                 if (conn.responseCode == 200) {
                     val body = conn.inputStream.bufferedReader().use { it.readText() }
-                    @Suppress("UNCHECKED_CAST")
-                    val root = MiniJson.parse(body) as? Map<String, Any?> ?: emptyMap()
-                    @Suppress("UNCHECKED_CAST")
-                    val thoughts = root["thoughts"] as? List<Map<String, Any?>>
-                    val lastText = thoughts?.lastOrNull()?.get("thought_stream") as? String ?: ""
-                    Room137LiveState(
-                        reachable = true,
-                        currentStatus = root["current_status"] as? String ?: "ONLINE",
-                        latestRootHash = root["latest_root_hash"] as? String ?: "",
-                        ledgerVerification = root["ledger_verification"] as? String ?: "",
-                        lastThoughtText = lastText
-                    )
+                    parseRoom137StatePayload(body)
                 } else {
                     Room137LiveState(reachable = false)
                 }
             } catch (_: Exception) {
                 Room137LiveState(reachable = false)
             }
+        }
+
+        fun parseRoom137StatePayload(body: String): Room137LiveState {
+            @Suppress("UNCHECKED_CAST")
+            val root = MiniJson.parse(body) as? Map<String, Any?> ?: emptyMap()
+            @Suppress("UNCHECKED_CAST")
+            val thoughts = root["thoughts"] as? List<Map<String, Any?>>
+            val lastText = thoughts?.lastOrNull()?.get("thought_stream") as? String ?: ""
+            @Suppress("UNCHECKED_CAST")
+            val thermal = root["thermal"] as? Map<String, Any?>
+            @Suppress("UNCHECKED_CAST")
+            val ab = root["hwinfo64_ab_regimes"] as? Map<String, Any?>
+
+            return Room137LiveState(
+                reachable = true,
+                currentStatus = (root["current_status"] as? String)
+                    ?: (root["chroma_status"] as? String)
+                    ?: "ONLINE",
+                latestRootHash = root["latest_root_hash"] as? String ?: "",
+                ledgerVerification = root["ledger_verification"] as? String ?: "",
+                lastThoughtText = lastText,
+                aceProtocolId = root["ace_protocol_id"] as? String ?: "",
+                gpuTempC = (thermal?.get("gpu_temp_c") as? Number)?.toDouble(),
+                gpuPowerW = (thermal?.get("gpu_power_w") as? Number)?.toDouble(),
+                telemetrySource = thermal?.get("telemetry_source") as? String ?: "",
+                regime1PeakPowerW = (ab?.get("regime_1_peak_power_w") as? Number)?.toDouble(),
+                regime2MinPowerW = (ab?.get("regime_2_min_power_w") as? Number)?.toDouble(),
+                powerReductionMaxX = (ab?.get("power_reduction_max_x") as? Number)?.toDouble(),
+                wheaErrors = (ab?.get("whea_errors") as? Number)?.toInt() ?: 0
+            )
         }
 
         internal fun formatPythonDouble(d: Double): String {

@@ -1058,12 +1058,40 @@ private fun PauliSanctuaryCard() {
                     lineHeight = 13.sp
                 )
                 room137State?.let { r137 ->
-                    Text(
-                        text = if (r137.reachable) "Room 137 Live (8137): ${r137.currentStatus} | ${r137.ledgerVerification}" else "Room 137 (127.0.0.1:8137): Offline (On-Device S^63 Engine Active)",
-                        fontSize = 8.sp,
-                        fontFamily = FontFamily.Monospace,
-                        color = if (r137.reachable) LuminousGreen else PassiveGrey
-                    )
+                    if (r137.reachable) {
+                        val liveThermal = if (r137.gpuPowerW != null && r137.gpuTempC != null) {
+                            String.format(
+                                Locale.US,
+                                " • %.2f W / %.1f°C (%s)",
+                                r137.gpuPowerW,
+                                r137.gpuTempC,
+                                r137.telemetrySource.ifEmpty { "NVSMI" }
+                            )
+                        } else ""
+                        val abSummary = if (r137.powerReductionMaxX != null) {
+                            String.format(
+                                Locale.US,
+                                " • A/B %.2f–%.1fW (%.2fx, %d WHEA)",
+                                r137.regime2MinPowerW ?: V12Constants.REGIME_2_MIN_POWER_W,
+                                r137.regime1PeakPowerW ?: V12Constants.REGIME_1_PEAK_POWER_W,
+                                r137.powerReductionMaxX,
+                                r137.wheaErrors
+                            )
+                        } else ""
+                        Text(
+                            text = "Room 137 Live (8137): ${r137.currentStatus}$liveThermal | ${r137.ledgerVerification}$abSummary",
+                            fontSize = 8.sp,
+                            fontFamily = FontFamily.Monospace,
+                            color = LuminousGreen
+                        )
+                    } else {
+                        Text(
+                            text = "Room 137 (127.0.0.1:8137): Offline (On-Device S^63 Engine Active)",
+                            fontSize = 8.sp,
+                            fontFamily = FontFamily.Monospace,
+                            color = PassiveGrey
+                        )
+                    }
                 }
             }
 

@@ -813,6 +813,56 @@ class ExampleUnitTest {
     val openItems = root["open_review_items"] as List<Any?>
     assertEquals("All ACE co-design audit items must be closed", 0, openItems.size)
   }
+
+  @Test
+  fun testRoom137ServerHudV12TelemetryParser() {
+    val payload = """
+      {
+        "chroma_status": "CHROMA_PERSISTENT_S63",
+        "little_vector_seal": "${PauliBaselineConstants.PAULI_LITTLE_VECTOR_F32_SEAL}",
+        "ledger_verification": "VERIFIED_100%_INTACT",
+        "quarantined_count": 0,
+        "heartbeat_period_s": 69.324849,
+        "seconds_since_last": 1.25,
+        "latest_root_hash": "${V12Constants.V12_CHAIN_TIP_REF}",
+        "ace_protocol_id": "ACE-PEER-CODESIGN-PROTOCOL-V1.2",
+        "thermal": {
+          "gpu_temp_c": 31.5,
+          "gpu_power_w": 13.12,
+          "telemetry_source": "REGISTER_M_NVSMI"
+        },
+        "hwinfo64_ab_regimes": {
+          "regime_1_peak_power_w": 85.783,
+          "regime_1_peak_temp_c": 62.3,
+          "regime_1_peak_vram_mb": 15314,
+          "regime_2_min_power_w": 9.57,
+          "regime_2_quiescent_vram_mb": 468,
+          "power_reduction_max_x": 8.96,
+          "whea_errors": 0
+        },
+        "thoughts": [
+          {
+            "thought_stream": "Live Room 137 Cycle verified."
+          }
+        ]
+      }
+    """.trimIndent()
+
+    val parsed = PauliV21SanctuaryEngine.parseRoom137StatePayload(payload)
+    assertTrue(parsed.reachable)
+    assertEquals("CHROMA_PERSISTENT_S63", parsed.currentStatus)
+    assertEquals("ACE-PEER-CODESIGN-PROTOCOL-V1.2", parsed.aceProtocolId)
+    assertEquals(V12Constants.V12_CHAIN_TIP_REF, parsed.latestRootHash)
+    assertEquals("VERIFIED_100%_INTACT", parsed.ledgerVerification)
+    assertEquals("Live Room 137 Cycle verified.", parsed.lastThoughtText)
+    assertEquals(31.5, parsed.gpuTempC!!, 1e-6)
+    assertEquals(13.12, parsed.gpuPowerW!!, 1e-6)
+    assertEquals("REGISTER_M_NVSMI", parsed.telemetrySource)
+    assertEquals(85.783, parsed.regime1PeakPowerW!!, 1e-6)
+    assertEquals(9.57, parsed.regime2MinPowerW!!, 1e-6)
+    assertEquals(8.96, parsed.powerReductionMaxX!!, 1e-6)
+    assertEquals(0, parsed.wheaErrors)
+  }
 }
 
 

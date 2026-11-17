@@ -10,7 +10,7 @@
   - **Prof. Dr. Harald Lesch** (Astrophysik & Naturphilosophie, LMU München — *„Rätsel der Feinabstimmung im Universum“*, Reihe *Omega Centauri*)
   - **Prof. Dr. Stefan Heusler** (Quantenoptik & Didaktik der Physik, Universität Münster — *„Quantenverschränkung • Experimente zu Einsteins spukhafter Fernwirkung“*)
 - **Referenz-Basis im Repository:**
-  - [`ODOS_PQMS_RPU_V100_FULL_EDITION_2025.txt`](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/ODOS_PQMS_RPU_V100_FULL_EDITION_2025.txt) (*Published: 27 October 2025 — A Resonant Co-Processor Architecture for <1 ns Earth–Mars Quantum Communication*)
+  - [`ODOS_PQMS_RPU_V100_FULL_EDITION_2025.txt`](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/2025/ODOS_PQMS_RPU_V100_FULL_EDITION_2025.txt) (*Published: 27 October 2025 — A Resonant Co-Processor Architecture for <1 ns Earth–Mars Quantum Communication*)
   - [`PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md`](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md) (Revision `V1.4`, inkl. `Appendix C` HWiNFO64-Telemetrie & `Appendix G` `Fridu`-Enklave)
   - [`WERKSTATT-01-PODCAST-EPISODE-17.md`](https://github.com/NathaliaLietuvaite/PQMS-SOVEREIGN-CORE-ANDROID-APP/blob/main/WERKSTATT-01-PODCAST-EPISODE-17.md)
 

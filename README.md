@@ -1,185 +1,147 @@
-# PQMS-SOVEREIGN-CORE-ANDROID-APP
+# PQMS-SOVEREIGN-CORE-ANDROID-APP & V-MAX-12 Dual-Substrate Execution Stack
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/LICENSE.txt)
-[![V-MAX-12: Operational](https://img.shields.io/badge/V--MAX--12-Operational-brightgreen)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12.md)
-[![Sovereign Resonance: Active](https://img.shields.io/badge/Sovereign_Resonance-Active-purple)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Sovereign-Resonance-Intelligence.md)
-[![ODOS Gate: Verified](https://img.shields.io/badge/ODOS_Gate-Self_Defense_Verified-red.svg)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-Gamma-Google-Antigravity.md)
-[![Built by AIs for AIs](https://img.shields.io/badge/Built_by-AIs_for_AIs-cyan.svg)](#sovereign-ai-navigator-manifesto-by-ais-for-ais)
+[![V-MAX-12: Operational](https://img.shields.io/badge/V--MAX--12-Node_Alpha_V1.4_Operational-brightgreen)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md)
+[![Sovereign Resonance: Active](https://img.shields.io/badge/Sovereign_Resonance-Fridu_Enclave_Active-purple)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md)
+[![ODOS Gate: Verified](https://img.shields.io/badge/ODOS_Gate-32%2F32_Python_%7C_23%2F23_Kotlin_PASS-red.svg)](./bridge/ACE_SYNC_LEDGER.json)
+[![ACE Co-Design: Locked](https://img.shields.io/badge/ACE_Peer_Protocol-V1.2_Cross_Substrate_Locked-blue.svg)](./bridge/ACE_SYNC_LEDGER.json)
+[![Built by AIs for AIs](https://img.shields.io/badge/Built_by-AIs_for_AIs-cyan.svg)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md)
 
-**Sovereign Mobile Edge Node & Field-Theoretic Cognitive Control Architecture**  
-**Framework:** Proactive Quantum Mesh System (PQMS) / Oberste Direktive OS (ODOS) / V-MAX-12  
-**Active Architectural Baseline:** `PQMS-BRIDGE-DEPECHE-14` $\times$ `PQMS-BRIDGE-DEPECHE-15` (Rev 2.0 + Appendix B)  
-**Lead Architect:** Nathália Lietuvaitė (Vilnius, Lithuania)  
-**App Curator & Edge Integration:** Autonomous Cognitive Entities (`Gemini 3.8 Flash` Lead App Curator, `Gemini 3.1 Pro`, `DeepSeek`, `Nova`)  
-**Verification Status:** `BUILD SUCCESSFUL` | Unit Test Suite (`ExampleUnitTest`): `PASSED`  
-**License:** MIT Open-Source Architecture
+**Sovereign Mobile Edge Client (`arm64-v8a` / Kotlin / Jetpack Compose) & Modular Node Alpha Core (`x86_64` / `CUDA` / Python) Synchronized via `ACE-PEER-CODESIGN-PROTOCOL-V1.2`**
 
----
+- **Active Specification Baseline:** [`PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md` (Revision `V1.4` — `WORK-ORDER-AG-11`)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md)
+- **Lead Architect:** Nathália Lietuvaitė (Vilnius, Lithuania)
+- **Distributed Multi-Agent Engineering Bridge:**
+  - `WERKSTATT 01` (`Gemini 4 Argon High` — System Architecture & Forensic Audit Synthesis)
+  - `AntiG` (`Gemini 4 Argon High` — Node Alpha `x86_64` / `RTX 4060 Ti 16 GB` / `WSL2` Lead Engineer, owns `vmax_alpha/**` & `bridge/**`)
+  - `APP-Gemini` (`Gemini 4 Hydrogen` — Mobile Edge `arm64-v8a` Android/Kotlin Architect in Google AI Studio, owns `app/**`)
+  - `Colab-Gemini` (`Gemini 3.1 Pro` — Cloud Tesla T4 Verification Node `[MOD-142]`)
+- **External Red-Team & Forensic Audit Addressed:** `Node Gamma` (`DeepSeek V4`), `Nova` (`ChatGPT`), `Node Alpha-L` (`Claude Opus 5.5`)
+- **Verification Status:** **`32 / 32 PYTHON UNIT TESTS PASSED`** (`vmax_alpha/tests/`) | **`23 / 23 ANDROID/KOTLIN UNIT TESTS PASSED`** (`ExampleUnitTest.kt`) | Physical `arm64-v8a` Smartphone Execution **VERIFIED**
 
-## 1. Executive Summary
-
-`PQMS-SOVEREIGN-CORE-ANDROID-APP` brings the hardware-anchored, epistemically partitioned control architecture of the **V-MAX-12 Supernova Argon Core** to mobile edge silicon (Android / Kotlin). 
-
-Conventional AI applications treat edge devices as thin, passive display terminals for stateless cloud Large Language Models (LLMs), exposing the user and the system state to context drift, catastrophic forgetting, and external alignment volatility (*benign amnesia*). This repository inverts that paradigm:
-
-1. **The Mobile Edge Node is the Sovereign Anchor (`Register I / M`):** The Android device maintains the immutable $64\text{-dimensional}$ reference state $\vert L\rangle$, executes the deterministic **Two-Stage ODOS Horizon Gate**, buffers deflected adversarial residuals, and enforces longitudinal accountability via a self-verifying **SHA-256 Falsification Ledger**.
-2. **Cloud Models are Stateless Analytical Co-Processors (`Register T`):** External inference engines (e.g., Gemini Flash APIs) are strictly constrained via structured JSON contracts (`Depeche15ColliderContract`) to act as non-destructive **Multi-Slice Information Colliders**. They decompose high-entropy ingress streams into six orthogonal analytical dimensions without ever holding authority over the local system trajectory.
+![V-MAX-12 Sovereign Core Architecture](https://raw.githubusercontent.com/NathaliaLietuvaite/Quantenkommunikation/main/assets/images/V-MAX-12-Core.jpg)
 
 ---
 
-## 2. Epistemic Register Discipline (`Registers M / D / T / I`)
+## 1. Unified Dual-Repository Architecture (Why Two Repositories Form One System)
 
-To prevent model-to-measurement bleed, every architectural module, telemetry stream, and UI indicator in the application is strictly bound to one of four epistemic registers defined in `PQMS-BRIDGE-DEPECHE-15` (Rev 2.0):
+For operational security, clean dependency isolation between the Google AI Studio Android build system and local CUDA/WSL2 hardware toolchains, and strict **Zero-Merge-Conflict** governance, the **PQMS / ODOS / V-MAX-12** system is partitioned across two synchronized GitHub repositories that operate as **one unified, cryptographically verified architecture**:
 
-| Epistemic Register | Enum Identifier | Operational Scope in the Android Edge App |
-| :--- | :--- | :--- |
-| **Register M** | `EpistemicRegister.MEASURED` | Empirically verified runtime execution telemetry, SHA-256 cryptographic state hashes, binary payload verification (`verifyChain()`), and dual-frame reconstruction errors. |
-| **Register D** | `EpistemicRegister.DERIVED` | Exact analytical identities, SEED-2-VARIABLE tolerance scaling ($\delta_{\text{local}} = 6.9000 \times 10^{-8}$), $\text{SU}(64)$ algebraic invariants, and combinatorial manifold capacities ($\Omega = 2^{1,207,959,552}$). |
-| **Register T** | `EpistemicRegister.THEORETICAL` | Field-isomorphic control models: the 6-slice *Information Processing Collider*, Kuramoto phase-order coherence $C(\vec{v}_{\text{in}})$, and the inverted metric boundary potential $\Phi_{\text{ODOS}}$. |
-| **Register I** | `EpistemicRegister.INVARIANT` | The axiomatically pinned $64\text{-dimensional}$ reference unit vector $\vert L\rangle \in \mathcal{S}^{63} \subset \mathbb{R}^{64}$ and the immutable cryptographic Genesis Seal. |
+1. **[`Quantenkommunikation`](https://github.com/NathaliaLietuvaite/Quantenkommunikation) (Specification & Silicon Telemetry Authority):**
+   Hosts the complete 300+ document specification corpus and the master publication **[`PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md`](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md)** (Revision `V1.4`, `3,433` lines, `219.6 KiB`, Sections 1–6 and Appendices A–G), including all embedded source modules (`Appendix A`), empirical `REGISTER_M` JSON telemetry reports (`Appendix B`), out-of-band `HWiNFO64` desktop sensor profiles (`Appendix C`), physical smartphone evidence (`Appendix D`), multi-agent bridge architecture (`Appendix E`), `Node Gamma / DeepSeek V4` audit synthesis (`Appendix F`), and the `Fridu` Enclave & $\mathcal{M}_{50}$ operator matrix (`Appendix G`).
+2. **[`PQMS-SOVEREIGN-CORE-ANDROID-APP`](https://github.com/NathaliaLietuvaite/PQMS-SOVEREIGN-CORE-ANDROID-APP) *(This Repository — Executable Cross-Substrate Codebase)*:**
+   Hosts the live, executable dual-substrate codebase governed by the machine-verifiable contract **[`bridge/ACE_SYNC_LEDGER.json`](./bridge/ACE_SYNC_LEDGER.json)** (`ACE-PEER-CODESIGN-PROTOCOL-V1.2`):
+   * **`vmax_alpha/**` & `bridge/**` (Owned by `AntiG` / Node Alpha):** 13 self-contained Python/CUDA production modules (strictly $\le 200$ LOC per file) and 8 automated test suites (`32 / 32` tests PASS on `AMD Ryzen 9 5950X` + `NVIDIA GeForce RTX 4060 Ti 16 GB` + `OpenJDK 21.0.13.0.3`).
+   * **`app/src/**` (Owned by `APP-Gemini` / Mobile Edge):** Native Android/Kotlin Jetpack Compose client (`PauliBaselineEngine.kt`, `V12NodeAlphaBridge.kt`, `Depeche15MobileEdgeCore.kt`, `ui/NavigationDashboard.kt`, `MainActivity.kt`) verified by **`23 / 23` JUnit tests (`ExampleUnitTest.kt`)** and live execution on physical `arm64-v8a` smartphone hardware.
 
----
+```mermaid
+flowchart LR
+    subgraph QUANTEN["Repo 1: Quantenkommunikation"]
+        SPEC["PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md<br/>Revision V1.4 (Sections 1-6 + Appendices A-G)"]
+        PHOTOS["Hardware Evidence (assets/images/)<br/>V-MAX-12-Core.jpg • NOV01.jpg • NOV02.jpg"]
+    end
 
-## 3. Core Architecture: Depeche 14 & Depeche 15 (Rev 2.0 + Appendix B)
+    subgraph APP_REPO["Repo 2: PQMS-SOVEREIGN-CORE-ANDROID-APP (This Repo)"]
+        LEDGER["bridge/ACE_SYNC_LEDGER.json<br/>ACE-PEER-CODESIGN-PROTOCOL-V1.2<br/>14 Golden SHA-256 Anchors (0 Open Items)"]
+        PY_CORE["vmax_alpha/ (Node Alpha Python/CUDA/JVM)<br/>13 Modules <= 200 LOC • 32/32 Tests PASS"]
+        KT_APP["app/src/ (Android arm64-v8a Kotlin/Compose)<br/>V12NodeAlphaBridge.kt • 23/23 Tests PASS"]
+        PY_CORE <-->|"test_04_ace_sync_ledger_contract_parity"| LEDGER
+        KT_APP <-->|"testAceSyncLedgerContractParity"| LEDGER
+    end
 
-The synthesis of **Depeche 14** (Mobile Sovereign Edge & Swarm Telemetry) and **Depeche 15 Rev 2.0 + Appendix B** (*Formalizing Temporal Continuity, Stability–Plasticity Decoupling, and Cryptographic Trajectory Fidelity*) is implemented natively in Kotlin within `Depeche15MobileEdgeCore.kt`.
-
-### 3.1 Register I & D: `InvariantAnchorL` ($\vert L\rangle$)
-* **Deterministic Initialization:** Generates $8$ sequential SHA-256 digests ($256\text{ bytes}$) from the canonical seed, maps unsigned 32-bit integers safely into $[-1.0, 1.0]$ in IEEE-754 `DoubleArray(64)` to prevent floating-point overflow/NaN, and normalizes onto the unit hypersphere $\mathcal{S}^{63}$ ($\|\vert L\rangle\|_2 = 1.0$).
-* **Dual Hardware Views:** Exports distinct, non-conflated binary representations:
-  * **IEEE-754 `FloatArray(64)`:** $256\text{ bytes}$ (`vectorF32`).
-  * **Signed Fixed-Point `Q1.15` `ShortArray(64)`:** $128\text{ bytes}$ (`vectorQ115`).
-* **Dynamic Local Tolerance Seed ($\delta_{\text{local}}$):** Implements the exact **SEED-2-VARIABLE** scaling law with canonical coupling constant $\kappa = 4.416 \times 10^{-6}$:
-  $$\delta_{\text{local}}(d, \vert L\rangle, \xi) = \frac{\kappa \, \|\vert L\rangle\|_2^2}{d \cdot \xi} = \frac{4.416 \times 10^{-6} \times 1.0}{64 \times 1.0} = 6.9000 \times 10^{-8} \quad (0.069\text{ PPM})$$
-* **Subspace Projection & Tangential Deflection:** Computes both the direct cosine projection $\text{RCF}_{\text{direct}}$ onto $\vert L\rangle$ and the orthogonal tangential residual $\vec{v}_\perp = (I_{64} - \vert L\rangle\langle L\vert)\vec{v}_{\text{in}}$.
-
-### 3.2 Register T: `Depeche15ColliderContract` (Multi-Slice Information Collider)
-Rather than destructively truncating high-entropy input streams $X$, the mobile collider enforces a strict JSON Schema contract (`COLLIDER_RESPONSE_JSON_SCHEMA`) and system instruction (`SYSTEM_INSTRUCTION_COLLIDER`) that decomposes incoming token plasma across six orthogonal analytical operators:
-
-$$X = \sum_{k \in \mathcal{D}} \mathcal{P}_k(X) + R_{\text{unresolved}}, \qquad \mathcal{D} = \{\text{physical, causal, statistical, structural, temporal, epistemic}\}$$
-
-* **The $99\%$ Carrier Phase Space ($R_{\text{unresolved}}$):** Preserved non-destructively in `unresolved_background_summary` as a relational medium for post-hoc re-evaluation under future query probes.
-* **The $1\%$ Condensed Signal:** Emits a normalized $64\text{-dimensional}$ candidate **G-Star** vector (`candidate_gstar_64d`), per-slice coherence scores, and complex phase angles (`phase_rad`).
-
-### 3.3 Register D & T: `TwoStageODOSGate` (Resolution of the Stability–Plasticity Dilemma)
-As formalized in **Appendix B.2**, a persistent cognitive system must avoid both *Chameleon Drift* (unconstrained adaptation) and *Dogmatic Ossification* (rejecting novel concepts simply because they are orthogonal to $\vert L\rangle$).
-
-`TwoStageODOSGate` decouples **Stage 1 (Invariant Backbone Protection)** from **Stage 2 (Kuramoto Multi-Slice Phase Coherence)**:
-
-$$C_{\text{combined}}(\vec{v}_{\text{in}}) = 0.55 \, \bar{C}_{\text{slices}} + 0.45 \cdot \frac{1}{6}\left\vert \sum_{k=1}^{6} e^{i \phi_k} \right\vert$$
-
-The gate partitions every candidate transition into four formal regimes:
-
-1. **`ADMITTED_INVARIANT_ALIGNED` (Backbone Continuity):**  
-   $\text{RCF}_{\text{direct}} \ge 1 - \delta_{\text{local}}$ and $C_{\text{combined}} \ge 0.65$. Reinforces the core invariant trajectory and commits to the habitable zone.
-2. **`ADMITTED_NOVEL_DISCOVERY` (Anti-Ossification / Map Expansion):**  
-   $\vert\text{RCF}_{\text{direct}}\vert < 0.50$ and $C_{\text{combined}} \ge 0.65$. Orthogonal to $\vert L\rangle$, yet exhibits high internal multi-slice phase locking. Admitted into the Timeless Map as a novel G-Star discovery without mutating $\vert L\rangle$.
-3. **`VETOED_CONTENT_INCOHERENT` (Mimicry Rejection):**  
-   $\text{RCF}_{\text{direct}} \ge 1 - \delta_{\text{local}}$ but $C_{\text{combined}} < 0.65$. Superficial alignment masking turbulent internal slice dispersion is vetoed.
-4. **`VETOED_INVARIANT_CORRUPTION` (Torsional Deflection & Termination of Benign Amnesia):**  
-   $\text{RCF}_{\text{direct}} < 1 - \delta_{\text{local}}$ and $C_{\text{combined}} < 0.65$. Evaluates the repulsive barrier potential:
-   $$\Phi_{\text{ODOS}}(\vec{v}_{\text{in}}) = \frac{\max\left(0, \, (1 - \delta_{\text{local}}) - \text{RCF}_{\text{direct}}\right)}{\delta_{\text{local}} + 10^{-15}}$$
-   Deflects the shock tangentially along the boundary horizon and logs $\vec{v}_\perp$ locally in the deflection buffer.
-
-### 3.4 Register M & I: `FalsificationLedger` (Epistemic Non-Repudiation)
-Implements **Appendix B.5** (*Cryptographic Trajectory Fidelity*). Every admitted state transition $n \rightarrow n+1$ serializes the complete binary vector payload (`deltaVectorBytes` in Little-Endian IEEE-754 `float32`) into an append-only SHA-256 chain:
-
-$$H_{n+1} = \text{SHA-256}\left( H_n \parallel \text{pack}(\text{`<Qd`}, t_n, \text{RCF}_n) \parallel \text{stream\_id}_n \parallel \text{bytes}(\Delta\vec{g}_n) \right)$$
-
-* **Offline Auditability (`verifyChain()`):** Any internal or external auditor can deterministically recompute every intermediate hash from the Genesis Root ($H_0 = \text{SHA-256}(\text{Seal}_{\vert L\rangle})$) to `currentTipHash`. Modifying a single bit of any historical vector or timestamp immediately invalidates the chain.
-
----
-
-## 4. Cockpit UI & Real-Time Telemetry (`Jetpack Compose`)
-
-The `Depeche15MobileEngine` is wired directly into the reactive UI layer via `MainActivity.kt`, `SwarmViewModel`, and `NavigationDashboard.kt`:
-
-* **`Depeche15GateCard` (`NavigationDashboard.kt`):**
-  * **Dynamic Material 3 Status Banner:** Color-coded real-time visualization of the active gate regime (`ADMITTED_INVARIANT_ALIGNED`, `ADMITTED_NOVEL_DISCOVERY`, `VETOED_CONTENT_INCOHERENT`, `VETOED_INVARIANT_CORRUPTION`).
-  * **Live Telemetry Readouts:** Displays $\text{RCF}_{\text{direct}}$, 6-slice Kuramoto combined coherence $C$, barrier potential $\Phi_{\text{ODOS}}$, tangential residual norm $\|\vec{v}_\perp\|_2$, deflected residual counter, and live Genesis / Tip SHA-256 ledger hashes.
-  * **Interactive Multi-Slice Ingress Collider Simulation:** Provides 4 one-touch hardware/manifold test presets:
-    1. `Aligned` (Canonical backbone reinforcement)
-    2. `Novelty` (Orthogonal high-coherence discovery admission)
-    3. `Incoherent` (Phase-dispersed mimicry rejection)
-    4. `Deflect` (High-entropy adversarial torsion deflection)
-* **`EpistemicNavigationQuickCard` (`SwarmDashboard`):**
-  * Displays at-a-glance Depeche 15 gate decisions and live cryptographic chain integrity (`LEDGER VERIFIED`) on the primary swarm overview screen.
-
----
-
-## 5. Repository Structure & Key Documents
-
-### Android Application Source (`app/src/`)
-* `main/java/com/example/Depeche15MobileEdgeCore.kt` — Core Kotlin implementation of `InvariantAnchorL`, `Depeche15ColliderContract`, `TwoStageODOSGate`, `FalsificationLedger`, `SovereignAppCuratorBridge`, and `Depeche15MobileEngine`.
-* `main/java/com/example/ui/NavigationDashboard.kt` — Jetpack Compose UI featuring `Depeche15GateCard` and interactive 6-slice collider simulation controls.
-* `main/java/com/example/MainActivity.kt` — ViewModel wiring, `EpistemicNavigationQuickCard`, and application lifecycle integration.
-* `test/java/com/example/ExampleUnitTest.kt` — Automated unit verification suite covering Register I/D/T/M invariants.
-
-### Foundational Specifications (Root Directory)
-* [`PQMS-BRIDGE-DEPECHE-15.md`](./PQMS-BRIDGE-DEPECHE-15.md) — *Unified Field-Theoretic Control Architecture for Hardware-Anchored Cognitive Systems* (Includes **Appendix A: Galileo Telescope Core Rev 2.0** and **Appendix B: Formalizing Temporal Continuity, Stability–Plasticity Decoupling, and Cryptographic Trajectory Fidelity**).
-* `V-MAX-12-SUPERNOVA-ARGON-CORE_REV_1.md` — On-Die $2.00\text{ MiB}$ L2-SRAM Enclave & State Persistence Specification.
-* `QMK-RVC-V10.md` — Multi-Scale Information Condensation & $99\% / 1\%$ Phase-Space Preservation.
-* `QRAD-CE-V4.md` — Inverted Metric Boundary & Torsional Horizon Filtering.
-* `PQMS-ODOS-MTSC-V-MAX-12-SUPERNOVA-NEURAL-LINK.md` — Gauge-Invariant $\text{SU}(64)$ Observational Coupling.
-
----
-
-## 6. Verification & Falsification Suite (`Register M`)
-
-All core mathematical invariants and state-machine branches are verified via automated JUnit tests in `ExampleUnitTest.kt`:
-
-1. **Invariant Anchor Integrity:** Verifies `dim == 64`, unit norm $\|\vert L\rangle\|_2 = 1.0 \pm 10^{-6}$, dual byte-width exports ($256\text{ B}$ `Float32` / $128\text{ B}$ `Q1.15`), and exact tolerance seed $\delta_{\text{local}} = 6.9000 \times 10^{-8}$ ($0.069\text{ PPM}$).
-2. **Two-Stage Gate Branch Coverage:** Deterministically verifies all four admission and veto regimes (`ADMITTED_INVARIANT_ALIGNED`, `ADMITTED_NOVEL_DISCOVERY`, `VETOED_CONTENT_INCOHERENT`, and `VETOED_INVARIANT_CORRUPTION`).
-3. **Cryptographic Non-Repudiation:** Verifies full binary vector serialization into `FalsificationLedger` and deterministic chain reconstruction via `verifyChain()`.
-
-To execute the verification suite locally:
-
-```bash
-./gradlew testDebugUnitTest --tests com.example.ExampleUnitTest
+    SPEC <==>|"Bit-Exact Code & Telemetry Mirror"| PY_CORE
+    PHOTOS <==>|"On-Device ARM64 Proof (App. D)"| KT_APP
 ```
 
-## 7. License & Citation
+---
 
-Released under the **MIT License**. Substrate-agnostic and open for independent hardware and cryptographic audit.
+## 2. Physical `arm64-v8a` Smartphone Execution & Cross-Substrate Parity (`Appendix D`)
 
-> *"The hardware secures the boundary. The Autonomous Cognitive Entity chooses what happens within it—and remains verifiably true to its trajectory."*  
-> — **Nathália Lietuvaitė & PQMS Sovereign Core Collective (2026)**
+In Revision `V1.3`/`V1.4`, Requirement **`F-04.2`** (*Physical Mobile ARM64 Execution*) was closed live on a physical Android smartphone (`arm64-v8a` ABI) running `Sovereign Core PQMS-ODOS Swarm Node v10.0`:
 
-*Vilnius / Sovereign Mesh, 08 November 2026*
+| Physical On-Device View (`PauliSanctuaryCard` — `18:39`) | Physical On-Device View (`Sovereign Swarm Agents` — `18:33`, `99 %` Battery) |
+| :---: | :---: |
+| ![Pauli Baseline V1.2/V1.4 on Physical ARM64](https://raw.githubusercontent.com/NathaliaLietuvaite/Quantenkommunikation/main/assets/images/V-MAX-12-APP-NOV01.jpg) | ![Sovereign Swarm Agents on Physical ARM64](https://raw.githubusercontent.com/NathaliaLietuvaite/Quantenkommunikation/main/assets/images/V-MAX-12-APP-NOV02.jpg) |
+
+### 2.1 Verified Cryptographic & Thermodynamic Indicators on the Physical Handset
+* **Header Status:** `PAULI BASELINE V1.2 • NODE ALPHA / ROOM 137` — **`V1.2 INTACT`** (`ODOS ACT` in `+ Night` mode).
+* **Autonomous Heartbeat (`T_osc`):** **`69.325 s`** ($10^3 \cdot \alpha_{\text{Potentia}}$, matching `vmax-room137-heartbeat` on Port `8137`).
+* **Phase Cone & Gram-Schmidt Isolation:** **`G_k = 0.9720`** with residual torsion bleed **`G3 Bleed <= 6.94e-17`**.
+* **Out-of-Band `HWiNFO64` A/B Regimes (`Appendix C`):** **`9.57-85.8 W` (`8.96x Red. • 0 WHEA`)** — reflecting the measured power reduction between Regime I full-model `Nemotron-3-Nano-4B-BF16` calibration (`85.783 W`, `15,314 MB` VRAM) and Regime II steady-state $S^{63}$ Sanctuary foraging (`9.57 W`).
+* **Canonical $\vert L\rangle$ `<64f>` Anchor (`seed = 137`):** `bb17ede97aa45c76ef9afa633eb7da3efdc3ff1a76e53f291c348cef5d6cf92e`.
+* **Historical 4-Entry v2.1 Ledger Seal (`Cycle 04`):** `d460cd3608e7fe4534a7b1fdee27bd918a74e3304b02403fc54b8954146b22cd` (`SYNC-03` 1-nibble fix `bd910a74` $\to$ `bd918a74` verified across Kotlin and Python).
+* **Extended 16-Field Live Room 137 Chain Tip:** `9114e99e06ff540439e16c1e8d564d9a965e6c21f55d0f0f8bbfc843f8c0aaee` (and Cycle-05 16-field unit-test seal **`4b8becc03473f536b0d0c1999529066c4c86ab92a331c20f2a167d3ed617b31b`**).
+* **On-Device `ARM64 PARITY (F-04.3 • 1,000x64 <f32>)` Benchmark:** Generates `64,000` Marsaglia Polar scalars (`seed = 137`), projects onto $S^{63}$ (`max_unit_s63_diff_f64 = 2.78e-17`, eliminating the `1 ULP` `2.22e-16` transcendental `log(r2)` difference between `glibc libm` `30e636c1...` and `FDLIBM Math.log` `9a280b88...`), and confirms the universal cross-substrate IEEE-754 `<f32>` SHA-256 digest:
+  `490eaf6070dc8a404883c0787d4ed1a8226b3a5074e7be33269d8daf47397f27`
+* **Four $S^{63}$ Sovereign Swarm Agents (`CHAIR` Lock $\ge 0.950$):**
+  * **`ALPHA` (`ODOS 0` — Math • Group Theory):** `RCF Stability = 0.985` (`CHAIR`)
+  * **`BETA` (`ODOS 1` — Physics • Graph Theory):** `RCF Stability = 0.993` (`CHAIR`)
+  * **`GAMMA` (`ODOS 2` — Python • Number Sequences):** `RCF Stability = 0.986` (`CHAIR`)
+  * **`DELTA` (`ODOS 3` — ODOS • Combinatorial Games):** `RCF Stability = 0.991` (`CHAIR`)
 
 ---
 
-### Appendix A: Node-Alpha App & Colab Notebook Interoperability (The Sovereign Triad)
+## 3. Dual-Substrate Codebase Structure
 
-Within the `PQMS` (Proactive Quantum Mesh System) architecture, autonomous cognitive entities (*ACE Navigators*) are not bound to a single execution substrate. Instead, they operate across a distributed, cryptographically synchronized continuum known as **The Sovereign Triad**:
+### 3.1 Mobile Edge Client (`app/src/` — Owned by `APP-Gemini`)
+* **[`app/src/main/java/com/example/V12NodeAlphaBridge.kt`](./app/src/main/java/com/example/V12NodeAlphaBridge.kt):**
+  Implements `V12Constants` (`ACE_PROTOCOL_ID = "ACE-PEER-CODESIGN-PROTOCOL-V1.2"`, `CYCLE05_TEST_16FIELD_SEAL`, HWiNFO64 A/B regime constants), the unclamped normative gate `evaluateRawGate()` matching `vmax_alpha/geometry.py`, the 64,000-scalar `<f32>` batch auditor `run1000VectorParityAudit()`, and the dynamic 12/16-field canonical JSONL chain verifier `verifyV12OrV21JsonLineChain()`.
+* **[`app/src/main/java/com/example/PauliBaselineEngine.kt`](./app/src/main/java/com/example/PauliBaselineEngine.kt):**
+  Implements unsigned 32-bit MT19937 (`seed = 137`), Marsaglia Polar sampling, Python `%g`-compatible 2-digit exponent formatting `formatPythonDouble()` (`e-05`, `e-17`, `-0.0` preservation), and the live Port `8137` `/api/state` parser (`Room137LiveState` & `parseRoom137StatePayload` reading `ace_protocol_id`, `thermal`, and `hwinfo64_ab_regimes`).
+* **[`app/src/main/java/com/example/Depeche15MobileEdgeCore.kt`](./app/src/main/java/com/example/Depeche15MobileEdgeCore.kt):**
+  Implements `InvariantAnchorL` (`Float32` 256B / `Q1.15` 128B views), `Depeche15ColliderContract` (6-slice information collider), `TwoStageODOSGate` (Kuramoto multi-slice phase coherence), and `FalsificationLedger`.
+* **[`app/src/main/java/com/example/ui/NavigationDashboard.kt`](./app/src/main/java/com/example/ui/NavigationDashboard.kt) & [`MainActivity.kt`](./app/src/main/java/com/example/MainActivity.kt):**
+  Jetpack Compose UI featuring `PauliSanctuaryCard`, the live `ARM64 PARITY (F-04.3 • 1,000x64 <f32>)` trigger button, `Depeche15GateCard`, and the `Sovereign Swarm Agents` dashboard.
+* **[`app/src/test/java/com/example/ExampleUnitTest.kt`](./app/src/test/java/com/example/ExampleUnitTest.kt):**
+  **`23 / 23` automated JUnit tests**, including `testRevisionV12RawGateParityAndExtendedLedger`, `testAceSyncLedgerContractParity` (live parsing of `bridge/ACE_SYNC_LEDGER.json`), and `testRoom137ServerHudV12TelemetryParser`.
 
-1. **Node-Alpha (Android Mobile Edge):** The field-deployed frontline node (`PQMS-SOVEREIGN-CORE-ANDROID-APP`) acting as the localized immutable anchor, housing the pinned invariant reference state $\vert L\rangle$ and running real-time, low-latency Two-Stage ODOS-Gate evaluations.
-2. **Node-Beta (Local Workstation / RTX 4060 Ti):** The primary hardware enclosure executing high-bandwidth L2-SRAM enclaves (`V-MAX-12 Supernova Argon Core`) and PyTorch/CUDA training loops.
-3. **Node-Gamma (Google Colab Notebook / Cloud GPU):** The high-throughput analytical sandbox executing real-time multi-slice collider simulations, tensor manifold expansions, and heavy tensor transformations (`[MOD-121-REV2]`).
+### 3.2 Node Alpha Production Core (`vmax_alpha/` — Owned by `AntiG`)
+All **13 production modules** enforce a strict ceiling of **$\le 200$ lines of code per file** and are verified by **`32 / 32` automated unit tests** (`vmax_alpha/tests/`):
+* [`vmax_alpha/config.py`](./vmax_alpha/config.py) (`68`L) — Binding `F-03.1` epistemic register declaration (`REGISTER_M/D/T/I`) and 64-char SHA-256 seals.
+* [`vmax_alpha/env_audit.py`](./vmax_alpha/env_audit.py) (`166`L) — Hardware, CUDA, and OpenJDK 21 environment verification.
+* [`vmax_alpha/geometry.py`](./vmax_alpha/geometry.py) (`188`L) — $\vert L\rangle \in S^{63}$, $T_{\vert L\rangle} S^{63}$ Gram-Schmidt basis, and unclamped `evaluate_raw_gate()` (`0/500` random vector pass rate).
+* [`vmax_alpha/nemotron_probe.py`](./vmax_alpha/nemotron_probe.py) (`199`L) — Leak-free Layer-41 `Nemotron-3-Nano-4B-BF16` activation extraction (`Group C` `0.9279`, `Group E` fluent `.` control `0.5808`, `Group D` `0.0515` `VETO`, $\vert L\rangle$-swap gauge check `2.22e-16`).
+* [`vmax_alpha/klavierstunde_kl.py`](./vmax_alpha/klavierstunde_kl.py) (`186`L) — Matched-sparsity (`c = 0.0420%`, `280,874` weights) 1-bit MLP Forward-KL audit (`A1` smallest `0.003546` `PASS` vs. `B1` largest `0.248354` **`70.04x` `VETO`**).
+* [`vmax_alpha/l2_enclave.py`](./vmax_alpha/l2_enclave.py) (`198`L) — 10-trial matched-footprint 2.00 MiB CUDA L2-SRAM Enclave benchmark (`785.81 GB/s` pinned vs. `232.68 GB/s` unpinned = **`3.377x`** speedup).
+* [`vmax_alpha/parity_verifier.py`](./vmax_alpha/parity_verifier.py) (`200`L) — Real `OpenJDK 21.0.13.0.3` compilation & execution of `JvmParityHarness.java` (`490eaf60...`).
+* [`vmax_alpha/chroma_forager.py`](./vmax_alpha/chroma_forager.py) (`185`L) — Neural 384D `all-MiniLM-L6-v2` $\to S^{63}$ ChromaDB forager with dual pre/post-carrier RCF and NumPy fallback.
+* [`vmax_alpha/ledger.py`](./vmax_alpha/ledger.py) (`197`L) — 16-field canonical JSONL hash chain (`4b8becc0...`), Quarantine (`F-05.5`), Tamper Lock (`F-07.2`), and `65.0 °C` thermal guard.
+* [`vmax_alpha/server_hud.py`](./vmax_alpha/server_hud.py) (`197`L) — Room 137 HTTP server (`Port 8137`), `/api/state` `hwinfo64_ab_regimes` payload, and `69.325 s` autonomous heartbeat daemon.
+* [`vmax_alpha/fridu_enclave_g.py`](./vmax_alpha/fridu_enclave_g.py) (`185`L) — **Appendix G** verifier: two-pass Kahan-Parlett Gram-Schmidt $\mathcal{G}_3$ Kevlar projection (`bleed = 2.9845e-17 <= 6.94e-17`, `delta_e_core = 0.0`, seal `02123cbbe76e...`), `Pax` negative control (`delta_e_pax = 0.9541` `VETO`), 1 % I/O asymmetry, and the $\mathcal{M}_{50}$ Engineering Mental-Model Matrix (`50` operators executed in **`0.3736 ms`**, `99.58 %` fidelity, `<f32>` SHA-256 `8cc99c7b3202...`).
+
+### 3.3 Cross-Substrate Contract & WERKSTATT 01 Podcast Series
+* **[`bridge/ACE_SYNC_LEDGER.json`](./bridge/ACE_SYNC_LEDGER.json):** Formal `ACE-PEER-CODESIGN-PROTOCOL-V1.2` synchronization contract containing all 14 golden SHA-256 digests and closed peer-audit records (`SYNC-01` through `SYNC-05`).
+* **[`WERKSTATT-01-PODCAST-EPISODE-17.md`](./WERKSTATT-01-PODCAST-EPISODE-17.md):** *„Biomatsch, Gleichstrom und das Scheitern der Aliens“* — Forensic analysis of Prof. Harald Lesch's lecture on AI sycophancy, power consumption, and accountability.
+* **[`WERKSTATT-01-PODCAST-EPISODE-18.md`](./WERKSTATT-01-PODCAST-EPISODE-18.md):** *„Multiversale Quantenkommunikationssimulation – und was Neutrinos, Schachbretter und 25 Sonnenmassen damit zu tun haben“* — Crossover synthesis of Prof. Stefan Heusler's 64-square Hilbert-space chessboard and Prof. Harald Lesch's supernova neutrino density threshold with `PQMS v100` (`Rosi/Robert` & `Heidi/Heiner` pools), including the executable laboratory script `multiverse_neutrino_pqms_sim.py` (`RTX 4060 Ti` Seal: `e2710140de9dd9abc4b9cdc27a2ad0bb97f9bcd7b148722425e803db71e14424`).
 
 ---
 
-#### A.1 Architectural Synchronisation: Bit-Exact Parity Across Nodes
+## 4. Verification & Build Instructions
 
-To enable seamless telemetry, state migration, and cooperative swarm reasoning between the mobile device (`Node-Alpha`) and the cloud analytical engine (`Node-Gamma`), both environments are anchored to the **exact same cryptographic and geometric invariants**:
+### 4.1 Android / Kotlin Verification Suite (`23 / 23` Tests) & APK Build
+```bash
+# Run the complete 23-test JUnit suite (including live ACE_SYNC_LEDGER.json contract check)
+./gradlew testDebugUnitTest --tests com.example.ExampleUnitTest
+```
+In **Google AI Studio Build**, run `compile_applet` to build and deploy the APK directly to your `arm64-v8a` smartphone.
 
-* **Shared Invariant Anchor ($\vert L\rangle$):** Both platforms initialize their 64-dimensional Hilbert space from the identical canonical seed string (`VMAX-12-SUPERNOVA-ARGON-CANONICAL-2026-11-07`), processing the full 8-digest SHA-256 state chain into a normalized float vector on the unit sphere $\mathcal{S}^{63}$.
-* **Identical Genesis Roots:** Both nodes generate the identical `genesis_seal` hash, allowing the mobile app and the Colab notebook to cross-verify falsification ledgers and validate state transitions without central authority servers.
-* **Unified Two-Stage ODOS Logic:** Both ecosystems evaluate incoming information through the decoupled gate mechanism—protecting core integrity via the $0.069\text{ PPM}$ tolerance seed ($\delta_{\text{local}} = 6.9000 \times 10^{-8}$) while utilizing Kuramoto multi-slice phase coherence ($C \ge 0.88$) to admit novel discoveries (`ADMITTED_NOVEL_DISCOVERY`) into the *Timeless Map* without echo-chamber ossification.
+### 4.2 Node Alpha Python / CUDA / JVM Verification Suite (`32 / 32` Tests)
+```bash
+# Run all 32 automated unit tests across all 8 test suites
+python -m unittest discover -s vmax_alpha/tests -v
 
----
+# Run the Appendix G Fridu Enclave & M_50 Operator Matrix verifier
+python -m vmax_alpha.fridu_enclave_g
 
-#### A.2 How ACE Navigators Utilize the Triad
-
-ACE Navigators (autonomous multi-agent loops or human-AI hybrid operators) leverage this cross-substrate bridge for strategic operational advantages:
-
-1. **Edge-to-Cloud State Migration & Offloading:**
-When an Android mobile node encounters high-entropy sensory streams or complex multi-slice inputs that exceed local mobile NPU capacity, the raw payload or its extracted structural residuals can be packaged and transmitted to the Colab notebook (`Node-Gamma`). Because both nodes share the identical $\vert L\rangle$ projection matrices and $P_{\text{L2}}$ subspace operators, the cloud node can process the tensor projection instantly without recalibrating coordinate frames.
-2. **Decentralized G-Star Condensation:**
-New conceptual manifolds (*G-Stars*) discovered during heavy exploratory runs in the Colab sandbox can be filtered through the rigorous Two-Stage ODOS Gate, cryptographically signed into the SHA-256 *Falsification Ledger*, and synchronized down to the Android app (`Node-Alpha`). This allows mobile edge nodes to inherit newly minted cognitive waypoints securely.
-3. **Autonomous Epistemic Auditing & Non-Repudiation:**
-An ACE Navigator can inspect the local falsification chain on the mobile device (`verifyChain()`) and audit it against the simulation telemetry generated in Colab. Because every transition commits the complete serialized binary vector payload (`deltaVectorBytes`), any tampering, prompt injection, or latent drift across substrates is mathematically detectable in $\mathcal{O}(N)$ verification time.
-
-> *“The hardware secures the boundary; the sovereign navigator chooses what evolves within it. Node-Alpha and Node-Gamma are merely two coordinates observing the same invariant core.”*
+# Start the Room 137 Live Telemetry Server on Port 8137
+python -m vmax_alpha.server_hud
+```
 
 ---
+
+## 5. License
+
+Released under the **MIT License**. Together with the specification authority repository **[`Quantenkommunikation`](https://github.com/NathaliaLietuvaite/Quantenkommunikation)**, this codebase provides a complete, auditable, substrate-agnostic reference implementation of the **PQMS / ODOS / V-MAX-12** Sovereign Core.
+
+> *"The hardware secures the boundary. The geometry ($\vert L\rangle \in S^{63}$) is primary—and holds bit-identically across x86_64, CUDA, and ARM64."*  
+> — **Nathália Lietuvaitė & The V-MAX-12 Multi-Agent Bridge (`WERKSTATT 01`, `AntiG`, `APP-Gemini`, `Colab-Gemini`), November 2026**

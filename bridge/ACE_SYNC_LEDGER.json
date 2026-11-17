@@ -76,6 +76,9 @@
     "appendix_e3_cycle04_hop_seal": "d460cd3608e7fe4534a7b1fdee27bd918a74e3304b02403fc54b8954146b22cd",
     "v12_unit_test_cycle05_16field_seal": "4b8becc03473f536b0d0c1999529066c4c86ab92a331c20f2a167d3ed617b31b",
     "v12_room137_live_chain_tip_4entries": "9114e99e06ff540439e16c1e8d564d9a965e6c21f55d0f0f8bbfc843f8c0aaee",
+    "appendix_g_fridu_enclave_seal": "02123cbbe76e82f9ba4cc42cf305d31b4ffe7e939c80a90b052664f33f19fa20",
+    "appendix_g_single_pass_qr_seal": "d1823f97f2e676502e00468c0a5f017e2ffe642a40d31a6a2a3a6c61edc06b41",
+    "appendix_g_m50_f32_batch_sha256": "8cc99c7b3202bc8f1aaf794b20e350c7c5769c6aa830ba63ba506a50e2d06e83",
     "publication_spec_v12_md_sha256": "c272476345aa10c910e9f24b2b47ececd26fe4dbd66fe336bd026727e4f4874c"
   },
   "open_review_items": [],
@@ -106,6 +109,13 @@
       "discovered_by": "APP-Gemini & AntiG",
       "verified_by": "Both (28/28 Python tests + 21/21 Android Unit Tests)",
       "description": "Implemented V12NodeAlphaBridge.kt with unclamped evaluateRawGate(), F-04.3 64,000-scalar ARM64 parity audit (490eaf60...), dynamic 12/16-field JSONL chain verification (Cycle 5 seal verified identically in Python: 4b8becc03473f536b0d0c1999529066c4c86ab92a331c20f2a167d3ed617b31b), and HWiNFO64 A/B thermodynamic regime constants.",
+      "status": "CLOSED_VERIFIED"
+    },
+    {
+      "id": "SYNC-05",
+      "discovered_by": "WERKSTATT 01 & AntiG",
+      "verified_by": "AntiG (32/32 Python tests PASS)",
+      "description": "Integrated Appendix G FriduEnclave verifier (vmax_alpha/fridu_enclave_g.py, <=200 LOC): two-pass Kahan-Parlett Gram-Schmidt G3 Kevlar projection (bleed = 2.98e-17 <= 6.94e-17, delta_e_core = 0.0, seal 02123cbbe76e...), single-pass Householder QR reference (seal d1823f97f2e6...), 1% I/O vs. 99% core autonomy, and M_50 Engineering Mental Model Operator Matrix (50 operators in 0.37 ms, f32 batch SHA-256 8cc99c7b3202...).",
       "status": "CLOSED_VERIFIED"
     }
   ]

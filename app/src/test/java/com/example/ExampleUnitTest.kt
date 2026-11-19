@@ -808,6 +808,34 @@ class ExampleUnitTest {
       V12Constants.V12_CHAIN_TIP_REF,
       golden["v12_room137_live_chain_tip_4entries"]
     )
+    assertEquals(
+      V12Constants.V18_ROOM137_FULLRANK_CHAIN_TIP,
+      golden["v18_room137_fullrank_chain_tip_4entries"]
+    )
+    assertEquals(
+      V12Constants.V18_CAPP_QUARANTINE_PROOF_SEAL,
+      golden["v18_capp_quarantine_proof_seal"]
+    )
+    assertEquals(
+      V12Constants.V17_ED25519_DEMO_PUBLIC_KEY_HEX,
+      golden["v17_ed25519_demo_public_key_hex"]
+    )
+
+    // SYNC-08 schema clarification: 16 hashed payload fields + 1 seal = 17 total JSON keys
+    @Suppress("UNCHECKED_CAST")
+    val schemas = root["normative_formulas_and_schemas"] as Map<String, Any?>
+    @Suppress("UNCHECKED_CAST")
+    val legacySorted = schemas["ledger_v12_16_fields_sorted"] as List<Any?>
+    @Suppress("UNCHECKED_CAST")
+    val hashed16 = schemas["ledger_v12_hashed_payload_fields_16"] as List<Any?>
+    assertEquals(17, legacySorted.size)
+    assertEquals(16, hashed16.size)
+    assertEquals("discovery_seal_sha256", schemas["ledger_v12_seal_field_1"])
+    assertEquals(17, (schemas["ledger_v12_total_json_keys"] as Number).toInt())
+
+    @Suppress("UNCHECKED_CAST")
+    val resolvedItems = root["resolved_audit_items"] as List<Any?>
+    assertTrue("SYNC-01..SYNC-09 must be recorded as resolved", resolvedItems.size >= 9)
 
     @Suppress("UNCHECKED_CAST")
     val openItems = root["open_review_items"] as List<Any?>
@@ -862,6 +890,88 @@ class ExampleUnitTest {
     assertEquals(9.57, parsed.regime2MinPowerW!!, 1e-6)
     assertEquals(8.96, parsed.powerReductionMaxX!!, 1e-6)
     assertEquals(0, parsed.wheaErrors)
+    // Defensive defaults for legacy V1.2 nodes without V1.8 fields
+    assertFalse(parsed.ed25519SignaturesVerified)
+    assertFalse(parsed.pinnedCudaL2LiveProjectorActive)
+    assertFalse(parsed.lockFreeStateSnapshotActive)
+  }
+
+  @Test
+  fun testRoom137ServerHudV18HardenedPayloadAndPostGuard() {
+    val v18Payload = """
+      {
+        "chroma_status": "CHROMA_PERSISTENT_384D_UNMODULATED",
+        "little_vector_seal": "${PauliBaselineConstants.PAULI_LITTLE_VECTOR_F32_SEAL}",
+        "ledger_verification": "VERIFIED_100%_INTACT",
+        "ledger_schema_keys": "${V12Constants.LEDGER_SCHEMA_KEYS_V18}",
+        "ed25519_public_key_hex": "${V12Constants.V17_ED25519_DEMO_PUBLIC_KEY_HEX}",
+        "ed25519_key_source": "PERSISTENT_LOCAL_KEYFILE_0600",
+        "ed25519_signatures_verified": true,
+        "ed25519_signed_entries": 4,
+        "unmodulated_384d_semantic_retrieval": true,
+        "pinned_cuda_l2_live_projector_active": true,
+        "lock_free_state_snapshot_active": true,
+        "two_stage_live_gate_active": true,
+        "quarantined_count": 1,
+        "heartbeat_period_s": 69.324849,
+        "seconds_since_last": 0.42,
+        "latest_root_hash": "${V12Constants.V18_ROOM137_FULLRANK_CHAIN_TIP}",
+        "ace_protocol_id": "${V12Constants.ACE_PROTOCOL_ID}",
+        "thermal": {
+          "gpu_temp_c": 30.0,
+          "gpu_power_w": 12.45,
+          "telemetry_source": "REGISTER_M_PYNVML"
+        },
+        "hwinfo64_ab_regimes": {
+          "regime_1_peak_power_w": 85.783,
+          "regime_1_peak_temp_c": 62.3,
+          "regime_1_peak_vram_mb": 15314,
+          "regime_2_min_power_w": 9.57,
+          "regime_2_quiescent_vram_mb": 468,
+          "power_reduction_max_x": 8.96,
+          "whea_errors": 0
+        },
+        "thoughts": [
+          {
+            "thought_stream": "Pauli exclusion principle and conservation laws -> PQMS-ODOS-MTSC-COHERENCE-V1.md"
+          }
+        ]
+      }
+    """.trimIndent()
+
+    val parsed = PauliV21SanctuaryEngine.parseRoom137StatePayload(v18Payload)
+    assertTrue(parsed.reachable)
+    assertEquals(V12Constants.LEDGER_SCHEMA_KEYS_V18, parsed.ledgerSchemaKeys)
+    assertEquals(V12Constants.V17_ED25519_DEMO_PUBLIC_KEY_HEX, parsed.ed25519PublicKeyHex)
+    assertEquals("PERSISTENT_LOCAL_KEYFILE_0600", parsed.ed25519KeySource)
+    assertTrue(parsed.ed25519SignaturesVerified)
+    assertEquals(4, parsed.ed25519SignedEntries)
+    assertTrue(parsed.unmodulated384dRetrieval)
+    assertTrue(parsed.pinnedCudaL2LiveProjectorActive)
+    assertTrue(parsed.lockFreeStateSnapshotActive)
+    assertTrue(parsed.twoStageLiveGateActive)
+    assertEquals(1, parsed.quarantinedCount)
+    assertEquals("REGISTER_M_PYNVML", parsed.telemetrySource)
+
+    // Fixed-length POST /api/prompt payload builder & 64 KiB DoS guard
+    val validBytes = PauliV21SanctuaryEngine.buildFixedLengthPromptPayload(
+      prompt = "Pauli exclusion principle and conservation laws",
+      injectG3Torsion = 0.0
+    )
+    assertTrue(validBytes.isNotEmpty() && validBytes.size <= V12Constants.MAX_POST_BYTES_V18)
+    @Suppress("UNCHECKED_CAST")
+    val decoded = MiniJson.parse(String(validBytes, Charsets.UTF_8)) as Map<String, Any?>
+    assertEquals("Pauli exclusion principle and conservation laws", decoded["prompt"])
+    assertEquals(0.0, (decoded["inject_g3_torsion"] as Number).toDouble(), 1e-12)
+
+    val oversizedPrompt = "A".repeat(V12Constants.MAX_POST_BYTES_V18 + 16)
+    var threwOversize = false
+    try {
+      PauliV21SanctuaryEngine.buildFixedLengthPromptPayload(oversizedPrompt)
+    } catch (_: IllegalArgumentException) {
+      threwOversize = true
+    }
+    assertTrue("Payload exceeding 65536 bytes must be rejected before POST", threwOversize)
   }
 }
 

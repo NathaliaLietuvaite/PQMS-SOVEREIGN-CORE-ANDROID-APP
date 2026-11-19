@@ -744,13 +744,13 @@ private fun PauliSanctuaryCard() {
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "PAULI BASELINE V1.2 • NODE ALPHA / ROOM 137",
+                        text = "PAULI BASELINE V1.8 • NODE ALPHA / ROOM 137",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeonCyan
                     )
                     Text(
-                        text = "Raw Gate ΔE_raw • F-04.3 64k Parity • App. A-F",
+                        text = "Ed25519 • Pinned L2 • Lock-Free • F-04.3 64k Parity",
                         fontSize = 10.sp,
                         color = PassiveGrey
                     )
@@ -767,7 +767,7 @@ private fun PauliSanctuaryCard() {
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = if (ledgerVerify.intact) "V1.2 INTACT" else "AUDIT ERR",
+                        text = if (ledgerVerify.intact) "V1.8 INTACT" else "AUDIT ERR",
                         fontSize = 9.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold,
@@ -860,7 +860,7 @@ private fun PauliSanctuaryCard() {
                         color = NeonCyan
                     )
                     Text(
-                        text = "LEDGER (${ledgerVerify.entryCount} entries): ${ledgerVerify.latestSeal.take(18)}... • V1.2 TIP: ${V12Constants.V12_CHAIN_TIP_REF.take(14)}...",
+                        text = "LEDGER (${ledgerVerify.entryCount} entries): ${ledgerVerify.latestSeal.take(16)}... • V1.8 TIP: ${V12Constants.V18_ROOM137_FULLRANK_CHAIN_TIP.take(14)}...",
                         fontSize = 8.sp,
                         fontFamily = FontFamily.Monospace,
                         color = LuminousGreen
@@ -1084,9 +1084,80 @@ private fun PauliSanctuaryCard() {
                             fontFamily = FontFamily.Monospace,
                             color = LuminousGreen
                         )
+                        if (r137.ed25519SignaturesVerified || r137.pinnedCudaL2LiveProjectorActive || r137.lockFreeStateSnapshotActive) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                if (r137.ed25519SignaturesVerified) {
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(Color(0x2E39FF14))
+                                            .border(1.dp, LuminousGreen.copy(alpha = 0.7f), RoundedCornerShape(4.dp))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            .testTag("room137_ed25519_badge")
+                                    ) {
+                                        Text(
+                                            text = "ED25519 VERIFIED (${r137.ed25519SignedEntries})",
+                                            fontSize = 7.sp,
+                                            fontFamily = FontFamily.Monospace,
+                                            fontWeight = FontWeight.Bold,
+                                            color = LuminousGreen
+                                        )
+                                    }
+                                }
+                                if (r137.pinnedCudaL2LiveProjectorActive) {
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(Color(0x2600E5FF))
+                                            .border(1.dp, NeonCyan.copy(alpha = 0.7f), RoundedCornerShape(4.dp))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            .testTag("room137_l2_pinned_badge")
+                                    ) {
+                                        Text(
+                                            text = "L2 PINNED",
+                                            fontSize = 7.sp,
+                                            fontFamily = FontFamily.Monospace,
+                                            fontWeight = FontWeight.Bold,
+                                            color = NeonCyan
+                                        )
+                                    }
+                                }
+                                if (r137.lockFreeStateSnapshotActive) {
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(Color(0x26FFD700))
+                                            .border(1.dp, LaserGold.copy(alpha = 0.7f), RoundedCornerShape(4.dp))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            .testTag("room137_lockfree_badge")
+                                    ) {
+                                        Text(
+                                            text = "LOCK-FREE",
+                                            fontSize = 7.sp,
+                                            fontFamily = FontFamily.Monospace,
+                                            fontWeight = FontWeight.Bold,
+                                            color = LaserGold
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        if (r137.ed25519PublicKeyHex.isNotEmpty()) {
+                            Text(
+                                text = "Ed25519 PubKey: ${r137.ed25519PublicKeyHex.take(20)}... (${r137.ed25519KeySource.ifEmpty { "PERSISTENT" }})",
+                                fontSize = 7.sp,
+                                fontFamily = FontFamily.Monospace,
+                                color = PassiveGrey
+                            )
+                        }
                     } else {
                         Text(
-                            text = "Room 137 (127.0.0.1:8137): Offline (On-Device S^63 Engine Active)",
+                            text = "Room 137 (127.0.0.1:8137): Offline (On-Device S^63 Engine Active • App. H.3 TEE Ready)",
                             fontSize = 8.sp,
                             fontFamily = FontFamily.Monospace,
                             color = PassiveGrey

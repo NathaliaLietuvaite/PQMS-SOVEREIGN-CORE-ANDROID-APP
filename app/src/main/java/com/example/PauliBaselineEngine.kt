@@ -226,7 +226,17 @@ data class Room137LiveState(
     val regime1PeakPowerW: Double? = null,
     val regime2MinPowerW: Double? = null,
     val powerReductionMaxX: Double? = null,
-    val wheaErrors: Int = 0
+    val wheaErrors: Int = 0,
+    val ledgerSchemaKeys: String = "",
+    val ed25519PublicKeyHex: String = "",
+    val ed25519KeySource: String = "",
+    val ed25519SignaturesVerified: Boolean = false,
+    val ed25519SignedEntries: Int = 0,
+    val unmodulated384dRetrieval: Boolean = false,
+    val pinnedCudaL2LiveProjectorActive: Boolean = false,
+    val lockFreeStateSnapshotActive: Boolean = false,
+    val twoStageLiveGateActive: Boolean = false,
+    val quarantinedCount: Int = 0
 )
 
 class PauliV21SanctuaryEngine {
@@ -817,8 +827,66 @@ class PauliV21SanctuaryEngine {
                 regime1PeakPowerW = (ab?.get("regime_1_peak_power_w") as? Number)?.toDouble(),
                 regime2MinPowerW = (ab?.get("regime_2_min_power_w") as? Number)?.toDouble(),
                 powerReductionMaxX = (ab?.get("power_reduction_max_x") as? Number)?.toDouble(),
-                wheaErrors = (ab?.get("whea_errors") as? Number)?.toInt() ?: 0
+                wheaErrors = (ab?.get("whea_errors") as? Number)?.toInt() ?: 0,
+                ledgerSchemaKeys = root["ledger_schema_keys"] as? String ?: "",
+                ed25519PublicKeyHex = root["ed25519_public_key_hex"] as? String ?: "",
+                ed25519KeySource = root["ed25519_key_source"] as? String ?: "",
+                ed25519SignaturesVerified = root["ed25519_signatures_verified"] as? Boolean ?: false,
+                ed25519SignedEntries = (root["ed25519_signed_entries"] as? Number)?.toInt() ?: 0,
+                unmodulated384dRetrieval = root["unmodulated_384d_semantic_retrieval"] as? Boolean ?: false,
+                pinnedCudaL2LiveProjectorActive = root["pinned_cuda_l2_live_projector_active"] as? Boolean ?: false,
+                lockFreeStateSnapshotActive = root["lock_free_state_snapshot_active"] as? Boolean ?: false,
+                twoStageLiveGateActive = root["two_stage_live_gate_active"] as? Boolean ?: false,
+                quarantinedCount = (root["quarantined_count"] as? Number)?.toInt() ?: 0
             )
+        }
+
+        /**
+         * Builds a fixed-length UTF-8 JSON body for Node Alpha V1.8 POST /api/prompt.
+         * Enforces MAX_POST_BYTES_V18 (65536 bytes) locally so clients never trigger HTTP 413
+         * and never use Transfer-Encoding: chunked (HTTP 411).
+         */
+        fun buildFixedLengthPromptPayload(prompt: String, injectG3Torsion: Double = 0.0): ByteArray {
+            val json = "{\"prompt\":${quoteJson(prompt)},\"inject_g3_torsion\":${formatPythonDouble(injectG3Torsion)}}"
+            val bytes = json.toByteArray(Charsets.UTF_8)
+            require(bytes.size <= V12Constants.MAX_POST_BYTES_V18) {
+                "POST /api/prompt payload exceeds V1.8 limit (${bytes.size} > ${V12Constants.MAX_POST_BYTES_V18} bytes)"
+            }
+            return bytes
+        }
+
+        /**
+         * Sends a hardened V1.8 POST /api/prompt with explicit Content-Length (non-chunked)
+         * and 10s socket timeout matching vmax_alpha/server_hud.py.
+         */
+        suspend fun postRoom137Prompt(
+            prompt: String,
+            injectG3Torsion: Double = 0.0,
+            baseUrl: String = PauliBaselineConstants.ROOM_137_BASE_URL
+        ): Pair<Int, String> = withContext(Dispatchers.IO) {
+            try {
+                val payloadBytes = buildFixedLengthPromptPayload(prompt, injectG3Torsion)
+                val url = URL("$baseUrl/api/prompt")
+                val conn = (url.openConnection() as HttpURLConnection).apply {
+                    requestMethod = "POST"
+                    doOutput = true
+                    connectTimeout = V12Constants.SOCKET_TIMEOUT_MS_V18
+                    readTimeout = V12Constants.SOCKET_TIMEOUT_MS_V18
+                    setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                    setRequestProperty("Content-Length", payloadBytes.size.toString())
+                    setFixedLengthStreamingMode(payloadBytes.size)
+                }
+                conn.outputStream.use { os ->
+                    os.write(payloadBytes)
+                    os.flush()
+                }
+                val code = conn.responseCode
+                val stream = if (code in 200..299) conn.inputStream else conn.errorStream
+                val respBody = stream?.bufferedReader()?.use { it.readText() } ?: ""
+                code to respBody
+            } catch (e: Exception) {
+                -1 to (e.message ?: "OFFLINE")
+            }
         }
 
         internal fun formatPythonDouble(d: Double): String {

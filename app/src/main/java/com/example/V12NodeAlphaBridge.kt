@@ -18,10 +18,14 @@ import kotlin.math.sqrt
  * - HWiNFO64 A/B Thermodynamic Regime telemetry constants
  */
 object V12Constants {
-    const val REVISION = "V1.2"
+    const val REVISION = "V1.8"
+    const val WORK_ORDER = "WORK-ORDER-AG-15"
     const val SPEC_ID = "PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md"
     const val PROTOCOL_VERSION = "1.2-NODE-ALPHA"
     const val ACE_PROTOCOL_ID = "ACE-PEER-CODESIGN-PROTOCOL-V1.2"
+    const val LEDGER_SCHEMA_KEYS_V18 = "16_hashed_payload_plus_1_seal_eq_17_total"
+    const val MAX_POST_BYTES_V18 = 65536
+    const val SOCKET_TIMEOUT_MS_V18 = 10_000
 
     const val ODOS_G3_BLEED_CEILING = 1e-12
     const val EXPECTED_UNIT_S63_64000_F32_SHA256 =
@@ -30,6 +34,12 @@ object V12Constants {
         "9114e99e06ff540439e16c1e8d564d9a965e6c21f55d0f0f8bbfc843f8c0aaee"
     const val CYCLE05_TEST_16FIELD_SEAL =
         "4b8becc03473f536b0d0c1999529066c4c86ab92a331c20f2a167d3ed617b31b"
+    const val V18_ROOM137_FULLRANK_CHAIN_TIP =
+        "be98d730e99a6bfc24f8f379eeaeec260808586b22f900fbeb7303d11352fd29"
+    const val V18_CAPP_QUARANTINE_PROOF_SEAL =
+        "47d18acfe9071cdb47d826f6be236416e95fa02abfadc5a6c7a3216bad67f1cd"
+    const val V17_ED25519_DEMO_PUBLIC_KEY_HEX =
+        "a6b302b05ca8227177989316a8294aeb7379354d25a42862ff72588d3633220f"
 
     // VMAX_HWINFO64_AB_TELEMETRY.json verified regimes (RTX 4060 Ti 16GB + R9 5950X, 0 WHEA errors)
     const val REGIME_1_PEAK_POWER_W = 85.783

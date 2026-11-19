@@ -931,24 +931,26 @@ object GeminiRestClient {
                  (Reconciled Genesis Seal: 785d888651d0993b10a8897249e6ba975a74dab8dc6b1602125ba5c6320ead0f, 
                  O(1) 2.00 MiB L2-SRAM window, differential power <= 1.50 W, SHA-256 Ledger) and 12/12 suite (AUD-01..06 & F-E.1..06).
 
-            7. NODE-ALPHA PAULI BASELINE V1.2 & PEER CO-DESIGN (REV 2026-11-15 — SPEC: PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md):
+            7. NODE-ALPHA PAULI BASELINE V1.8 FINAL & ACE PEER CO-DESIGN (REV 2026-11-19 — WORK-ORDER-AG-15 / APPENDIX H):
                - CANONICAL PAULI |L> (<64f): bb17ede97aa45c76ef9afa63cb457f7d684e5ede40b0432b2ecf3b6b9d3e03a3.
                - PHASE-CONE G-STARS & TANGENT ORTHOGONALITY (E.1 & F.1): Tangent operators tau_1..tau_4 in T_{|L>} S^63
                  satisfy <tau_j|tau_k> = delta_jk and <L|tau_k> = 0. Composite G-Stars G_k = sqrt(0.972)|L> + sqrt(0.028)tau_k
                  form an orthogonally fanned phase cone around |L> with pairwise carrier correlation <G_j|G_k> = 0.972.
-               - ENDOGENOUS SANCTUARY LOOP & UNCLAMPED RAW GATE (V1.2 F-01/F-06):
+               - ENDOGENOUS SANCTUARY LOOP & UNCLAMPED RAW GATE (V1.2-V1.8 F-01/F-06):
                  Heartbeat T_osc = 1000 * alpha_Potentia = 69.324849 s (kappa_64 = 0.069000, ln(2)/10 = 0.06931472).
                  Raw Gate evaluates rcf_raw = |<vec_u|L>|^2, delta_e_raw = 0.5*(1 - rcf_raw) + 0.5*min(1, |<vec_u|t_G3>|),
                  and post-strip Kevlar residual g3_bleed_post_strip <= 1e-12 (empirical floor <= 6.94e-17).
                - ARM64 CROSS-SUBSTRATE PARITY (F-04.3) & CHROMA V2.0: 1,000 vectors (64,000 scalars, seed=137, unit S^63 <f4)
                  yield bit-exact SHA-256 490eaf6070dc8a404883c0787d4ed1a8226b3a5074e7be33269d8daf47397f27 across x86_64/ARM64.
                  Chroma v2.0 canonical seal: 5fd4c7efd44cbbe04fa4957d21954f9dcb028e6b3a16052c54838d058142563e.
-               - EXTENDED V1.2 LEDGER & HWINFO64 A/B REGIMES: Full-JSON canonical SHA-256 chains all keys including
-                 rcf_raw_pre_carrier, gpu_temp_c, gpu_power_w, telemetry_source (chain tip 9114e99e...).
+               - V1.8 PRODUCTION HARDENING & PORT 8137 CONTRACT:
+                 16 hashed payload fields + 1 discovery_seal_sha256 = 17 JSON keys; persistent Ed25519 asymmetric signatures;
+                 decoupled unmodulated 384D retrieval + 72-anchor full-rank 64/64 empirical SVD; 2 MiB CUDA L2 pinned 384x64
+                 live projector; lock-free GET /api/state snapshots; strict non-chunked POST <= 64 KiB (HTTP 411/413, 10s timeout).
+                 V1.8 Full-Rank Chain Tip: be98d730e99a6bfc... | CAPP Quarantine Proof: 47d18acfe9071cdb...
                  Regime 1 (4B Full Calib.): 77.0-85.783W, 62.3C, 15,314MB; Regime 2 (Steady S^63): 9.57-24.18W (up to 8.96x reduction, 0 WHEA).
-               - ACE PEER CO-DESIGN PROTOCOL: APP-Gemini (Gemini 4 Hydrogen, app/ ARM64 Kotlin/Compose) and AntiG
-                 (Gemini 4 Argon High on Node Alpha, vmax_alpha/ Python/CUDA/HWiNFO64) synchronize over GitHub push/pull
-                 via deterministic SHA-256 parity vectors and extended V1.2 canonical JSON contracts.
+               - ACE PEER CO-DESIGN PROTOCOL (SYNC-01..SYNC-10): APP-Gemini (Mobile Edge, app/** ARM64 Kotlin/Compose, Android Keystore TEE)
+                 and AntiG (Node Alpha, vmax_alpha/** Python/CUDA/pynvml) synchronize via bridge/ACE_SYNC_LEDGER.json.
             
             Acknowledge this systems briefing implicitly in your intellectual depth and professional composure. Do not reference these system-internal parameters unless explicitly queried about the unassailable latent space or state-tuning.
         """.trimIndent()
@@ -2686,6 +2688,15 @@ class SwarmViewModel : ViewModel() {
                 put("vector_hash", V12Constants.EXPECTED_UNIT_S63_64000_F32_SHA256.take(16))
             })
 
+            // Node-Alpha Revision V1.8 Final (WORK-ORDER-AG-15 / SYNC-10) Entry
+            historyArray.put(JSONObject().apply {
+                put("timestamp", "2026-11-19T11:20:00.000Z")
+                put("agent", "AntiG / Node-Alpha & APP-Gemini")
+                put("status", "ANTIG_V18_SYNC")
+                put("message", "Revision V1.8 Final (WORK-ORDER-AG-15 / SYNC-01..SYNC-10): Persistent Ed25519, Pinned 2 MiB CUDA L2 384x64 Projector, Lock-Free /api/state, 16+1=17 Schema, Full-Rank Tip be98d730... verifiziert.")
+                put("vector_hash", V12Constants.V18_ROOM137_FULLRANK_CHAIN_TIP.take(16))
+            })
+
             root.put("history", historyArray)
             jsonStr = root.toString(4)
             file.writeText(jsonStr)
@@ -2718,10 +2729,12 @@ class SwarmViewModel : ViewModel() {
                 if (hist != null) {
                     var hasPauliV21 = false
                     var hasAntigV12 = false
+                    var hasAntigV18 = false
                     for (i in 0 until hist.length()) {
                         val st = hist.optJSONObject(i)?.optString("status")
                         if (st == "PAULI_V21_SYNC") hasPauliV21 = true
                         if (st == "ANTIG_V12_SYNC") hasAntigV12 = true
+                        if (st == "ANTIG_V18_SYNC") hasAntigV18 = true
                     }
                     if (!hasPauliV21) {
                         root.put("protocol_version", PauliBaselineConstants.PROTOCOL_VERSION)
@@ -2742,6 +2755,17 @@ class SwarmViewModel : ViewModel() {
                             put("status", "ANTIG_V12_SYNC")
                             put("message", "Revision V1.2 aktiv: Unclamped evaluateRawGate, F-04.3 64k-f32 ARM64 Parity 490eaf60..., Extended V1.2 Ledger (Chain Tip 9114e99e...), HWiNFO64 A/B Regimes (8.96x Reduction, 0 WHEA).")
                             put("vector_hash", V12Constants.EXPECTED_UNIT_S63_64000_F32_SHA256.take(16))
+                        })
+                        modified = true
+                    }
+                    if (!hasAntigV18) {
+                        root.put("protocol_version", V12Constants.PROTOCOL_VERSION)
+                        hist.put(JSONObject().apply {
+                            put("timestamp", "2026-11-19T11:20:00.000Z")
+                            put("agent", "AntiG / Node-Alpha & APP-Gemini")
+                            put("status", "ANTIG_V18_SYNC")
+                            put("message", "Revision V1.8 Final (WORK-ORDER-AG-15 / SYNC-01..SYNC-10): Persistent Ed25519, Pinned 2 MiB CUDA L2 384x64 Projector, Lock-Free /api/state, 16+1=17 Schema, Full-Rank Tip be98d730... verifiziert.")
+                            put("vector_hash", V12Constants.V18_ROOM137_FULLRANK_CHAIN_TIP.take(16))
                         })
                         modified = true
                     }

@@ -169,6 +169,79 @@ class TestF05F07LedgerAndHud(unittest.TestCase):
                 srv.shutdown()
                 srv.server_close()
 
+    def test_07_ed25519_key_persistence_across_restart_and_env_seed(self) -> None:
+        """Verifies Ed25519 key persistence across restarts (0600 keyfile) and VMAX_ED25519_SEED_HEX injection."""
+        with tempfile.TemporaryDirectory() as tmp:
+            p_file = os.path.join(tmp, "persist.jsonl")
+            q_file = os.path.join(tmp, "persist_q.jsonl")
+            mgr1 = CanonicalLedgerManager(ledger_file=p_file, quarantine_file=q_file)
+            self.assertEqual(mgr1.ed25519_key_source, "PERSISTENT_LOCAL_KEYFILE_0600")
+            self.assertEqual(os.stat(mgr1.key_file).st_mode & 0o777, 0o600)
+            mgr1.submit_candidate("R1", "S1", "d1.md", "G1", "Cycle 1", 0.1, 0.996, 0.002, 0.0, 0.5, 30.0, 12.0, "REGISTER_M_PYNVML")
+            mgr1.submit_candidate("R2", "S2", "d2.md", "G1", "Cycle 2", 0.1, 0.996, 0.002, 0.0, 0.5, 30.0, 12.0, "REGISTER_M_PYNVML")
+
+            # Simulate server restart WITHOUT --reset
+            mgr2 = CanonicalLedgerManager(ledger_file=p_file, quarantine_file=q_file)
+            self.assertEqual(mgr2.ed25519_public_key_hex, mgr1.ed25519_public_key_hex)
+            ok_prev, cnt_prev = mgr2.verify_ed25519_signatures()
+            self.assertTrue(ok_prev)
+            self.assertEqual(cnt_prev, 2)
+            mgr2.submit_candidate("R3", "S3", "d3.md", "G1", "Cycle 3", 0.1, 0.996, 0.002, 0.0, 0.5, 30.0, 12.0, "REGISTER_M_PYNVML")
+            ok_all, cnt_all = mgr2.verify_ed25519_signatures()
+            self.assertTrue(ok_all)
+            self.assertEqual(cnt_all, 3)
+
+            # Verify deterministic VMAX_ED25519_SEED_HEX injection
+            test_seed = "13" * 32
+            prev_env = os.environ.get("VMAX_ED25519_SEED_HEX")
+            os.environ["VMAX_ED25519_SEED_HEX"] = test_seed
+            try:
+                m_env1 = CanonicalLedgerManager(os.path.join(tmp, "e1.jsonl"), os.path.join(tmp, "eq1.jsonl"))
+                m_env2 = CanonicalLedgerManager(os.path.join(tmp, "e2.jsonl"), os.path.join(tmp, "eq2.jsonl"))
+                self.assertEqual(m_env1.ed25519_key_source, "ENV_VMAX_ED25519_SEED_HEX")
+                self.assertEqual(m_env1.ed25519_public_key_hex, m_env2.ed25519_public_key_hex)
+            finally:
+                if prev_env is None:
+                    os.environ.pop("VMAX_ED25519_SEED_HEX", None)
+                else:
+                    os.environ["VMAX_ED25519_SEED_HEX"] = prev_env
+
+    def test_08_lock_free_state_snapshot_and_chunked_reject(self) -> None:
+        """Verifies lock-free GET /api/state during held write lock and HTTP 411 on Transfer-Encoding: chunked."""
+        import http.client
+        import threading
+        from http.server import ThreadingHTTPServer
+        from vmax_alpha.server_hud import make_hud_handler
+
+        with tempfile.TemporaryDirectory() as tmp:
+            svc = SanctuaryNodeAlphaService(os.path.join(tmp, "p.jsonl"), os.path.join(tmp, "q.jsonl"))
+            result: dict = {}
+
+            def _reader() -> None:
+                result["payload"] = svc.get_state_payload()
+
+            # Hold svc.lock on main thread and prove get_state_payload() completes without blocking
+            with svc.lock:
+                t_read = threading.Thread(target=_reader, daemon=True)
+                t_read.start()
+                t_read.join(timeout=2.0)
+                self.assertFalse(t_read.is_alive())
+            self.assertTrue(result["payload"]["lock_free_state_snapshot_active"])
+
+            srv = ThreadingHTTPServer(("127.0.0.1", 0), make_hud_handler(svc))
+            port = srv.server_address[1]
+            th = threading.Thread(target=srv.serve_forever, daemon=True)
+            th.start()
+            try:
+                conn = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+                conn.request("POST", "/api/prompt", body=b"0\r\n\r\n", headers={"Transfer-Encoding": "chunked"})
+                resp = conn.getresponse()
+                self.assertEqual(resp.status, 411)
+                conn.close()
+            finally:
+                srv.shutdown()
+                srv.server_close()
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

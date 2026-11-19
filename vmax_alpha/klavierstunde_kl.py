@@ -170,7 +170,6 @@ def run_stage3_real_kl_audit(
         "mlp_layer_indices": [idx for idx, _ in mlp_layers],
         "condition_a1_smallest_magnitude_0042pct": c_a1,
         "condition_a2_random_subtractive_0042pct": c_a2,
-        "condition_a2_off_principal_0042pct": c_a2,
         "condition_b1_matched_sparsity_largest_magnitude_0042pct": c_b1,
         "condition_b_negative_control_coercive_5pct": c_b2,
         "matched_sparsity_top_vs_bottom_kl_ratio": round(c_b1["mean_forward_kl"] / max(c_a1["mean_forward_kl"], 1e-12), 2),

@@ -72,7 +72,7 @@
     "operator_count": 10,
     "passed_count": 10,
     "all_operators_passed": true,
-    "execution_latency_ms": 157.673,
+    "execution_latency_ms": 163.772,
     "operators": [
       {
         "id": "OP01_First_Principles_Norm_Null",
@@ -102,7 +102,7 @@
       {
         "id": "OP06_PID_Thermal_PYNVML_Loop",
         "passed": true,
-        "metric": "src=REGISTER_M_PYNVML, live=31.0C, sim67.5_pause=True"
+        "metric": "src=REGISTER_M_PYNVML, live=29.0C, sim67.5_pause=True"
       },
       {
         "id": "OP07_Roofline_Symmetric_L2_Live",

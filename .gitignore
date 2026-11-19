@@ -20,3 +20,8 @@ debug.keystore
 *.apk
 __pycache__/
 *.pyc
+*.ed25519.key
+*.ed25519.jsonl
+chroma_vmax_prod_*/
+VMAX_SANCTUARY_PROD_LEDGER.jsonl
+VMAX_QUARANTINE_LEDGER.jsonl

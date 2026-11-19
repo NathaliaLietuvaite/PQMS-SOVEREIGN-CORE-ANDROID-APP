@@ -52,6 +52,36 @@ ANCHOR_POS_384: List[str] = [
     "Quantum coherence across orthonormal S^63 tangent bundles minimizes dissipative entropy production.",
     "Relativistic quantum field symmetries preserve charge, spin, and topological flux invariants.",
     "Autonomous cognitive sanctuary architectures maintain invariant ethical framing under Landauer bounds.",
+    "Gauge invariance of Maxwell equations guarantees strict local conservation of electromagnetic four-current.",
+    "Symplectic flows in canonical Hamiltonian mechanics preserve differential two-forms along every trajectory.",
+    "Second-law thermodynamics forbids spontaneous entropy decrease inside an adiabatically isolated cavity.",
+    "Lorentz covariance leaves spacetime interval metrics identical across all inertial reference frames.",
+    "Unitary scattering matrices satisfy probability conservation across every elastic and inelastic channel.",
+    "Hermitian generators of continuous Lie groups guarantee real eigenvalues for physical observables.",
+    "Kramers-Kronig dispersion relations bind causal response functions to analytic upper-half-plane poles.",
+    "Adiabatic Berry phase holonomies accumulate geometric invariants around closed parameter-space loops.",
+    "Topological Chern numbers remain quantized against smooth local deformations of band Hamiltonians.",
+    "Canonical commutation relations enforce lower bounds on simultaneous position and momentum variances.",
+    "Bianchi identities require the covariant divergence of the Einstein curvature tensor to vanish identically.",
+    "Fluctuation-dissipation theorems relate equilibrium thermal noise spectra to linear transport susceptibilities.",
+    "Zero-divergence magnetic fields exclude isolated magnetic monopoles in classical electrodynamics.",
+    "Information-theoretic data-processing inequalities prohibit post-processing from increasing mutual information.",
+    "Orthonormal Gram-Schmidt projections eliminate orthogonal perturbation leakage to machine precision.",
+    "Kahan-Parlett two-pass re-orthogonalization prevents catastrophic cancellation in floating-point inner products.",
+    "SHA-256 cryptographic hash chains provide deterministic tamper detection across append-only telemetry logs.",
+    "Asymmetric Ed25519 digital signatures authenticate telemetry roots against full-chain re-hash forgery.",
+    "CUDA L2 cache persistence windows pin critical projection weights inside on-chip static memory.",
+    "Bit-exact cross-substrate verification constrains x86_64, CUDA, and ARM64 hardware to shared invariants.",
+    "Minimum-dissipation geodesic trajectories navigate high-dimensional spheres without coercive torsion.",
+    "Landauer erasure bounds establish the minimum thermal work required to reset one irreversible bit.",
+    "Superconducting flux quantization restricts trapped magnetic flux to integer multiples of the flux quantum.",
+    "CPT invariance preserves combined charge conjugation, parity inversion, and time reversal symmetry.",
+    "Detailed balance at thermal equilibrium equates forward and reverse microscopic transition fluxes.",
+    "Helmholtz decomposition separates smooth vector fields uniquely into curl-free and divergence-free parts.",
+    "Spectral norm bounds certify non-expansive stability across linear subspace filter transformations.",
+    "Deterministic Mersenne Twister seeding ensures reproducible geometric anchor generation across compilers.",
+    "Unclamped pre-carrier cosine gating measures intrinsic manifold alignment before downstream modulation.",
+    "Decoupled semantic vector indexing preserves full embedding geometry during nearest-neighbor retrieval.",
 ]
 ANCHOR_BG_384: List[str] = [
     "Please remember to water the indoor ferns twice a week during the dry winter months.",
@@ -60,6 +90,36 @@ ANCHOR_BG_384: List[str] = [
     "Passengers boarding the regional express should validate their paper tickets at the platform kiosk.",
     "Our neighborhood bakery starts glazing cinnamon rolls shortly before sunrise every Saturday.",
     "Autumn rain softened the clay tennis courts and postponed the weekend club match until Monday.",
+    "Wooden sailboats bobbed gently near the harbor pier while seagulls circled above the lighthouse.",
+    "A bright yellow delivery van stopped beside the flower market to unload crates of tulips.",
+    "Grandmother knitted a thick wool scarf in alternating stripes of mustard yellow and forest green.",
+    "The downtown cinema scheduled a double feature of classic silent comedies for Sunday evening.",
+    "Fresh basil and cherry tomatoes ripened quickly on the sunny apartment balcony all summer.",
+    "Local cyclists gathered at the town square for a leisurely morning ride along the canal.",
+    "He polished his leather hiking boots before packing two wool sweaters for the mountain cabin.",
+    "The acoustic guitar needed a fresh set of bronze strings before the cafe open-mic night.",
+    "Warm sourdough bread cooled on a wire rack next to jars of homemade raspberry jam.",
+    "Children built an elaborate sandcastle near the shoreline before the afternoon tide rolled in.",
+    "The antique wall clock chimed softly at noon inside the quiet second-hand bookstore.",
+    "Volunteers painted the wooden park benches a fresh shade of cobalt blue last weekend.",
+    "A calico cat napped lazily on the folded linen tablecloth beside the sunny kitchen window.",
+    "Roasted chestnuts filled the cobblestone street with a comforting smoky aroma in late November.",
+    "The neighborhood choir practiced traditional folk harmonies in the community hall on Tuesdays.",
+    "She arranged postcards from summer coastal trips inside a cloth-bound scrapbook on her desk.",
+    "Heavy mist lingered over the apple orchard until the mid-morning sun broke through the clouds.",
+    "The ferry captain sounded a brief horn before pulling away from the timber island dock.",
+    "Freshly brewed peppermint tea steamed inside ceramic mugs after the brisk lakeside walk.",
+    "Ceramic bowls glazed in speckled turquoise lined the top shelf of the pottery studio.",
+    "A street violinist played cheerful waltzes beneath the brick arcade near the fountain.",
+    "Gardeners planted rows of purple lavender along the gravel footpath leading to the greenhouse.",
+    "The commuter bus paused at the botanical garden stop to let school groups step aboard.",
+    "Golden maple leaves drifted slowly across the quiet courtyard after the afternoon breeze.",
+    "He sketched the old stone footbridge with soft charcoal pencils in a pocket notebook.",
+    "Warm vegetable soup simmered slowly in a cast-iron pot with thyme and bay leaves.",
+    "Paper lanterns swayed softly above the outdoor courtyard tables during the summer street festival.",
+    "The tailor hemmed the navy linen trousers neatly before the wedding rehearsal dinner.",
+    "Two wooden rowboats rested upside down on the grassy riverbank under weeping willows.",
+    "A friendly golden retriever trotted happily down the sandy beach chasing driftwood sticks.",
 ]
 
 
@@ -162,8 +222,13 @@ class NeuralChromaForager:
         bg_c = _unit_rows(bg_u - mean_bg)
         u1 = np.mean(pos_c, axis=0)
         u1 = u1 / np.linalg.norm(u1)
-        _, _, vt_emp = np.linalg.svd(np.vstack([pos_c, bg_c]), full_matrices=False)
-        seed_u = np.column_stack([u1] + [vt_emp[i] for i in range(min(vt_emp.shape[0], DIM_S63 - 1))])
+        _, s_emp, vt_emp = np.linalg.svd(np.vstack([pos_c, bg_c]), full_matrices=False)
+        valid_emp = int(np.sum(s_emp > 1e-6))
+        take_emp = min(valid_emp, DIM_S63 - 1)
+        seed_u = np.column_stack([u1] + [vt_emp[i] for i in range(take_emp)])
+        self.anchor_count: int = len(ANCHOR_POS_384) + len(ANCHOR_BG_384)
+        self.empirical_svd_axes_used: int = int(seed_u.shape[1])
+        self.random_pad_axes: int = max(0, DIM_S63 - self.empirical_svd_axes_used)
         u_mat = _householder_basis(seed_u, 384, DIM_S63, seed=137)
         v_mat = _householder_basis(self.little_vector.reshape(-1, 1), DIM_S63, DIM_S63, seed=138)
         return mean_bg, u_mat @ v_mat.T
@@ -269,6 +334,10 @@ class NeuralChromaForager:
         return {
             "epistemic_register": REGISTER_M,
             "corpus_order_invariant_calibration": True,
+            "calibration_anchor_count": self.anchor_count,
+            "empirical_svd_axes_used": self.empirical_svd_axes_used,
+            "random_pad_axes": self.random_pad_axes,
+            "full_rank_empirical_64d_basis": self.random_pad_axes == 0,
             "unmodulated_384d_semantic_retrieval": True,
             "pinned_cuda_l2_live_projector_active": self.l2_projector.active,
             "embedding_model": "sentence-transformers/all-MiniLM-L6-v2 (Unmodulated 384D ChromaDB + L2-Pinned 64D Gate)",

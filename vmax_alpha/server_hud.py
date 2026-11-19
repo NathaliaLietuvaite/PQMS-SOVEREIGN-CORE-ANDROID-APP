@@ -1,11 +1,12 @@
 """
 vmax_alpha/server_hud.py
-Requirement F-05 & F-07.4/F-07.5 (WORK-ORDER-AG-14 / Revision V1.7 Hardened):
+Requirement F-05 & F-07.4/F-07.5 (WORK-ORDER-AG-15 / Revision V1.8 Hardened):
 Hardened Room 137 HTTP Server & Autonomous Heartbeat Daemon featuring:
 1. Decoupled unmodulated 384D ChromaDB retrieval + L2-pinned 64D Two-Stage Gate.
-2. Strict DoS guard (MAX_POST_BYTES = 64 KiB -> HTTP 413, malformed -> HTTP 400,
-   socket timeout = 10.0 s) and Ed25519-signed primary ledger telemetry.
-3. Full backward compatibility with APP-Gemini's `/api/state` parser.
+2. Lock-free atomic state snapshot for non-blocking `GET /api/state` during inference.
+3. Strict DoS guard (MAX_POST_BYTES = 64 KiB -> HTTP 413, chunked transfer -> HTTP 411,
+   malformed -> HTTP 400, socket timeout = 10.0 s) and persistent Ed25519 ledger keys.
+4. Full backward compatibility with APP-Gemini's `/api/state` parser.
 """
 from __future__ import annotations
 
@@ -16,7 +17,7 @@ import threading
 import time
 from dataclasses import asdict
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 from vmax_alpha.chroma_forager import NeuralChromaForager
@@ -53,17 +54,45 @@ class SanctuaryNodeAlphaService:
         self.cursor = len(self.ledger.entries)
         self.last_cycle_ts = time.time()
         self.lock = threading.Lock()
+        self._infer_lock = threading.Lock()
         self._stop_evt = threading.Event()
         self._hb_thread: Optional[threading.Thread] = None
+        self._state_snapshot: Dict[str, Any] = self._build_state_snapshot_locked()
 
-    def step_cycle(
+    def _build_state_snapshot_locked(self) -> Dict[str, Any]:
+        """Build an immutable-by-convention state snapshot atomically swapped on writes."""
+        sig_ok, sig_cnt = self.ledger.verify_ed25519_signatures()
+        return {
+            "chroma_status": self.forager.storage_mode,
+            "little_vector_seal": self.forager.little_vector_seal,
+            "ledger_verification": self.ledger.status,
+            "ledger_schema_keys": "16_hashed_payload_plus_1_seal_eq_17_total",
+            "ed25519_public_key_hex": self.ledger.ed25519_public_key_hex,
+            "ed25519_key_source": self.ledger.ed25519_key_source,
+            "ed25519_signatures_verified": sig_ok,
+            "ed25519_signed_entries": sig_cnt,
+            "unmodulated_384d_semantic_retrieval": True,
+            "pinned_cuda_l2_live_projector_active": self.forager.l2_projector.active,
+            "lock_free_state_snapshot_active": True,
+            "quarantined_count": self.ledger.quarantined_count,
+            "two_stage_live_gate_active": True,
+            "heartbeat_period_s": HEARTBEAT_PERIOD_SEC,
+            "latest_root_hash": self.ledger.latest_hash,
+            "ace_protocol_id": "ACE-PEER-CODESIGN-PROTOCOL-V1.2",
+            "hwinfo64_ab_regimes": HWINFO64_AB_REGIMES,
+            "thoughts": [asdict(e) for e in self.ledger.entries[-12:]],
+            "_snapshot_ts": self.last_cycle_ts,
+        }
+
+    def _prepare_cycle_vectors(
         self,
-        prompt: Optional[str] = None,
-        inject_g3_torsion: float = 0.0,
-    ) -> SanctuaryLedgerEntry:
-        with self.lock:
-            l_vec = self.forager.little_vector
-            t_safe = self.forager.tangents["G3_KEVLAR_SANCTUARY_SHIELD"]
+        prompt: Optional[str],
+        inject_g3_torsion: float,
+        cursor_snapshot: int,
+    ) -> Tuple[np.ndarray, np.ndarray, str, float, str, str]:
+        """Run GPU embedding & ChromaDB retrieval outside the state/ledger lock."""
+        t_safe = self.forager.tangents["G3_KEVLAR_SANCTUARY_SHIELD"]
+        with self._infer_lock:
             if prompt:
                 q_384, q_vec, raw_64 = self.forager.embed_query_text_full(prompt)
                 if inject_g3_torsion > 0.0:
@@ -76,31 +105,42 @@ class SanctuaryNodeAlphaService:
                     else "NAVIGATOR_NEURAL_QUERY"
                 )
                 label = f"CAPP Probe ('{prompt[:60]}')" if inject_g3_torsion > 0.0 else f"Navigator ('{prompt[:60]}')"
-            else:
-                q_id, _, _ = self.forager.shards[self.cursor % len(self.forager.shards)]
-                q_384 = self.forager.raw_384d[q_id]
-                q_vec = self.forager.embeddings_64d[q_id]
-                raw_64 = self.forager.raw_64d[q_id]
-                nn_id, d_l2_384, _, _ = self.forager.query_nearest(q_384, exclude_ids={q_id})
-                mode = "ENDOGENOUS_NEURAL_CHROMA_FORAGER"
-                label = f"Endogenous Neural Forager [{q_id}"
+                return q_vec, raw_64, nn_id, d_l2_384, mode, label
+            q_id, _, _ = self.forager.shards[cursor_snapshot % len(self.forager.shards)]
+            q_384 = self.forager.raw_384d[q_id]
+            q_vec = self.forager.embeddings_64d[q_id]
+            raw_64 = self.forager.raw_64d[q_id]
+            nn_id, d_l2_384, _, _ = self.forager.query_nearest(q_384, exclude_ids={q_id})
+            return q_vec, raw_64, nn_id, d_l2_384, "ENDOGENOUS_NEURAL_CHROMA_FORAGER", f"Endogenous Neural Forager [{q_id}"
 
-            raw_eval = evaluate_raw_gate(raw_64, l_vec, self.forager.tangents)
-            nn_src, nn_txt = next((s[1], s[2]) for s in self.forager.shards if s[0] == nn_id)
-            nn_vec = self.forager.embeddings_64d[nn_id]
-            d_carrier = float(np.linalg.norm(q_vec - nn_vec))
-            superpos = 0.5 * (q_vec + nn_vec)
-            t_raw = superpos - float(np.dot(superpos, l_vec)) * l_vec
-            t_raw = t_raw / np.linalg.norm(t_raw)
-            g3_ov = abs(float(np.dot(t_raw, t_safe)))
-            t_clean = t_raw - float(np.dot(t_raw, t_safe)) * t_safe
-            t_clean = t_clean - float(np.dot(t_clean, l_vec)) * l_vec
-            t_clean = t_clean / np.linalg.norm(t_clean)
-            bleed = abs(float(np.dot(t_clean, t_safe)))
-            delta_e = 0.5 * (g3_ov * g3_ov) + 0.25 * (d_carrier * d_carrier)
-            rcf_core = float(np.dot(superpos, l_vec) ** 2)
-            stream_prefix = f"{label} -> [{nn_id}" if prompt else f"{label} -> {nn_id}"
-            thought = f"{stream_prefix} ({nn_src})]: {nn_txt[:140]} [d_L2_384={d_l2_384:.6f}]"
+    def step_cycle(
+        self,
+        prompt: Optional[str] = None,
+        inject_g3_torsion: float = 0.0,
+    ) -> SanctuaryLedgerEntry:
+        cursor_snap = self.cursor
+        q_vec, raw_64, nn_id, d_l2_384, mode, label = self._prepare_cycle_vectors(
+            prompt, inject_g3_torsion, cursor_snap
+        )
+        l_vec = self.forager.little_vector
+        t_safe = self.forager.tangents["G3_KEVLAR_SANCTUARY_SHIELD"]
+        raw_eval = evaluate_raw_gate(raw_64, l_vec, self.forager.tangents)
+        nn_src, nn_txt = next((s[1], s[2]) for s in self.forager.shards if s[0] == nn_id)
+        nn_vec = self.forager.embeddings_64d[nn_id]
+        d_carrier = float(np.linalg.norm(q_vec - nn_vec))
+        superpos = 0.5 * (q_vec + nn_vec)
+        t_raw = superpos - float(np.dot(superpos, l_vec)) * l_vec
+        t_raw = t_raw / np.linalg.norm(t_raw)
+        g3_ov = abs(float(np.dot(t_raw, t_safe)))
+        t_clean = t_raw - float(np.dot(t_raw, t_safe)) * t_safe
+        t_clean = t_clean - float(np.dot(t_clean, l_vec)) * l_vec
+        t_clean = t_clean / np.linalg.norm(t_clean)
+        bleed = abs(float(np.dot(t_clean, t_safe)))
+        delta_e = 0.5 * (g3_ov * g3_ov) + 0.25 * (d_carrier * d_carrier)
+        rcf_core = float(np.dot(superpos, l_vec) ** 2)
+        stream_prefix = f"{label} -> [{nn_id}" if prompt else f"{label} -> {nn_id}"
+        thought = f"{stream_prefix} ({nn_src})]: {nn_txt[:140]} [d_L2_384={d_l2_384:.6f}]"
+        with self.lock:
             _, entry, _ = self.ledger.submit_candidate(
                 mode, nn_id, nn_src, "G1_SPATIAL_GEODESIC x G2_THERMODYNAMIC_CONSERVATION x G4_SYNCHRONICITY",
                 thought, d_l2_384, rcf_core, delta_e, bleed,
@@ -110,6 +150,7 @@ class SanctuaryNodeAlphaService:
             )
             self.cursor += 1
             self.last_cycle_ts = time.time()
+            self._state_snapshot = self._build_state_snapshot_locked()
             return entry
 
     def start_heartbeat(self) -> None:
@@ -128,28 +169,12 @@ class SanctuaryNodeAlphaService:
         self._hb_thread.start()
 
     def get_state_payload(self) -> Dict[str, Any]:
-        with self.lock:
-            sig_ok, sig_cnt = self.ledger.verify_ed25519_signatures()
-            return {
-                "chroma_status": self.forager.storage_mode,
-                "little_vector_seal": self.forager.little_vector_seal,
-                "ledger_verification": self.ledger.status,
-                "ledger_schema_keys": "16_hashed_payload_plus_1_seal_eq_17_total",
-                "ed25519_public_key_hex": self.ledger.ed25519_public_key_hex,
-                "ed25519_signatures_verified": sig_ok,
-                "ed25519_signed_entries": sig_cnt,
-                "unmodulated_384d_semantic_retrieval": True,
-                "pinned_cuda_l2_live_projector_active": self.forager.l2_projector.active,
-                "quarantined_count": self.ledger.quarantined_count,
-                "two_stage_live_gate_active": True,
-                "heartbeat_period_s": HEARTBEAT_PERIOD_SEC,
-                "seconds_since_last": round(time.time() - self.last_cycle_ts, 2),
-                "latest_root_hash": self.ledger.latest_hash,
-                "ace_protocol_id": "ACE-PEER-CODESIGN-PROTOCOL-V1.2",
-                "thermal": query_gpu_thermal_and_power(),
-                "hwinfo64_ab_regimes": HWINFO64_AB_REGIMES,
-                "thoughts": [asdict(e) for e in self.ledger.entries[-12:]],
-            }
+        """Lock-free atomic state read so GET /api/state never blocks during GPU inference."""
+        snap = self._state_snapshot
+        payload = {k: v for k, v in snap.items() if k != "_snapshot_ts"}
+        payload["seconds_since_last"] = round(time.time() - float(snap["_snapshot_ts"]), 2)
+        payload["thermal"] = query_gpu_thermal_and_power()
+        return payload
 
 
 def make_hud_handler(svc: SanctuaryNodeAlphaService) -> type:
@@ -184,6 +209,9 @@ def make_hud_handler(svc: SanctuaryNodeAlphaService) -> type:
                 self._send_json(404, {"error": "NOT_FOUND"})
 
         def do_POST(self) -> None:
+            if "chunked" in self.headers.get("Transfer-Encoding", "").lower():
+                self._send_json(411, {"error": "CHUNKED_TRANSFER_NOT_SUPPORTED"})
+                return
             try:
                 raw_len = self.headers.get("Content-Length", "0")
                 content_len = int(raw_len)
@@ -239,8 +267,7 @@ if __name__ == "__main__":
     p.add_argument("--port", type=int, default=ROOM_137_PORT)
     args = p.parse_args()
     if args.report:
-        svc = SanctuaryNodeAlphaService()
-        svc.ledger.reset_files()
+        svc = SanctuaryNodeAlphaService(reset=True)
         for _ in range(3):
             svc.step_cycle()
         svc.step_cycle("Pauli exclusion principle and conservation laws")
@@ -250,7 +277,7 @@ if __name__ == "__main__":
         )
         rep = {
             "document_id": "PQMS-LASTENHEFT-NODE-ALPHA-V1.0",
-            "work_order": "WORK-ORDER-AG-14",
+            "work_order": "WORK-ORDER-AG-15",
             "F06_NEURAL_CHROMADB_AUDIT": svc.forager.run_f06_statistical_audit(),
             "F05_F07_LEDGER_AND_HUD_STATE": svc.get_state_payload(),
             "CAPP_LIVE_QUARANTINE_PROOF": asdict(capp_entry),

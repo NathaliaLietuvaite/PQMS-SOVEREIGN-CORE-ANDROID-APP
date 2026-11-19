@@ -21,6 +21,10 @@ class TestF06ChromaForager(unittest.TestCase):
         self.assertEqual(self.audit["epistemic_register"], REGISTER_M)
         self.assertEqual(self.audit["shard_count"], 18)
         self.assertLess(self.audit["orthonormality_err_w_384_to_64"], 1e-13)
+        self.assertGreaterEqual(self.audit["calibration_anchor_count"], 64)
+        self.assertEqual(self.audit["empirical_svd_axes_used"], 64)
+        self.assertEqual(self.audit["random_pad_axes"], 0)
+        self.assertTrue(self.audit["full_rank_empirical_64d_basis"])
 
     def test_02_d_l2_statistics_and_pre_g3_reconstruction(self) -> None:
         stats = self.audit["d_l2_statistics"]

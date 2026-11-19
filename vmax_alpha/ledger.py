@@ -1,11 +1,12 @@
 """
 vmax_alpha/ledger.py
-Requirement F-05 & F-07.2/F-07.4/F-07.5 (WORK-ORDER-AG-14 / Revision V1.7 Hardened):
+Requirement F-05 & F-07.2/F-07.4/F-07.5 (WORK-ORDER-AG-15 / Revision V1.8 Hardened):
 Canonical JSONL Hash-Chain Ledger (16 hashed payload fields + 1 discovery_seal_sha256
 field = 17 JSON keys total) featuring:
 1. Native `pynvml` C-API GPU telemetry (zero subprocess overhead, graceful fallback).
 2. O(1) incremental write-path integrity tracking with immediate tamper lock.
-3. Asymmetric Ed25519 signature sidecar preventing full-chain re-hash forgery.
+3. Persistent Ed25519 signature sidecar (env-var `VMAX_ED25519_SEED_HEX` or `0600`
+   local keystore surviving server restarts without `--reset`).
 4. Two-Stage Live ODOS Gate (Stage 1 raw pre-carrier + Stage 2 sanctuary carrier).
 """
 from __future__ import annotations
@@ -18,7 +19,7 @@ from dataclasses import asdict, dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
-from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+from cryptography.hazmat.primitives.serialization import Encoding, NoEncryption, PrivateFormat, PublicFormat
 from vmax_alpha.config import (
     APPENDIX_C_SANCTUARY_ROOT_HASH,
     ODOS_DELTA_E_CEILING,
@@ -159,16 +160,46 @@ def query_gpu_thermal_and_power(simulated_temp_c: float | None = None) -> Dict[s
     }
 
 
+def _load_or_create_ed25519_key(key_file: str) -> Tuple[Ed25519PrivateKey, str]:
+    """Load Ed25519 key from VMAX_ED25519_SEED_HEX or persistent 0600 local keyfile."""
+    env_seed = os.environ.get("VMAX_ED25519_SEED_HEX", "").strip()
+    if env_seed:
+        raw = bytes.fromhex(env_seed)
+        if len(raw) != 32:
+            raise ValueError("VMAX_ED25519_SEED_HEX must be exactly 64 hex chars (32 bytes)")
+        return Ed25519PrivateKey.from_private_bytes(raw), "ENV_VMAX_ED25519_SEED_HEX"
+    if os.path.exists(key_file):
+        with open(key_file, "r", encoding="utf-8") as kf:
+            raw = bytes.fromhex(kf.read().strip())
+        if len(raw) != 32:
+            raise ValueError(f"Corrupt Ed25519 keyfile: {key_file}")
+        return Ed25519PrivateKey.from_private_bytes(raw), "PERSISTENT_LOCAL_KEYFILE_0600"
+    priv = Ed25519PrivateKey.generate()
+    seed_hex = priv.private_bytes(Encoding.Raw, PrivateFormat.Raw, NoEncryption()).hex()
+    parent = os.path.dirname(os.path.abspath(key_file))
+    if parent:
+        os.makedirs(parent, exist_ok=True)
+    fd = os.open(key_file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    try:
+        os.write(fd, (seed_hex + "\n").encode("ascii"))
+    finally:
+        os.close(fd)
+    os.chmod(key_file, 0o600)
+    return priv, "PERSISTENT_LOCAL_KEYFILE_0600"
+
+
 class CanonicalLedgerManager:
     def __init__(
         self,
         ledger_file: str = "VMAX_SANCTUARY_PROD_LEDGER.jsonl",
         quarantine_file: str = "VMAX_QUARANTINE_LEDGER.jsonl",
         root_anchor: str = APPENDIX_C_SANCTUARY_ROOT_HASH,
+        key_file: Optional[str] = None,
     ) -> None:
         self.ledger_file = ledger_file
         self.quarantine_file = quarantine_file
         self.sig_file = f"{ledger_file}.ed25519.jsonl"
+        self.key_file = key_file or f"{ledger_file}.ed25519.key"
         self.root_anchor = root_anchor
         self.status = "ACTIVE_VERIFIED"
         self.entries: List[SanctuaryLedgerEntry] = []
@@ -176,7 +207,7 @@ class CanonicalLedgerManager:
         self.latest_hash = root_anchor
         self._tamper_locked = False
         self._last_stat: Optional[Tuple[int, int]] = None
-        self._ed25519_priv = Ed25519PrivateKey.generate()
+        self._ed25519_priv, self.ed25519_key_source = _load_or_create_ed25519_key(self.key_file)
         self.ed25519_public_key_hex: str = (
             self._ed25519_priv.public_key()
             .public_bytes(Encoding.Raw, PublicFormat.Raw)

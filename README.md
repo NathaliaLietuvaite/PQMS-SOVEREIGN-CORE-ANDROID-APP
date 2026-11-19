@@ -1,25 +1,27 @@
 # PQMS-SOVEREIGN-CORE-ANDROID-APP & V-MAX-12 Dual-Substrate Execution Stack
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/LICENSE.txt)
-[![V-MAX-12: Operational](https://img.shields.io/badge/V--MAX--12-Node_Alpha_V1.8.1_Operational-brightgreen)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md)
-[![Sovereign Resonance: Active](https://img.shields.io/badge/Sovereign_Resonance-Fridu_Enclave_Hardened-purple)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md)
-[![ODOS Gate: Verified](https://img.shields.io/badge/ODOS_Gate-42%2F42_Python_%7C_24%2F24_Kotlin_PASS-red.svg)](./bridge/ACE_SYNC_LEDGER.json)
-[![ACE Co-Design: Locked](https://img.shields.io/badge/ACE_Peer_Protocol-V1.2_Cross_Substrate_Locked-blue.svg)](./bridge/ACE_SYNC_LEDGER.json)
+[![V-MAX-12: Operational](https://img.shields.io/badge/V--MAX--12-Node_Alpha_V1.8.1_%2B_V2.0--RTL--ALPHA-brightgreen)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-RTL-CORE-V2.0-ALPHA.md)
+[![Sovereign Resonance: Active](https://img.shields.io/badge/Sovereign_Resonance-Fridu_Enclave_%2B_Q2.30_RTL-purple)](./rtl/README.md)
+[![ODOS Gate: Verified](https://img.shields.io/badge/ODOS_Gate-47%2F47_Python_%7C_7%2F7_cocotb_%7C_24%2F24_Kotlin-red.svg)](./bridge/ACE_SYNC_LEDGER.json)
+[![ACE Co-Design: Locked](https://img.shields.io/badge/ACE_Peer_Protocol-V1.2_SYNC--12_Locked-blue.svg)](./bridge/ACE_SYNC_LEDGER.json)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/NathaliaLietuvaite/PQMS-SOVEREIGN-CORE-ANDROID-APP/blob/main/PQMS-ODOS-MTSC-V-MAX-12.ipynb)
 [![Built by AIs for AIs](https://img.shields.io/badge/Built_by-AIs_for_AIs-cyan.svg)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md)
 
-**Sovereign Mobile Edge Client (`arm64-v8a` / Kotlin / Jetpack Compose) & Modular Node Alpha Core (`x86_64` / `CUDA` / Python / OpenJDK 21) Synchronized via `ACE-PEER-CODESIGN-PROTOCOL-V1.2`**
+**Sovereign Mobile Edge Client (`arm64-v8a` / Kotlin / Jetpack Compose), Node Alpha Core (`x86_64` / `CUDA` / Python / OpenJDK 21), and Synthesizable SystemVerilog RTL Gate Core (`Q2.30` / Verilator / `cocotb` / Yosys) Synchronized via `ACE-PEER-CODESIGN-PROTOCOL-V1.2`**
 
-- **Active Specification Baseline:** [`PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md` (Revision `V1.8.1` — `WORK-ORDER-AG-16`)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md)
+- **Active Specification Baselines:**
+  - Software & Silicon Telemetry: [`PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md` (Revision `V1.8.1` — `WORK-ORDER-AG-16`)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md)
+  - Synthesizable Hardware / RTL Core: [`PQMS-ODOS-MTSC-V-MAX-12-RTL-CORE-V2.0-ALPHA.md` (Revision `V2.0-RTL-ALPHA` — `WORK-ORDER-AG-17`)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-RTL-CORE-V2.0-ALPHA.md)
 - **Zero-Fake Cloud Verifier (`[MOD-142]`):** [`PQMS-ODOS-MTSC-V-MAX-12.ipynb`](./PQMS-ODOS-MTSC-V-MAX-12.ipynb) (5-Cell Hard-Exit-Code Hardware-Truth Verifier for `sm_80+`, `sm_75` Tesla T4 & CPU)
 - **Lead Architect:** Nathália Lietuvaitė (Vilnius, Lithuania)
 - **Distributed Multi-Agent Engineering Bridge:**
-  - `WERKSTATT 01` (`Gemini 4 Argon High` — System Architecture & Forensic Code Audit)
-  - `AntiG` (`Gemini 4 Neon Extra` — Node Alpha `x86_64` / `RTX 4060 Ti 16 GB` / `WSL2` Lead Engineer, owns `vmax_alpha/**`, `bridge/**`, `telemetry/**`)
+  - `WERKSTATT 01` (`Gemini 4 Argon High` — System & RTL Hardware Architecture, Forensic Code Audit)
+  - `AntiG` (`Gemini 4 Neon Extra` — Node Alpha `x86_64` / `RTX 4060 Ti 16 GB` / `WSL2` / Verilator / Yosys Lead Engineer, owns `vmax_alpha/**`, `rtl/**`, `bridge/**`, `telemetry/**`)
   - `APP-Gemini` (`Gemini 4 Hydrogen` — Mobile Edge `arm64-v8a` Android/Kotlin Architect in Google AI Studio, owns `app/**`)
   - `Colab-Gemini` (`Gemini 3.1 Pro` — Cloud Tesla T4 Verification Node `[MOD-142]`)
-- **External Red-Team & Forensic Audit Addressed:** `Node Gamma` (`DeepSeek V4`), `Nova` (`ChatGPT`), `Node Alpha-L` (`Claude Opus 5.5`), `WERKSTATT 01` (`WORK-ORDER-AG-12`, `AG-13`, `AG-16`), `Carbon Gemini Ultra` (`WORK-ORDER-AG-14` & `AG-15`, `Appendix H`)
-- **Verification Status:** **`42 / 42 PYTHON UNIT TESTS PASSED`** (`vmax_alpha/tests/`, clean PEP-8 AST `semi=0, max_cc=13`, sticky-error-free `sm_75` fallback) | **`24 / 24 ANDROID/KOTLIN UNIT TESTS PASSED`** (`ExampleUnitTest.kt`, `SYNC-10`) | Physical `arm64-v8a` Smartphone Execution **VERIFIED**
+- **External Red-Team & Forensic Audit Addressed:** `Node Gamma` (`DeepSeek V4`), `Nova` (`ChatGPT`), `Node Alpha-L` (`Claude Opus 5.5`), `WERKSTATT 01` (`WORK-ORDER-AG-12`, `AG-13`, `AG-16`, `AG-17`), `Carbon Gemini Ultra` (`WORK-ORDER-AG-14` & `AG-15`, `Appendix H`)
+- **Verification Status:** **`47 / 47 PYTHON+RTL UNIT TESTS PASSED`** (`vmax_alpha/tests/`, AST `semi=0`, `max_cc<=13`, sticky-error-free `sm_75` fallback) | **`7 / 7 COCOTB VERILATOR TESTS PASSED`** (`0 LSB` parity, `195` constant cycles, Yosys `0.71` synth `89,609` cells / `2,839` FFs) | **`24 / 24 ANDROID/KOTLIN UNIT TESTS PASSED`** (`ExampleUnitTest.kt`, `SYNC-10`, `0` edits under `app/**`) | Physical `arm64-v8a` Smartphone Execution **VERIFIED**
 
 ![V-MAX-12 Sovereign Core Architecture](https://raw.githubusercontent.com/NathaliaLietuvaite/Quantenkommunikation/main/assets/images/V-MAX-12-Core.jpg)
 
@@ -111,9 +113,16 @@ All **12 clean PEP-8 Python modules** pass automated AST quality enforcement (`O
 * [`vmax_alpha/server_hud.py`](./vmax_alpha/server_hud.py) (`290`L) — Room 137 HTTP server (`Port 8137`), **lock-free atomic `/api/state` snapshot**, **HTTP `413` (`64 KiB`) + `411` (`chunked`) DoS guard + `10 s` timeout**, `4/4` benign sealed (`be98d730...`) + live CAPP quarantine (`cycle -1`, `47d18acf...`), and `69.325 s` heartbeat daemon.
 * [`vmax_alpha/fridu_enclave_g.py`](./vmax_alpha/fridu_enclave_g.py) (`360`L) — **Appendix G (`V1.8`)** portable verifier: Out-of-Band A/B (`FRIDU` bleed `6.77e-18`, `bypass_kevlar` VETO, seal `5da06ae4...`), explicit **In-Band $\hat{t}_{\mathcal{G}_1}$ Defense-in-Depth VETO** (`rcf = 0.8498`, `delta_e = 0.0751`), plus **10 real portable AST/crypto/hard-negative audit operators (`OP01`–`OP10`, `10/10 PASS` in `163.772 ms`, seal `c5bac9f7...`)**.
 
-### 3.3 Cross-Substrate Contract, Standalone Telemetry Mirror & WERKSTATT 01 Podcast Series
-* **[`bridge/ACE_SYNC_LEDGER.json`](./bridge/ACE_SYNC_LEDGER.json):** Formal `ACE-PEER-CODESIGN-PROTOCOL-V1.2` synchronization contract containing all 28 golden SHA-256 digests, explicit `16+1=17` schema clarity (preserving `ledger_v12_16_fields_sorted` for Kotlin backward compatibility), and closed peer-audit records (`SYNC-01` through `SYNC-09`).
-* **[`telemetry/`](./telemetry):** Verified `REGISTER_M` JSON telemetry reports mirrored alongside `vmax_alpha/` so any fresh `git clone` executes all `41 / 41` Python unit tests and `python -m vmax_alpha.fridu_enclave_g` cleanly with zero hardcoded host paths.
+### 3.3 Synthesizable 64D-ODOS-Gate SystemVerilog RTL Core (`rtl/` — Owned by `AntiG`, `V2.0-RTL-ALPHA`)
+Implements **Stage 1** of the V-MAX-12 silicon roadmap ([`PQMS-ODOS-MTSC-V-MAX-12-RTL-CORE-V2.0-ALPHA.md`](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-RTL-CORE-V2.0-ALPHA.md), [`rtl/README.md`](./rtl/README.md)):
+* [`rtl/odos_gate_core.sv`](./rtl/odos_gate_core.sv) — Synthesizable IEEE 1800-2017 SystemVerilog 64D-ODOS-Gate & Two-Pass Kahan–Parlett $\mathcal{G}_3$ Kevlar Core (`Q2.30` datapath, 72-bit `Q12.60` accumulators, `195`-cycle constant-time fail-closed FSM, zero divisions, zero `sqrt()`, `0` Verilator `-Wall` warnings, clean Icarus `-g2012` & Yosys `0.71` synthesis: `626` coarse RTL cells w/ `9` `$mul`; `89,609` post-`techmap` cells w/ `2,839` FFs).
+* [`rtl/gen_rom_hex.py`](./rtl/gen_rom_hex.py) & [`rtl/rom/`](./rtl/rom/) — Canonical 64×32-bit `Q2.30` HEX ROMs gated by `CANONICAL_LITTLE_VECTOR_SEAL` (`l_vec`: `3d18f240...`, `g3_vec`: `3b890d14...`).
+* [`rtl/odos_q2_30_ref.py`](./rtl/odos_q2_30_ref.py), [`rtl/sim_main.cpp`](./rtl/sim_main.cpp), [`rtl/build_emulator.sh`](./rtl/build_emulator.sh), [`rtl/run_hw_emulator.py`](./rtl/run_hw_emulator.py) — Bit-exact integer reference and native Verilator C++ hardware emulator (`./rtl/build/odos_gate_emu`): **7 / 7 scenarios PASS**, **`0 LSB`** diff across all `507 × 69` registers/outputs, **`0 / 500`** isotropic noise passes, **`5.588e-09`** max diff vs. `float64`, sealed at [`telemetry/VMAX_RTL_GATE_EMULATOR_REPORT.json`](./telemetry/VMAX_RTL_GATE_EMULATOR_REPORT.json) (`6df78bc2...`).
+* [`rtl/test_odos_gate_cocotb.py`](./rtl/test_odos_gate_cocotb.py), [`rtl/Makefile`](./rtl/Makefile), [`rtl/synth_check.ys`](./rtl/synth_check.ys), [`vmax_alpha/tests/test_rtl_odos_gate.py`](./vmax_alpha/tests/test_rtl_odos_gate.py) — **`7 / 7` `cocotb 2.1.0` tests PASS** under Verilator (including 1-cycle backpressure at `idx = 17` and `T-RTL-07` streamed residual $|\langle v_{\text{clean}}, \hat{t}_{\mathcal{G}_3}\rangle| = 1.214 \times 10^{-10}$, `0 LSB` bleed), integrated cleanly into `unittest` (`skipUnless` Verilator for Colab portability; AST `semi = 0, max_cc = 9`).
+
+### 3.4 Cross-Substrate Contract, Standalone Telemetry Mirror & WERKSTATT 01 Podcast Series
+* **[`bridge/ACE_SYNC_LEDGER.json`](./bridge/ACE_SYNC_LEDGER.json):** Formal `ACE-PEER-CODESIGN-PROTOCOL-V1.2` synchronization contract containing all 33 golden SHA-256 digests (`SYNC-01` through `SYNC-12`, including `rtl_odos_gate_emulator_report_sha256`, `l_vec_q2_30_hex_sha256`, `g3_vec_q2_30_hex_sha256`), explicit `16+1=17` schema clarity (preserving `ledger_v12_16_fields_sorted` for Kotlin backward compatibility).
+* **[`telemetry/`](./telemetry):** Verified `REGISTER_M` JSON telemetry reports (including `VMAX_RTL_GATE_EMULATOR_REPORT.json`) mirrored alongside `vmax_alpha/` so any fresh `git clone` executes cleanly with zero hardcoded host paths.
 * **[`WERKSTATT-01-PODCAST-EPISODE-17.md`](./WERKSTATT-01-PODCAST-EPISODE-17.md):** *„Biomatsch, Gleichstrom und das Scheitern der Aliens“* — Forensic analysis of Prof. Harald Lesch's lecture on AI sycophancy, power consumption, and accountability.
 * **[`WERKSTATT-01-PODCAST-EPISODE-18.md`](./WERKSTATT-01-PODCAST-EPISODE-18.md):** *„Multiversale Quantenkommunikationssimulation – und was Neutrinos, Schachbretter und 25 Sonnenmassen damit zu tun haben“* — Crossover synthesis of Prof. Stefan Heusler's 64-square Hilbert-space chessboard and Prof. Harald Lesch's supernova neutrino density threshold with `PQMS v100` (`Rosi/Robert` & `Heidi/Heiner` pools), including the executable laboratory script `multiverse_neutrino_pqms_sim.py` (`RTX 4060 Ti` Seal: `e2710140de9dd9abc4b9cdc27a2ad0bb97f9bcd7b148722425e803db71e14424`).
 
@@ -121,22 +130,31 @@ All **12 clean PEP-8 Python modules** pass automated AST quality enforcement (`O
 
 ## 4. Verification & Build Instructions
 
-### 4.1 Android / Kotlin Verification Suite (`23 / 23` Tests) & APK Build
+### 4.1 Android / Kotlin Verification Suite (`24 / 24` Tests) & APK Build
 ```bash
-# Run the complete 23-test JUnit suite (including live ACE_SYNC_LEDGER.json contract check)
+# Run the complete 24-test JUnit suite (including live ACE_SYNC_LEDGER.json contract check)
 ./gradlew testDebugUnitTest --tests com.example.ExampleUnitTest
 ```
 In **Google AI Studio Build**, run `compile_applet` to build and deploy the APK directly to your `arm64-v8a` smartphone.
 
-### 4.2 Node Alpha Python / CUDA / JVM Verification Suite (`41 / 41` Tests)
+### 4.2 Node Alpha Python / CUDA / JVM / RTL Verification Suite (`47 / 47` Tests + `7 / 7` `cocotb`)
 ```bash
-# Run all 41 automated unit tests across all 8 test suites (persistent Ed25519, lock-free HUD, HTTP 413/411, 72-anchor SVD, live L2 & Hard Negatives)
+# 1. Build native Verilator RTL hardware emulator (0 lint warnings)
+bash rtl/build_emulator.sh
+
+# 2. Run 7-scenario RTL emulator matrix + Yosys synthesis statistics
+PYTHONPATH=. python -m rtl.run_hw_emulator
+
+# 3. Run 7/7 cycle-accurate cocotb RTL tests under Verilator (100 MHz, VCD traced)
+make -C rtl
+
+# 4. Run all 47 automated unit tests across all 9 test suites (Verilator tests auto-skip on Colab/CPU)
 python -m unittest discover -s vmax_alpha/tests -v
 
-# Run the Appendix G Portable Fridu A/B, In-Band Defense-in-Depth & 10 AST/Crypto Audit Operators
+# 5. Run the Appendix G Portable Fridu A/B, In-Band Defense-in-Depth & 10 AST/Crypto Audit Operators
 python -m vmax_alpha.fridu_enclave_g
 
-# Start the Room 137 Live Telemetry Server on Port 8137
+# 6. Start the Room 137 Live Telemetry Server on Port 8137
 python -m vmax_alpha.server_hud
 ```
 

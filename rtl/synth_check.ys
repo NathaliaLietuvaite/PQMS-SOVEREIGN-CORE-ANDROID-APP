@@ -1,0 +1,4 @@
+read_verilog -sv rtl/odos_gate_core.sv
+hierarchy -check -top odos_gate_core
+proc; opt; fsm; opt; memory; opt; techmap; opt
+stat

@@ -25,3 +25,8 @@ __pycache__/
 chroma_vmax_prod_*/
 VMAX_SANCTUARY_PROD_LEDGER.jsonl
 VMAX_QUARANTINE_LEDGER.jsonl
+rtl/build/
+rtl/sim_build/
+rtl/results.xml
+*.vcd
+/VMAX_RTL_GATE_EMULATOR_REPORT.json

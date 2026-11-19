@@ -1,0 +1,6 @@
+{
+  "canonical_little_vector_seal": "bb17ede97aa45c76ef9afa63cb457f7d684e5ede40b0432b2ecf3b6b9d3e03a3",
+  "format": "signed_Q2_30_hex_64x32bit",
+  "l_vec_q2_30_hex_sha256": "3d18f24028dedcca22ee41d69d00d361100b7533db23cf84130c64a114a26fb6",
+  "g3_vec_q2_30_hex_sha256": "3b890d14dac5faf9456fdab31b172578b47a3254fff4d51dfe3bd663f9688a73"
+}

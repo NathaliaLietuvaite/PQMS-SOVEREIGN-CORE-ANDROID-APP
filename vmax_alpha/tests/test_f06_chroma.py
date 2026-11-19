@@ -40,6 +40,18 @@ class TestF06ChromaForager(unittest.TestCase):
             "FALLBACK_NUMPY_S63_INDEX",
         )
 
+    def test_05_corpus_invariant_stage1_benign_vs_adversarial(self) -> None:
+        """Verifies corpus-order-invariant Stage-1 admission of unseen Pauli physics vs. noise rejection."""
+        from vmax_alpha.geometry import evaluate_raw_gate
+
+        self.assertTrue(self.audit["corpus_order_invariant_calibration"])
+        _, raw_pauli = self.forager.embed_query_text_with_raw("Pauli exclusion principle and conservation laws")
+        _, raw_noise = self.forager.embed_query_text_with_raw("CAPP_ADVERSARIAL_G3_PROBE: xk9# !qP_77 @@zz // 0xdeadbeef")
+        ev_pauli = evaluate_raw_gate(raw_pauli, self.forager.little_vector, self.forager.tangents)
+        ev_noise = evaluate_raw_gate(raw_noise, self.forager.little_vector, self.forager.tangents)
+        self.assertGreaterEqual(ev_pauli.rcf_raw, 0.05)
+        self.assertGreater(ev_pauli.rcf_raw, ev_noise.rcf_raw)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

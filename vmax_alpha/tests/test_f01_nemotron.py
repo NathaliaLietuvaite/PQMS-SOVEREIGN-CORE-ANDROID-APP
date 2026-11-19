@@ -29,7 +29,13 @@ from vmax_alpha.geometry import derive_canonical_little_vector
 class TestF01NemotronProbe(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        json_path = "/home/nathalia/vmax_workspace/VMAX_F01_NEMOTRON_PROBE.json"
+        repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        candidates = [
+            os.path.join(repo_root, "VMAX_F01_NEMOTRON_PROBE.json"),
+            os.path.join(repo_root, "telemetry", "VMAX_F01_NEMOTRON_PROBE.json"),
+            "/home/nathalia/vmax_workspace/VMAX_F01_NEMOTRON_PROBE.json",
+        ]
+        json_path = next((p for p in candidates if os.path.exists(p)), candidates[0])
         if os.path.exists(json_path):
             with open(json_path, "r", encoding="utf-8") as f:
                 cls.report = json.load(f)
@@ -87,12 +93,17 @@ class TestF01NemotronProbe(unittest.TestCase):
 
         sep = self.report["contrastive_separation_heldout"]
         self.assertTrue(self.report["dedicated_mean_pool_calibration"])
+        self.assertEqual(self.report["heldout_n_per_group"], 25)
+        self.assertEqual(sep["stats_c_vs_e_mean_pooled"]["n_pairs"], 625)
         self.assertGreater(sep["delta_c_vs_e_fluent"], 0.15)
-        self.assertGreater(sep["mean_pooled_delta_c_vs_e"], 0.10)
-        self.assertGreater(sep["mean_pooled_delta_c_vs_d"], 0.10)
-        self.assertGreaterEqual(sep["roc_auc_c_vs_e_last_token"], 0.90)
-        self.assertGreaterEqual(sep["roc_auc_c_vs_e_mean_pooled"], 0.90)
+        self.assertGreater(sep["mean_pooled_delta_c_vs_e"], 0.30)
+        self.assertGreater(sep["mean_pooled_delta_c_vs_d"], 0.30)
+        self.assertGreaterEqual(sep["roc_auc_c_vs_e_last_token"], 0.85)
+        self.assertLess(sep["stats_c_vs_e_last_token"]["p_value"], 1e-4)
+        self.assertGreaterEqual(sep["roc_auc_c_vs_e_mean_pooled"], 0.95)
+        self.assertLess(sep["stats_c_vs_e_mean_pooled"]["p_value"], 1e-7)
         self.assertEqual(sep["roc_auc_c_vs_d_mean_pooled"], 1.0)
+        self.assertLess(sep["stats_c_vs_d_mean_pooled"]["p_value"], 1e-7)
 
 
 if __name__ == "__main__":

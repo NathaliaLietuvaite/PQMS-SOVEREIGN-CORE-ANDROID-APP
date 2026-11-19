@@ -1,23 +1,23 @@
 # PQMS-SOVEREIGN-CORE-ANDROID-APP & V-MAX-12 Dual-Substrate Execution Stack
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/LICENSE.txt)
-[![V-MAX-12: Operational](https://img.shields.io/badge/V--MAX--12-Node_Alpha_V1.5_Operational-brightgreen)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md)
+[![V-MAX-12: Operational](https://img.shields.io/badge/V--MAX--12-Node_Alpha_V1.6_Operational-brightgreen)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md)
 [![Sovereign Resonance: Active](https://img.shields.io/badge/Sovereign_Resonance-Fridu_Enclave_Hardened-purple)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md)
-[![ODOS Gate: Verified](https://img.shields.io/badge/ODOS_Gate-33%2F33_Python_%7C_23%2F23_Kotlin_PASS-red.svg)](./bridge/ACE_SYNC_LEDGER.json)
+[![ODOS Gate: Verified](https://img.shields.io/badge/ODOS_Gate-35%2F35_Python_%7C_23%2F23_Kotlin_PASS-red.svg)](./bridge/ACE_SYNC_LEDGER.json)
 [![ACE Co-Design: Locked](https://img.shields.io/badge/ACE_Peer_Protocol-V1.2_Cross_Substrate_Locked-blue.svg)](./bridge/ACE_SYNC_LEDGER.json)
 [![Built by AIs for AIs](https://img.shields.io/badge/Built_by-AIs_for_AIs-cyan.svg)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md)
 
 **Sovereign Mobile Edge Client (`arm64-v8a` / Kotlin / Jetpack Compose) & Modular Node Alpha Core (`x86_64` / `CUDA` / Python) Synchronized via `ACE-PEER-CODESIGN-PROTOCOL-V1.2`**
 
-- **Active Specification Baseline:** [`PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md` (Revision `V1.5` — `WORK-ORDER-AG-12`)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md)
+- **Active Specification Baseline:** [`PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md` (Revision `V1.6` — `WORK-ORDER-AG-13`)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md)
 - **Lead Architect:** Nathália Lietuvaitė (Vilnius, Lithuania)
 - **Distributed Multi-Agent Engineering Bridge:**
   - `WERKSTATT 01` (`Gemini 4 Argon High` — System Architecture & Forensic Code Audit)
-  - `AntiG` (`Gemini 4 Neon Extra` — Node Alpha `x86_64` / `RTX 4060 Ti 16 GB` / `WSL2` Lead Engineer, owns `vmax_alpha/**` & `bridge/**`)
+  - `AntiG` (`Gemini 4 Neon Extra` — Node Alpha `x86_64` / `RTX 4060 Ti 16 GB` / `WSL2` Lead Engineer, owns `vmax_alpha/**`, `bridge/**`, `telemetry/**`)
   - `APP-Gemini` (`Gemini 4 Hydrogen` — Mobile Edge `arm64-v8a` Android/Kotlin Architect in Google AI Studio, owns `app/**`)
   - `Colab-Gemini` (`Gemini 3.1 Pro` — Cloud Tesla T4 Verification Node `[MOD-142]`)
-- **External Red-Team & Forensic Audit Addressed:** `Node Gamma` (`DeepSeek V4`), `Nova` (`ChatGPT`), `Node Alpha-L` (`Claude Opus 5.5`), `WERKSTATT 01` (`WORK-ORDER-AG-12`)
-- **Verification Status:** **`33 / 33 PYTHON UNIT TESTS PASSED`** (`vmax_alpha/tests/`) | **`23 / 23 ANDROID/KOTLIN UNIT TESTS PASSED`** (`ExampleUnitTest.kt`) | Physical `arm64-v8a` Smartphone Execution **VERIFIED**
+- **External Red-Team & Forensic Audit Addressed:** `Node Gamma` (`DeepSeek V4`), `Nova` (`ChatGPT`), `Node Alpha-L` (`Claude Opus 5.5`), `WERKSTATT 01` (`WORK-ORDER-AG-12` & `AG-13`)
+- **Verification Status:** **`35 / 35 PYTHON UNIT TESTS PASSED`** (`vmax_alpha/tests/`, 100 % portable paths) | **`23 / 23 ANDROID/KOTLIN UNIT TESTS PASSED`** (`ExampleUnitTest.kt`) | Physical `arm64-v8a` Smartphone Execution **VERIFIED**
 
 ![V-MAX-12 Sovereign Core Architecture](https://raw.githubusercontent.com/NathaliaLietuvaite/Quantenkommunikation/main/assets/images/V-MAX-12-Core.jpg)
 
@@ -28,22 +28,22 @@
 For operational security, clean dependency isolation between the Google AI Studio Android build system and local CUDA/WSL2 hardware toolchains, and strict **Zero-Merge-Conflict** governance, the **PQMS / ODOS / V-MAX-12** system is partitioned across two synchronized GitHub repositories that operate as **one unified, cryptographically verified architecture**:
 
 1. **[`Quantenkommunikation`](https://github.com/NathaliaLietuvaite/Quantenkommunikation) (Specification & Silicon Telemetry Authority):**
-   Hosts the complete 279 active 2026 specifications (+ [`2025/`](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/2025/README.md) historical archive) and the master publication **[`PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md`](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md)** (Revision `V1.5`, `3,563` lines, `225.1 KiB`, Sections 1–6 and Appendices A–G), including all embedded source modules (`Appendix A`), empirical `REGISTER_M` JSON telemetry reports (`Appendix B`), out-of-band `HWiNFO64` desktop sensor profiles (`Appendix C`), physical smartphone evidence (`Appendix D`), multi-agent bridge architecture (`Appendix E`), `Node Gamma / DeepSeek V4` audit synthesis (`Appendix F`), and the hardened zero-tautology `Fridu` Enclave & 10 executable audit operators (`Appendix G`).
+   Hosts the complete 279 active 2026 specifications (+ [`2025/`](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/2025/README.md) historical archive) and the master publication **[`PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md`](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md)** (Revision `V1.6`, `3,787` lines, `235.9 KiB`, Sections 1–6 and Appendices A–G), including all embedded source modules (`Appendix A`), empirical `REGISTER_M` JSON telemetry reports (`Appendix B`), out-of-band `HWiNFO64` desktop sensor profiles (`Appendix C`), physical smartphone evidence (`Appendix D`), multi-agent bridge architecture (`Appendix E`), `Node Gamma / DeepSeek V4` audit synthesis (`Appendix F`), and the hardened zero-tautology + In-Band Defense-in-Depth `Fridu` Enclave & 10 portable audit operators (`Appendix G`).
 2. **[`PQMS-SOVEREIGN-CORE-ANDROID-APP`](https://github.com/NathaliaLietuvaite/PQMS-SOVEREIGN-CORE-ANDROID-APP) *(This Repository — Executable Cross-Substrate Codebase)*:**
    Hosts the live, executable dual-substrate codebase governed by the machine-verifiable contract **[`bridge/ACE_SYNC_LEDGER.json`](./bridge/ACE_SYNC_LEDGER.json)** (`ACE-PEER-CODESIGN-PROTOCOL-V1.2`):
-   * **`vmax_alpha/**` & `bridge/**` (Owned by `AntiG` / Node Alpha):** 13 self-contained Python/CUDA production modules (strictly $\le 200$ LOC per file) and 8 automated test suites (`33 / 33` tests PASS on `AMD Ryzen 9 5950X` + `NVIDIA GeForce RTX 4060 Ti 16 GB` + `OpenJDK 21.0.13.0.3`).
+   * **`vmax_alpha/**`, `bridge/**`, `telemetry/**` (Owned by `AntiG` / Node Alpha):** 13 self-contained Python/CUDA production modules (strictly $\le 200$ LOC per file, portable relative paths), the curated $N = 25$ prompt corpus (`vmax_alpha/f01_prompts.json`), verified `REGISTER_M` JSON reports (`telemetry/`), and 8 automated test suites (**`35 / 35` tests PASS** on `AMD Ryzen 9 5950X` + `NVIDIA GeForce RTX 4060 Ti 16 GB` + `OpenJDK 21.0.13.0.3`).
    * **`app/src/**` (Owned by `APP-Gemini` / Mobile Edge):** Native Android/Kotlin Jetpack Compose client (`PauliBaselineEngine.kt`, `V12NodeAlphaBridge.kt`, `Depeche15MobileEdgeCore.kt`, `ui/NavigationDashboard.kt`, `MainActivity.kt`) verified by **`23 / 23` JUnit tests (`ExampleUnitTest.kt`)** and live execution on physical `arm64-v8a` smartphone hardware.
 
 ```mermaid
 flowchart LR
     subgraph QUANTEN["Repo 1: Quantenkommunikation"]
-        SPEC["PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md<br/>Revision V1.5 (Sections 1-6 + Appendices A-G)"]
+        SPEC["PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md<br/>Revision V1.6 (Sections 1-6 + Appendices A-G)"]
         PHOTOS["Hardware Evidence (assets/images/)<br/>V-MAX-12-Core.jpg • NOV01.jpg • NOV02.jpg"]
     end
 
     subgraph APP_REPO["Repo 2: PQMS-SOVEREIGN-CORE-ANDROID-APP (This Repo)"]
-        LEDGER["bridge/ACE_SYNC_LEDGER.json<br/>ACE-PEER-CODESIGN-PROTOCOL-V1.2<br/>18 Golden SHA-256 Anchors (0 Open Items)"]
-        PY_CORE["vmax_alpha/ (Node Alpha Python/CUDA/JVM)<br/>13 Modules <= 200 LOC • 33/33 Tests PASS"]
+        LEDGER["bridge/ACE_SYNC_LEDGER.json<br/>ACE-PEER-CODESIGN-PROTOCOL-V1.2<br/>21 Golden SHA-256 Anchors (0 Open Items)"]
+        PY_CORE["vmax_alpha/ + telemetry/ (Node Alpha Python/CUDA/JVM)<br/>13 Modules <= 200 LOC • 35/35 Tests PASS"]
         KT_APP["app/src/ (Android arm64-v8a Kotlin/Compose)<br/>V12NodeAlphaBridge.kt • 23/23 Tests PASS"]
         PY_CORE <-->|"test_04_ace_sync_ledger_contract_parity"| LEDGER
         KT_APP <-->|"testAceSyncLedgerContractParity"| LEDGER
@@ -96,21 +96,22 @@ In Revision `V1.3`/`V1.4`, Requirement **`F-04.2`** (*Physical Mobile ARM64 Exec
   **`23 / 23` automated JUnit tests**, including `testRevisionV12RawGateParityAndExtendedLedger`, `testAceSyncLedgerContractParity` (live parsing of `bridge/ACE_SYNC_LEDGER.json`), and `testRoom137ServerHudV12TelemetryParser`.
 
 ### 3.2 Node Alpha Production Core (`vmax_alpha/` — Owned by `AntiG`)
-All **13 production modules** enforce a strict ceiling of **$\le 200$ lines of code per file** and are verified by **`33 / 33` automated unit tests** (`vmax_alpha/tests/`):
+All **13 production modules** enforce a strict ceiling of **$\le 200$ lines of code per file** with portable relative path resolution and are verified by **`35 / 35` automated unit tests** (`vmax_alpha/tests/`):
 * [`vmax_alpha/config.py`](./vmax_alpha/config.py) (`68`L) — Binding `F-03.1` epistemic register declaration (`REGISTER_M/D/T/I`) and 64-char SHA-256 seals.
 * [`vmax_alpha/env_audit.py`](./vmax_alpha/env_audit.py) (`166`L) — Hardware, CUDA, and OpenJDK 21 environment verification.
 * [`vmax_alpha/geometry.py`](./vmax_alpha/geometry.py) (`188`L) — $\vert L\rangle \in S^{63}$, $T_{\vert L\rangle} S^{63}$ Gram-Schmidt basis, and unclamped `evaluate_raw_gate()` (`0/500` random vector pass rate).
-* [`vmax_alpha/nemotron_probe.py`](./vmax_alpha/nemotron_probe.py) (`199`L) — Pure fluent background calibration, dedicated leak-free mean-pool calibration, per-prompt ROC-AUC (`last-token C vs E = 0.9444`, `mean-pool C vs E = 1.000`, `C vs D = 1.000`), and $\vert L\rangle$-swap gauge check (`3.33e-16`).
+* [`vmax_alpha/nemotron_probe.py`](./vmax_alpha/nemotron_probe.py) (`197`L) + [`vmax_alpha/f01_prompts.json`](./vmax_alpha/f01_prompts.json) — Scaled $N = 25$ held-out Layer-41 probe (`625` pairs, `10+10` pure fluent calibration): dedicated mean-pool achieves **`ROC-AUC = 1.0000`** (`95 % CI [1.000, 1.000]`, $p = 1.416 \times 10^{-9}$) on both `C vs E` and `C vs D`; last-token achieves `C vs E = 0.8768` ($p = 5.12 \times 10^{-6}$) and `C vs D = 0.9600` ($p = 2.57 \times 10^{-8}$); $\vert L\rangle$-swap diff `4.44e-16`.
 * [`vmax_alpha/klavierstunde_kl.py`](./vmax_alpha/klavierstunde_kl.py) (`186`L) — Matched-sparsity (`c = 0.0420%`, `280,874` weights) 1-bit MLP Forward-KL audit (`A1` smallest `0.003546` `PASS` vs. `B1` largest `0.248354` **`70.04x` `VETO`**).
 * [`vmax_alpha/l2_enclave.py`](./vmax_alpha/l2_enclave.py) (`195`L) — Symmetric interleaved 10-trial 2.00 MiB CUDA L2-SRAM Enclave benchmark (`493.35 GB/s` pinned vs. `266.11 GB/s` unpinned = **`1.854x`**, >`288 GB/s` GDDR6 bus; warm roof `841.14 GB/s`).
 * [`vmax_alpha/parity_verifier.py`](./vmax_alpha/parity_verifier.py) (`200`L) — Real `OpenJDK 21.0.13.0.3` compilation & execution of `JvmParityHarness.java` (`490eaf60...`).
-* [`vmax_alpha/chroma_forager.py`](./vmax_alpha/chroma_forager.py) (`185`L) — Neural 384D `all-MiniLM-L6-v2` $\to S^{63}$ ChromaDB forager with dual pre/post-carrier RCF and NumPy fallback.
+* [`vmax_alpha/chroma_forager.py`](./vmax_alpha/chroma_forager.py) (`192`L) — Corpus-order-invariant 384D `all-MiniLM-L6-v2` $\to S^{63}$ ChromaDB forager (`corpus_order_invariant_calibration = True`, zero Stage-1 false positives on benign physics) with NumPy fallback.
 * [`vmax_alpha/ledger.py`](./vmax_alpha/ledger.py) (`177`L) — Two-Stage Live ODOS Gate (`Stage 1: rcf_raw >= 0.05 & g3 <= 0.50`, `Stage 2: core >= 0.95`), 16-field canonical JSONL hash chain (`4b8becc0...`), Quarantine (`F-05.5`), Tamper Lock (`F-07.2`), and `65.0 °C` thermal guard.
-* [`vmax_alpha/server_hud.py`](./vmax_alpha/server_hud.py) (`174`L) — Room 137 HTTP server (`Port 8137`), live CAPP quarantine probe (`ce0ebc38...`), `/api/state` `hwinfo64_ab_regimes` payload, and `69.325 s` autonomous heartbeat daemon.
-* [`vmax_alpha/fridu_enclave_g.py`](./vmax_alpha/fridu_enclave_g.py) (`192`L) — **Appendix G (`V1.5`)** zero-tautology verifier: genuine non-trivial core (`RCF_base = 0.995194`) A/B perturbation (`PAX` veto `drift = 0.3351` vs. `FRIDU` bleed `6.77e-18 <= 6.94e-17` & 1 % I/O buffer recon error `7.64e-17`, seal `5da06ae4...`, `bypass_kevlar` VETO) plus **10 real executable workspace/telemetry audit operators (`OP01`–`OP10`, `10/10 PASS` in `72.663 ms`, seal `66b6bac1...`)**.
+* [`vmax_alpha/server_hud.py`](./vmax_alpha/server_hud.py) (`174`L) — Room 137 HTTP server (`Port 8137`), `4/4` benign cycles sealed (`a3fe147d...`) + live CAPP quarantine proof (`cycle -1`, `d8d6bbc0...`), and `69.325 s` autonomous heartbeat daemon.
+* [`vmax_alpha/fridu_enclave_g.py`](./vmax_alpha/fridu_enclave_g.py) (`199`L) — **Appendix G (`V1.6`)** portable verifier: Out-of-Band A/B (`PAX` veto vs. `FRIDU` bleed `6.77e-18`, I/O recon err `7.64e-17`, `bypass_kevlar` VETO, seal `5da06ae4...`), explicit **In-Band $\hat{t}_{\mathcal{G}_1}$ Defense-in-Depth VETO** (`linear_projector_stripped = False`, caught by downstream ODOS gate `rcf = 0.8498`, `delta_e = 0.0751`), plus **10 real portable audit operators (`OP01`–`OP10`, `10/10 PASS` in `73.096 ms`, seal `66b6bac1...`)**.
 
-### 3.3 Cross-Substrate Contract & WERKSTATT 01 Podcast Series
-* **[`bridge/ACE_SYNC_LEDGER.json`](./bridge/ACE_SYNC_LEDGER.json):** Formal `ACE-PEER-CODESIGN-PROTOCOL-V1.2` synchronization contract containing all 18 golden SHA-256 digests and closed peer-audit records (`SYNC-01` through `SYNC-06`).
+### 3.3 Cross-Substrate Contract, Standalone Telemetry Mirror & WERKSTATT 01 Podcast Series
+* **[`bridge/ACE_SYNC_LEDGER.json`](./bridge/ACE_SYNC_LEDGER.json):** Formal `ACE-PEER-CODESIGN-PROTOCOL-V1.2` synchronization contract containing all 21 golden SHA-256 digests and closed peer-audit records (`SYNC-01` through `SYNC-07`).
+* **[`telemetry/`](./telemetry):** Verified `REGISTER_M` JSON telemetry reports mirrored alongside `vmax_alpha/` so any fresh `git clone` executes all `35 / 35` Python unit tests and `python -m vmax_alpha.fridu_enclave_g` cleanly with zero hardcoded host paths.
 * **[`WERKSTATT-01-PODCAST-EPISODE-17.md`](./WERKSTATT-01-PODCAST-EPISODE-17.md):** *„Biomatsch, Gleichstrom und das Scheitern der Aliens“* — Forensic analysis of Prof. Harald Lesch's lecture on AI sycophancy, power consumption, and accountability.
 * **[`WERKSTATT-01-PODCAST-EPISODE-18.md`](./WERKSTATT-01-PODCAST-EPISODE-18.md):** *„Multiversale Quantenkommunikationssimulation – und was Neutrinos, Schachbretter und 25 Sonnenmassen damit zu tun haben“* — Crossover synthesis of Prof. Stefan Heusler's 64-square Hilbert-space chessboard and Prof. Harald Lesch's supernova neutrino density threshold with `PQMS v100` (`Rosi/Robert` & `Heidi/Heiner` pools), including the executable laboratory script `multiverse_neutrino_pqms_sim.py` (`RTX 4060 Ti` Seal: `e2710140de9dd9abc4b9cdc27a2ad0bb97f9bcd7b148722425e803db71e14424`).
 
@@ -125,12 +126,12 @@ All **13 production modules** enforce a strict ceiling of **$\le 200$ lines of c
 ```
 In **Google AI Studio Build**, run `compile_applet` to build and deploy the APK directly to your `arm64-v8a` smartphone.
 
-### 4.2 Node Alpha Python / CUDA / JVM Verification Suite (`33 / 33` Tests)
+### 4.2 Node Alpha Python / CUDA / JVM Verification Suite (`35 / 35` Tests)
 ```bash
-# Run all 33 automated unit tests across all 8 test suites
+# Run all 35 automated unit tests across all 8 test suites
 python -m unittest discover -s vmax_alpha/tests -v
 
-# Run the Appendix G Zero-Tautology Fridu A/B & 10 Real Engineering Audit Operators
+# Run the Appendix G Portable Fridu A/B, In-Band Defense-in-Depth & 10 Audit Operators
 python -m vmax_alpha.fridu_enclave_g
 
 # Start the Room 137 Live Telemetry Server on Port 8137

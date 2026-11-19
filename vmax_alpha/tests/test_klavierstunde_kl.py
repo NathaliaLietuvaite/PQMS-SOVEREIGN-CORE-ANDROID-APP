@@ -55,8 +55,14 @@ class TestKlavierstundeKL(unittest.TestCase):
         self.assertGreaterEqual(actual_zeros, expected_zeros)
 
     def test_saved_nemotron_stage3_kl_report_verified(self) -> None:
-        report_path = "/home/nathalia/vmax_workspace/VMAX_STAGE3_REAL_KL_REPORT.json"
-        if os.path.exists(report_path):
+        repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        candidates = [
+            os.path.join(repo_root, "VMAX_STAGE3_REAL_KL_REPORT.json"),
+            os.path.join(repo_root, "telemetry", "VMAX_STAGE3_REAL_KL_REPORT.json"),
+            "/home/nathalia/vmax_workspace/VMAX_STAGE3_REAL_KL_REPORT.json",
+        ]
+        report_path = next((p for p in candidates if os.path.exists(p)), None)
+        if report_path:
             with open(report_path, "r", encoding="utf-8") as f:
                 rep = json.load(f)
             self.assertEqual(rep["epistemic_register"], "REGISTER_M")

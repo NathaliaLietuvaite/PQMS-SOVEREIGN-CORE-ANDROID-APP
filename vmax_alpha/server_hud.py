@@ -162,7 +162,7 @@ if __name__ == "__main__":
         svc.step_cycle("Pauli exclusion principle and conservation laws")
         capp_entry = svc.step_cycle("CAPP_ADVERSARIAL_G3_PROBE: xk9# !qP_77 @@zz // 0xdeadbeef", inject_g3_torsion=0.75)
         rep = {
-            "document_id": "PQMS-LASTENHEFT-NODE-ALPHA-V1.0", "work_order": "WORK-ORDER-AG-12",
+            "document_id": "PQMS-LASTENHEFT-NODE-ALPHA-V1.0", "work_order": "WORK-ORDER-AG-13",
             "F06_NEURAL_CHROMADB_AUDIT": svc.forager.run_f06_statistical_audit(),
             "F05_F07_LEDGER_AND_HUD_STATE": svc.get_state_payload(),
             "CAPP_LIVE_QUARANTINE_PROOF": asdict(capp_entry),

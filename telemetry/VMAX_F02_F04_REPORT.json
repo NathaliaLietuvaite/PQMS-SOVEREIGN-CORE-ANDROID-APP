@@ -1,0 +1,93 @@
+{
+  "document_id": "PQMS-LASTENHEFT-NODE-ALPHA-V1.0",
+  "work_order": "WORK-ORDER-AG-12",
+  "F02_L2_ENCLAVE": {
+    "epistemic_register": "REGISTER_M",
+    "symmetric_interleaved_protocol": true,
+    "libcudart_path": "/home/nathalia/vmax_310/lib/python3.10/site-packages/nvidia/cu13/lib/libcudart.so.13",
+    "hw_l2_cache_bytes": 33554432,
+    "hw_max_persisting_l2_bytes": 23068672,
+    "set_limit_rc": 0,
+    "persisting_limit_readback_bytes": 2097152,
+    "stream_a_pinning": {
+      "status": "PINNED_PERSISTING_ACTIVE",
+      "fault_code": 0,
+      "readback_rc": 0,
+      "base_ptr_hex": "0x708000000",
+      "num_bytes_readback": 2097152,
+      "hit_ratio_readback": 1.0,
+      "active_hit_prop": 2,
+      "active_miss_prop": 1,
+      "verified": true
+    },
+    "f07_1_fault_injection_recovery": {
+      "status": "FALLBACK_TO_NORMAL_RECOVERY",
+      "fault_code": 11,
+      "fallback_rc": 0,
+      "active_hit_prop": 0,
+      "recovered": true
+    },
+    "microbenchmark_bandwidth": {
+      "n_trials": 10,
+      "rounds_per_trial": 20,
+      "inner_hits_per_round": 1,
+      "stream_a_pinned_2mib_gbps": 493.35,
+      "stream_a_pinned_2mib_stats_gbps": {
+        "median": 493.35,
+        "mean": 495.55,
+        "std": 18.78
+      },
+      "stream_a_unpinned_evicted_2mib_gbps": 266.11,
+      "stream_a_unpinned_evicted_2mib_stats_gbps": {
+        "median": 266.11,
+        "mean": 266.76,
+        "std": 3.92
+      },
+      "stream_b_streaming_64mib_gbps": 269.37,
+      "stream_b_streaming_64mib_stats_gbps": {
+        "median": 269.37,
+        "mean": 270.54,
+        "std": 15.92
+      },
+      "uninterrupted_warm_2mib_l2_roof_gbps": 841.14,
+      "uninterrupted_warm_2mib_l2_roof_stats_gbps": {
+        "median": 841.14,
+        "mean": 802.0,
+        "std": 98.35
+      },
+      "pinned_vs_unpinned_2mib_speedup": 1.854,
+      "pinned_vs_streaming_speedup": 1.831
+    },
+    "ncu_profiler_output": "==WARNING== Note: Running with unmodified GPU clocks. If not controlled otherwise, profiling results may be inconsistent.\n==PROF== Connected to process 1519 (/usr/bin/python3.10)\n==ERROR== ERR_NVGPUCTRPERM - The user does not have permission to access NVIDIA GPU Performance Counters on the target device 0. For instructions on enabling permissions and to get more information see https://developer.nvidia.com/ERR_NVGPUCTRPERM\n==PROF== Disconnected from process 1519"
+  },
+  "F04_PARITY": {
+    "epistemic_register": "REGISTER_M",
+    "jvm_runtime_version": "openjdk version \"21.0.13.0.3\" 2026-10-24",
+    "n_vectors": 1000,
+    "dim": 64,
+    "total_scalars": 64000,
+    "seed": 137,
+    "max_abs_diff_f64": 0.0,
+    "max_abs_diff_python_libm_vs_real_jvm_fdlibm_f64": 2.220446049250313e-16,
+    "max_unit_s63_diff_f64": 0.0,
+    "max_unit_s63_diff_python_vs_real_jvm_f64": 2.7755575615628914e-17,
+    "zero_ulp_exact_match": true,
+    "sha256_raw_64000_f64": "30e636c1d6e3c115a8d5dc02308be97b7ce7d300bfc7413f37fbcfd3276c4f27",
+    "jvm_sha256_raw_64000_f64": "9a280b888f704c916ab40be7f10ab547efacf049ccfaf20bc883e1ef4cdb5f1e",
+    "sha256_raw_64000_f32": "b864d7ae68fe8cf5e706b9710e6d357bd62fefe49c7da3ad512354c85178a339",
+    "sha256_unit_s63_64000_f32": "490eaf6070dc8a404883c0787d4ed1a8226b3a5074e7be33269d8daf47397f27",
+    "jvm_sha256_unit_s63_64000_f32": "490eaf6070dc8a404883c0787d4ed1a8226b3a5074e7be33269d8daf47397f27",
+    "jvm_format_python_double_sample": "1.3877787807814457e-17|1.25e-05",
+    "ledger_chain_audit": {
+      "intact": true,
+      "verified_entries": 4,
+      "seals": [
+        "6784cd65b7b13ca1ec749b73d80647c6bd31a7c63133b307e0d127739075f9e0",
+        "38db6174fb08b76a186eaa51c6ffc99004f70e556b324c9cce01c2ec41814eef",
+        "babe652608bb3b0445bca2f56cf81e2b4a1a4f91508cac3b01228a0620fcf298",
+        "d460cd3608e7fe4534a7b1fdee27bd918a74e3304b02403fc54b8954146b22cd"
+      ],
+      "final_seal": "d460cd3608e7fe4534a7b1fdee27bd918a74e3304b02403fc54b8954146b22cd"
+    }
+  }
+}

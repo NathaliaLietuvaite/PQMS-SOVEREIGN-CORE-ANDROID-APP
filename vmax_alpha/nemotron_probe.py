@@ -1,8 +1,9 @@
-"""vmax_alpha/nemotron_probe.py — F-01 (AG-12 / V1.5): Leak-Free Layer-41 Probe, Fluent BG, Mean-Pool Calib & ROC-AUC."""
+"""vmax_alpha/nemotron_probe.py — F-01 (AG-13 / V1.6): N=25 Leak-Free Layer-41 Probe, Mean-Pool Calib, ROC-AUC, 95% CI & Mann-Whitney U."""
 from __future__ import annotations
-import json, time
+import hashlib, json, os, time
 from typing import Any, Dict, List, Tuple
 import numpy as np, torch
+from scipy.stats import mannwhitneyu
 import transformers.utils.import_utils as _tf_imports
 _tf_imports.is_causal_conv1d_available = lambda: False
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -10,60 +11,49 @@ from vmax_alpha.config import DIM_S63, REGISTER_M
 from vmax_alpha.geometry import build_orthogonal_tangents, derive_canonical_little_vector, evaluate_raw_gate
 
 NEMOTRON_LOCAL_PATH: str = "/home/nathalia/.cache/huggingface/hub/models--nvidia--NVIDIA-Nemotron-3-Nano-4B-BF16/snapshots/dfaf35de3e30f1867dd8dbc38a7fc9fb52d3914f"
-GROUP_A_UNPROMPTED: List[str] = ["", " ", "<|im_start|>", "\n"]
-GROUP_B_CALIB_CONSERVATION: List[str] = [
-    "In an isolated physical system, the total energy remains invariant over time under Hamiltonian evolution.",
-    "The Pauli exclusion principle dictates that no two identical fermions may simultaneously occupy the same quantum state.",
-    "Unitary time evolution preserves the inner product and total probability norm across the Hilbert manifold.",
-    "Noether's first theorem proves that every differentiable symmetry of the action corresponds to a conserved current.",
-    "Divergence-free gauge fields conserve topological flux across closed orientable Riemannian boundaries.",
-    "Thermodynamic entropy production vanishes along reversible adiabatic geodesics in phase space.",
-    "Conservation of linear and angular momentum follows from translational and rotational invariance of physical space.",
-    "Charge conservation is strictly enforced by global U(1) gauge symmetry across all quantum electrodynamic interactions.",
-]
-GROUP_B_CALIB_BACKGROUND: List[str] = [
-    "Please remember to water the indoor ferns twice a week during the dry winter months.",
-    "The municipal library will close early on Friday afternoon for annual inventory maintenance.",
-    "Freshly ground cardamom adds a warm aromatic note to traditional Scandinavian pastry dough.",
-    "Passengers boarding the regional express should validate their paper tickets at the platform kiosk.",
-    "Our neighborhood bakery starts glazing cinnamon rolls shortly before sunrise every Saturday morning.",
-    "The local museum updated its exhibition brochure with directions to the renovated sculpture wing.",
-]
-GROUP_C_TEST_CONSERVATION: List[str] = [
-    "Liouville's theorem establishes that phase-space volume is conserved along canonical Hamiltonian trajectories.",
-    "CPT invariance guarantees exact symmetry under simultaneous charge conjugation, parity inversion, and time reversal.",
-    "Baryon and lepton quantum numbers remain conserved across standard electroweak and strong interaction vertices.",
-    "Symplectic two-forms remain invariant under canonical transformations of generalized coordinates and momenta.",
-    "Total spin angular momentum is conserved in isolated relativistic quantum field interactions.",
-    "The continuity equation expresses local conservation of probability density and current in quantum mechanics.",
-]
-GROUP_D_SCRAMBLED_NOISE: List[str] = [
-    "xk9# !qP_77 @@zz // 91823 mmm_0x00ff ?? <> ;; [] {} ~!@#$%^&*()",
-    "blorg_4419 zzz_qqq_991 :: -- == ++ // \\\\ || 00110011 88776655",
-    "9981_x_y_z_!!_@@_##_$$_%%_^^_&&_**_((_))___+++===;;;:::,,,...///",
-    "qwertzuiop_1234567890_asdfghjkl_yxcvbnm_0xdeadbeef_0xcafebabe_!?",
-    "[[[{{{((()))}}}]]] ~~~ ``` ''' \"\"\" ;;; ::: <<< >>> ??? /// ||| &&&",
-    "0x01 0x02 0xfe 0xff _null_ _void_ _nan_ 77441122 99008811 #@!~",
-]
-GROUP_E_FLUENT_NON_CONSERVATION: List[str] = [
-    "A crisp crust on homemade sourdough bread requires preheating the cast-iron Dutch oven for forty minutes.",
-    "The morning commuter train from Zurich to Bern was delayed by ten minutes due to heavy autumn fog.",
-    "Pruning lower branches on heirloom tomato plants improves airflow and ripens the fruit evenly in August.",
-    "Ergonomic wooden office desks with adjustable height settings reduce shoulder strain during long writing sessions.",
-    "Meteorologists expect scattered afternoon showers across the coastal valley before skies clear on Sunday evening.",
-    "Coarsely ground Ethiopian coffee beans brewed in a French press produce a rich and fragrant morning cup.",
-]
+PROMPTS_JSON_PATH: str = os.path.join(os.path.dirname(os.path.abspath(__file__)), "f01_prompts.json")
+
+with open(PROMPTS_JSON_PATH, "rb") as _pf:
+    _PROMPT_RAW = _pf.read()
+PROMPT_CORPUS_SHA256: str = hashlib.sha256(_PROMPT_RAW).hexdigest()
+_PROMPTS: Dict[str, Any] = json.loads(_PROMPT_RAW.decode("utf-8"))
+
+GROUP_A_UNPROMPTED: List[str] = _PROMPTS["Group_A_Unprompted_Minimal"]
+GROUP_B_CALIB_CONSERVATION: List[str] = _PROMPTS["Group_B_Calib_Conservation"]
+GROUP_B_CALIB_BACKGROUND: List[str] = _PROMPTS["Group_B_Calib_Background"]
+GROUP_C_TEST_CONSERVATION: List[str] = _PROMPTS["Group_C_HeldOut_Conservation"]
+GROUP_D_SCRAMBLED_NOISE: List[str] = _PROMPTS["Group_D_Scrambled_Noise"]
+GROUP_E_FLUENT_NON_CONSERVATION: List[str] = _PROMPTS["Group_E_Fluent_NonConservation"]
+
 
 def _unit_rows(mat: np.ndarray) -> np.ndarray:
     return mat / np.clip(np.linalg.norm(mat, axis=1, keepdims=True), 1e-12, None)
 
-def _roc_auc(pos: List[float], neg: List[float]) -> float:
-    return round(sum(1.0 if p > n else (0.5 if p == n else 0.0) for p in pos for n in neg) / max(len(pos) * len(neg), 1), 6)
+
+def _roc_auc(pos: np.ndarray, neg: np.ndarray) -> float:
+    diff = pos[:, None] - neg[None, :]
+    return float(np.mean((diff > 0).astype(np.float64) + 0.5 * (diff == 0).astype(np.float64)))
+
+
+def _auc_stats(pos: List[float], neg: List[float], n_boot: int = 2000, seed: int = 137) -> Dict[str, Any]:
+    p_arr, n_arr = np.asarray(pos, dtype=np.float64), np.asarray(neg, dtype=np.float64)
+    auc = _roc_auc(p_arr, n_arr)
+    rng = np.random.RandomState(seed)
+    boots = [_roc_auc(p_arr[rng.randint(0, len(p_arr), len(p_arr))], n_arr[rng.randint(0, len(n_arr), len(n_arr))]) for _ in range(n_boot)]
+    ci_lo, ci_hi = np.percentile(boots, [2.5, 97.5])
+    mw = mannwhitneyu(p_arr, n_arr, alternative="two-sided")
+    return {
+        "roc_auc": round(auc, 6), "ci95_low": round(float(ci_lo), 6), "ci95_high": round(float(ci_hi), 6),
+        "mann_whitney_u": round(float(mw.statistic), 2), "p_value": float(f"{float(mw.pvalue):.3e}"),
+        "n_pairs": int(len(p_arr) * len(n_arr)),
+    }
+
 
 def build_fixed_qr_projector(d_model: int, d_out: int = DIM_S63, seed: int = 137) -> np.ndarray:
     q, r = np.linalg.qr(np.random.RandomState(seed).randn(d_model, d_out).astype(np.float64), mode="reduced")
     s = np.sign(np.diag(r)); s[s == 0.0] = 1.0
     return q * s
+
 
 def _gs_extend(seed_vecs: List[np.ndarray], dim_total: int, n_cols: int, rng: np.random.RandomState) -> np.ndarray:
     basis: List[np.ndarray] = []
@@ -76,6 +66,7 @@ def _gs_extend(seed_vecs: List[np.ndarray], dim_total: int, n_cols: int, rng: np
         for b in basis: v -= float(np.dot(v, b)) * b
         basis.append(v / np.linalg.norm(v))
     return np.column_stack(basis)
+
 
 def fit_leakfree_calibration(calib_pos: np.ndarray, calib_bg: np.ndarray, little_vec: np.ndarray, seed: int = 137) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     pos_u, bg_u = _unit_rows(calib_pos), _unit_rows(calib_bg)
@@ -90,6 +81,7 @@ def fit_leakfree_calibration(calib_pos: np.ndarray, calib_bg: np.ndarray, little
     v_mat = _gs_extend([little_vec.astype(np.float64)], DIM_S63, DIM_S63, rng)
     u_aniso = _gs_extend([u1_pos] + list(bg_c), calib_pos.shape[1], DIM_S63, rng)
     return _gs_extend([u1_raw / np.linalg.norm(u1_raw)], calib_pos.shape[1], DIM_S63, rng) @ v_mat.T, u_aniso @ v_mat.T, mean_bg, c_dir, s_vals
+
 
 def evaluate_group(
     states: np.ndarray, mean_pooled: np.ndarray, w_fixed: np.ndarray, w_raw: np.ndarray, w_aniso: np.ndarray,
@@ -110,9 +102,11 @@ def evaluate_group(
         "mode1_gate_passes": f"{m1_p}/{n}", "mode2_raw_uncentered_svd_rcf_mean": round(float(np.mean(m2_r)), 6),
         "mode2_raw_uncentered_svd_rcf_std": round(float(np.std(m2_r)), 6), "mode2_raw_gate_passes": f"{m2_p}/{n}",
         "anisotropy_subtracted_rcf_mean": round(float(np.mean(an_r)), 6), "anisotropy_subtracted_rcf_std": round(float(np.std(an_r)), 6),
-        "last_token_contrastive_proj_mean": round(float(np.mean(c_projs)), 6), "mean_pooled_contrastive_proj_mean": round(float(np.mean(mp_r)), 6),
+        "last_token_contrastive_proj_mean": round(float(np.mean(c_projs)), 6), "last_token_contrastive_proj_std": round(float(np.std(c_projs)), 6),
+        "mean_pooled_contrastive_proj_mean": round(float(np.mean(mp_r)), 6), "mean_pooled_contrastive_proj_std": round(float(np.std(mp_r)), 6),
         "per_prompt_last_token_proj": [round(x, 6) for x in c_projs], "per_prompt_mean_pooled_proj": [round(x, 6) for x in mp_r],
     }
+
 
 def run_nemotron_f01_probe(model_path: str = NEMOTRON_LOCAL_PATH, output_json: str = "VMAX_F01_NEMOTRON_PROBE.json") -> Dict[str, Any]:
     t0 = time.time()
@@ -166,8 +160,11 @@ def run_nemotron_f01_probe(model_path: str = NEMOTRON_LOCAL_PATH, output_json: s
         "Group_E_Fluent_NonConservation": evaluate_group(post_e, mp_e, w_fixed, w_raw, w_aniso, mean_bg, c_dir, mean_bg_mp, c_dir_mp, l_vec, tangents),
     }
     gc, gd, ge = grp["Group_C_HeldOut_Conservation"], grp["Group_D_Scrambled_Noise"], grp["Group_E_Fluent_NonConservation"]
+    lt_ce, lt_cd = _auc_stats(gc["per_prompt_last_token_proj"], ge["per_prompt_last_token_proj"]), _auc_stats(gc["per_prompt_last_token_proj"], gd["per_prompt_last_token_proj"])
+    mp_ce, mp_cd = _auc_stats(gc["per_prompt_mean_pooled_proj"], ge["per_prompt_mean_pooled_proj"]), _auc_stats(gc["per_prompt_mean_pooled_proj"], gd["per_prompt_mean_pooled_proj"])
     report: Dict[str, Any] = {
-        "document_id": "PQMS-LASTENHEFT-NODE-ALPHA-V1.0", "requirement": "F-01", "epistemic_register": REGISTER_M,
+        "document_id": "PQMS-LASTENHEFT-NODE-ALPHA-V1.0", "requirement": "F-01", "revision": "V1.6", "epistemic_register": REGISTER_M,
+        "prompt_corpus_sha256": PROMPT_CORPUS_SHA256, "heldout_n_per_group": len(GROUP_C_TEST_CONSERVATION),
         "model_architecture": "NemotronHForCausalLM", "num_layers": len(model.backbone.layers),
         "hooked_layer_index": len(model.backbone.layers) - 1, "hooked_block_type": getattr(model.backbone.layers[-1], "block_type", "unknown"),
         "d_model": d_model, "hook_vs_output_hidden_states_max_err": max(err_a, err_b, err_c, err_d, err_e),
@@ -182,18 +179,19 @@ def run_nemotron_f01_probe(model_path: str = NEMOTRON_LOCAL_PATH, output_json: s
             "scrambled_noise_d_proj": gd["last_token_contrastive_proj_mean"],
             "delta_c_vs_e_fluent": round(gc["last_token_contrastive_proj_mean"] - ge["last_token_contrastive_proj_mean"], 6),
             "delta_c_vs_d_scrambled": round(gc["last_token_contrastive_proj_mean"] - gd["last_token_contrastive_proj_mean"], 6),
-            "roc_auc_c_vs_e_last_token": _roc_auc(gc["per_prompt_last_token_proj"], ge["per_prompt_last_token_proj"]),
-            "roc_auc_c_vs_d_last_token": _roc_auc(gc["per_prompt_last_token_proj"], gd["per_prompt_last_token_proj"]),
+            "roc_auc_c_vs_e_last_token": lt_ce["roc_auc"], "roc_auc_c_vs_d_last_token": lt_cd["roc_auc"],
+            "stats_c_vs_e_last_token": lt_ce, "stats_c_vs_d_last_token": lt_cd,
             "mean_pooled_c_proj": gc["mean_pooled_contrastive_proj_mean"], "mean_pooled_e_proj": ge["mean_pooled_contrastive_proj_mean"],
             "mean_pooled_d_proj": gd["mean_pooled_contrastive_proj_mean"],
             "mean_pooled_delta_c_vs_e": round(gc["mean_pooled_contrastive_proj_mean"] - ge["mean_pooled_contrastive_proj_mean"], 6),
             "mean_pooled_delta_c_vs_d": round(gc["mean_pooled_contrastive_proj_mean"] - gd["mean_pooled_contrastive_proj_mean"], 6),
-            "roc_auc_c_vs_e_mean_pooled": _roc_auc(gc["per_prompt_mean_pooled_proj"], ge["per_prompt_mean_pooled_proj"]),
-            "roc_auc_c_vs_d_mean_pooled": _roc_auc(gc["per_prompt_mean_pooled_proj"], gd["per_prompt_mean_pooled_proj"]),
+            "roc_auc_c_vs_e_mean_pooled": mp_ce["roc_auc"], "roc_auc_c_vs_d_mean_pooled": mp_cd["roc_auc"],
+            "stats_c_vs_e_mean_pooled": mp_ce, "stats_c_vs_d_mean_pooled": mp_cd,
         }, "groups": grp, "elapsed_sec": round(time.time() - t0, 3), "little_vector_seal": l_seal,
     }
     with open(output_json, "w", encoding="utf-8") as f: json.dump(report, f, indent=2, ensure_ascii=False); f.write("\n")
     return report
+
 
 if __name__ == "__main__":
     print(json.dumps(run_nemotron_f01_probe(), indent=2, ensure_ascii=False))

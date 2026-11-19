@@ -58,8 +58,13 @@ class TestF04Parity(unittest.TestCase):
 
     def test_04_ace_sync_ledger_contract_parity(self) -> None:
         """Verifies bridge/ACE_SYNC_LEDGER.json Golden Vectors & Cycle-05 16-field seal parity."""
-        sync_path = "/home/nathalia/vmax_workspace/bridge/ACE_SYNC_LEDGER.json"
-        if not os.path.exists(sync_path):
+        repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        candidates = [
+            os.path.join(repo_root, "bridge", "ACE_SYNC_LEDGER.json"),
+            "/home/nathalia/vmax_workspace/bridge/ACE_SYNC_LEDGER.json",
+        ]
+        sync_path = next((p for p in candidates if os.path.exists(p)), None)
+        if not sync_path:
             return
         with open(sync_path, "r", encoding="utf-8") as f:
             contract = json.load(f)

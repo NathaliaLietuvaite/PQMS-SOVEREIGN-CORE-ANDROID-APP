@@ -27,9 +27,23 @@ class TestF06ChromaForager(unittest.TestCase):
         self.assertTrue(self.audit["full_rank_empirical_64d_basis"])
 
     def test_02_d_l2_statistics_and_pre_g3_reconstruction(self) -> None:
+        import numpy as np
+        from vmax_alpha.l2_enclave import ENCLAVE_BYTES_2MIB, query_hw_max_persisting_l2_bytes
+
         stats = self.audit["d_l2_statistics"]
         self.assertTrue(self.audit["unmodulated_384d_semantic_retrieval"])
-        self.assertTrue(self.audit["pinned_cuda_l2_live_projector_active"])
+        hw_supports_l2_pin = query_hw_max_persisting_l2_bytes() >= ENCLAVE_BYTES_2MIB
+        if hw_supports_l2_pin:
+            self.assertTrue(self.audit["pinned_cuda_l2_live_projector_active"])
+        else:
+            self.assertFalse(self.audit["pinned_cuda_l2_live_projector_active"])
+            self.assertTrue(self.forager.l2_projector.pin_info.get("recovered", False))
+            probe_v = np.random.RandomState(137).randn(384).astype(np.float64)
+            gpu_or_fb = self.forager.l2_projector.project(probe_v)
+            c = probe_v - self.forager.mean_384
+            ref = (c / max(float(np.linalg.norm(c)), 1e-12)) @ self.forager.w_384_to_64
+            ref = ref / max(float(np.linalg.norm(ref)), 1e-12)
+            self.assertLess(float(np.max(np.abs(gpu_or_fb - ref))), 1e-15)
         self.assertGreater(stats["mean"], 0.05)
         self.assertLess(stats["mean"], 1.50)
         self.assertGreater(stats["std"], 0.001)

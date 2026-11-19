@@ -1,11 +1,12 @@
 """
 vmax_alpha/l2_enclave.py
-Requirement F-02 & F-07.1 (WORK-ORDER-AG-15 / Revision V1.8 Hardened):
-CUDA L2-SRAM 2.00 MiB Enclave Pinning via libcudart.so.13 featuring:
+Requirement F-02 & F-07.1 (WORK-ORDER-AG-16 / Revision V1.8.1 Cross-Arch Hardened):
+CUDA L2-SRAM 2.00 MiB Enclave Pinning via libcudart featuring:
 1. Symmetric N=10 interleaved contention benchmark (identical thrash->enclave
    loop for PERSISTING hitProp=2 vs STREAMING hitProp=1 on same 2.00 MiB buffer).
 2. Real live `PinnedL2ProjectorEnclave` storing `mean_384` and `W_384_to_64`
-   inside the pinned 2.00 MiB L2-SRAM region and executing live S^63 projections.
+   inside the pinned 2.00 MiB L2-SRAM region on sm_80+ GPUs, with sticky-error-free
+   Pre-Ampere (sm_75 Tesla T4) & CPU fallback (`cudaGetLastError` drained).
 """
 from __future__ import annotations
 
@@ -85,10 +86,29 @@ def load_libcudart() -> Tuple[Optional[ctypes.CDLL], str]:
             lib.cudaStreamSetAttribute.restype = ctypes.c_int
             lib.cudaStreamGetAttribute.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.POINTER(CudaStreamAttrValue)]
             lib.cudaStreamGetAttribute.restype = ctypes.c_int
+            lib.cudaGetLastError.argtypes = []
+            lib.cudaGetLastError.restype = ctypes.c_int
             return lib, c
         except OSError:
             continue
     return None, ""
+
+
+def query_hw_max_persisting_l2_bytes(libcudart: Optional[ctypes.CDLL] = None) -> int:
+    """Query CUDA_DEV_ATTR_MAX_PERSISTING_L2_CACHE_SIZE (attr 108); returns 0 on sm_75/CPU."""
+    if not torch.cuda.is_available():
+        return 0
+    lib = libcudart
+    if lib is None:
+        lib, _ = load_libcudart()
+    if lib is None:
+        return 0
+    max_persist = ctypes.c_int(0)
+    rc = int(lib.cudaDeviceGetAttribute(ctypes.byref(max_persist), CUDA_DEV_ATTR_MAX_PERSISTING_L2_CACHE_SIZE, 0))
+    if rc != 0:
+        lib.cudaGetLastError()
+        return 0
+    return int(max_persist.value)
 
 
 def apply_l2_window_with_fallback(
@@ -130,6 +150,8 @@ def apply_l2_window_with_fallback(
                 ctypes.byref(fb),
             )
         )
+        # Drain any thread-local CUDA sticky error so subsequent PyTorch kernels never inherit it.
+        libcudart.cudaGetLastError()
         return {
             "status": "FALLBACK_TO_NORMAL_RECOVERY",
             "fault_code": res_code,
@@ -171,13 +193,29 @@ class PinnedL2ProjectorEnclave:
     def __init__(self, mean_vec: np.ndarray, w_proj: np.ndarray) -> None:
         self.d_in, self.d_out = int(w_proj.shape[0]), int(w_proj.shape[1])
         self.active = False
-        self.pin_info: Dict[str, Any] = {"status": "CPU_FALLBACK", "verified": False}
+        self.pin_info: Dict[str, Any] = {
+            "status": "CPU_FALLBACK",
+            "hw_max_persisting_l2_bytes": 0,
+            "active_hit_prop": CUDA_ACCESS_PROPERTY_NORMAL,
+            "recovered": True,
+            "verified": False,
+        }
         self._cpu_mean = mean_vec.astype(np.float64)
         self._cpu_w = w_proj.astype(np.float64)
         if not torch.cuda.is_available():
             return
         libcudart, _ = load_libcudart()
         if libcudart is None:
+            return
+        hw_max_persist = query_hw_max_persisting_l2_bytes(libcudart)
+        if hw_max_persist < ENCLAVE_BYTES_2MIB:
+            self.pin_info = {
+                "status": "UNSUPPORTED_PRE_AMPERE_FALLBACK",
+                "hw_max_persisting_l2_bytes": hw_max_persist,
+                "active_hit_prop": CUDA_ACCESS_PROPERTY_NORMAL,
+                "recovered": True,
+                "verified": False,
+            }
             return
         self.stream = torch.cuda.Stream(device=0)
         # 262,144 float64 values == exactly 2,097,152 bytes (2.00 MiB)
@@ -189,7 +227,18 @@ class PinnedL2ProjectorEnclave:
             self.mean_view.copy_(torch.from_numpy(self._cpu_mean).to("cuda:0"))
             self.w_view.copy_(torch.from_numpy(self._cpu_w).to("cuda:0"))
         self.stream.synchronize()
-        libcudart.cudaDeviceSetLimit(CUDA_LIMIT_PERSISTING_L2_CACHE_SIZE, ctypes.c_size_t(ENCLAVE_BYTES_2MIB))
+        limit_rc = int(libcudart.cudaDeviceSetLimit(CUDA_LIMIT_PERSISTING_L2_CACHE_SIZE, ctypes.c_size_t(ENCLAVE_BYTES_2MIB)))
+        if limit_rc != 0:
+            libcudart.cudaGetLastError()
+            self.pin_info = {
+                "status": "FALLBACK_TO_NORMAL_RECOVERY",
+                "fault_code": limit_rc,
+                "hw_max_persisting_l2_bytes": hw_max_persist,
+                "active_hit_prop": CUDA_ACCESS_PROPERTY_NORMAL,
+                "recovered": True,
+                "verified": False,
+            }
+            return
         self.pin_info = apply_l2_window_with_fallback(
             libcudart,
             int(self.stream.cuda_stream),
@@ -198,6 +247,7 @@ class PinnedL2ProjectorEnclave:
             1.0,
             hit_prop=CUDA_ACCESS_PROPERTY_PERSISTING,
         )
+        self.pin_info["hw_max_persisting_l2_bytes"] = hw_max_persist
         self.active = bool(self.pin_info.get("verified"))
 
     def project(self, vec_in: np.ndarray) -> np.ndarray:

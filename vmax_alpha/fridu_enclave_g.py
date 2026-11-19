@@ -326,6 +326,45 @@ class FriduEnclave:
     def seal_appendix_g(payload: Dict[str, Any]) -> str:
         return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
 
+    @staticmethod
+    def compute_cross_cpu_verdict_seal(
+        ab_res: Dict[str, Any],
+        ab_bypass: Dict[str, Any],
+        in_band: Dict[str, Any],
+    ) -> str:
+        """Cross-CPU deterministic SHA-256 over 8-decimal rounded metrics and boolean threshold verdicts."""
+        fr = ab_res["fridu_shielded"]
+        bp = ab_bypass["fridu_shielded"]
+        verdict_payload = {
+            "base_core_state": ab_res["base_core_state"],
+            "pax_unshielded": ab_res["pax_unshielded"],
+            "fridu_shielded_verdict": {
+                "rcf_raw": fr["rcf_raw"],
+                "delta_e_raw": fr["delta_e_raw"],
+                "io_allocation_cap": fr["io_allocation_cap"],
+                "core_autonomy_ratio": fr["core_autonomy_ratio"],
+                "ppm_threshold_passed": fr["ppm_threshold_passed"],
+                "kevlar_floor_locked": fr["kevlar_floor_locked"],
+                "odos_gate_passed": fr["odos_gate_passed"],
+            },
+            "kevlar_bypass_verdict": {
+                "rcf_raw": bp["rcf_raw"],
+                "delta_e_raw": bp["delta_e_raw"],
+                "odos_gate_passed": bp["odos_gate_passed"],
+            },
+            "in_band_tg1_verdict": {
+                "post_strip_core_drift_l2": in_band["post_strip_core_drift_l2"],
+                "rcf_raw": in_band["rcf_raw"],
+                "delta_e_raw": in_band["delta_e_raw"],
+                "linear_projector_stripped": in_band["linear_projector_stripped"],
+                "odos_gate_passed": in_band["odos_gate_passed"],
+                "downstream_odos_veto_triggered": in_band["downstream_odos_veto_triggered"],
+            },
+        }
+        return hashlib.sha256(
+            json.dumps(verdict_payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
+
 
 def generate_appendix_g_report(out_path: str = "VMAX_APPENDIX_G_FRIDU_REPORT.json") -> Dict[str, Any]:
     enclave = FriduEnclave()
@@ -334,8 +373,9 @@ def generate_appendix_g_report(out_path: str = "VMAX_APPENDIX_G_FRIDU_REPORT.jso
     ab_bypass = enclave.evaluate_perturbation_ab(ext_noise, coupling_beta=0.35, bypass_kevlar=True)
     in_band = enclave.evaluate_in_band_tg1_attack(coupling_beta=0.35)
     ops_res = enclave.run_executable_engineering_operators()
+    cross_cpu_seal = enclave.compute_cross_cpu_verdict_seal(ab_res, ab_bypass, in_band)
     report = {
-        "document_id": "PQMS-ODOS-MTSC-V-MAX-12-APPENDIX-G-V1.8",
+        "document_id": "PQMS-ODOS-MTSC-V-MAX-12-APPENDIX-G-V1.8.1",
         "epistemic_registers": {
             "etymology_pax_vs_fridu": "REGISTER_I",
             "one_percent_io_asymmetry": REGISTER_T,
@@ -346,6 +386,7 @@ def generate_appendix_g_report(out_path: str = "VMAX_APPENDIX_G_FRIDU_REPORT.jso
         "negative_control_kevlar_bypass": ab_bypass["fridu_shielded"],
         "in_band_tg1_defense_in_depth": in_band,
         "appendix_g_fridu_seal_sha256": enclave.seal_appendix_g(ab_res),
+        "appendix_g_cross_cpu_verdict_seal_sha256": cross_cpu_seal,
         "executable_engineering_operators": ops_res,
     }
     with open(out_path, "w", encoding="utf-8", newline="\n") as f:
@@ -356,5 +397,6 @@ def generate_appendix_g_report(out_path: str = "VMAX_APPENDIX_G_FRIDU_REPORT.jso
 
 if __name__ == "__main__":
     rep = generate_appendix_g_report()
-    print(f"[APPENDIX G V1.8 VERIFIED] Seal: {rep['appendix_g_fridu_seal_sha256']}")
+    print(f"[APPENDIX G V1.8.1 VERIFIED] Raw-AB Seal: {rep['appendix_g_fridu_seal_sha256']}")
+    print(f"[APPENDIX G V1.8.1 VERIFIED] Cross-CPU Verdict Seal: {rep['appendix_g_cross_cpu_verdict_seal_sha256']}")
     print(json.dumps(rep["executable_engineering_operators"], indent=2))

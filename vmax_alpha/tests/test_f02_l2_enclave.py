@@ -63,6 +63,36 @@ class TestF02L2Enclave(unittest.TestCase):
         self.assertEqual(lp["pin_status"], "PINNED_PERSISTING_ACTIVE")
         self.assertLess(lp["max_abs_diff_vs_cpu_f64"], 1e-13)
 
+    def test_06_post_fallback_cuda_zero_sticky_errors(self) -> None:
+        """Regression (WORK-ORDER-AG-16): L2 fallback must drain cudaGetLastError so PyTorch CUDA never inherits sticky errors."""
+        import torch
+        from vmax_alpha.l2_enclave import apply_l2_window_with_fallback, load_libcudart
+
+        libcudart, _ = load_libcudart()
+        self.assertIsNotNone(libcudart)
+        stream = torch.cuda.Stream(device=0)
+        buf = torch.zeros(1024, dtype=torch.float32, device="cuda:0")
+        # Trigger a real driver-level cudaErrorInvalidValue via invalid 1 TiB L2 window
+        fb = apply_l2_window_with_fallback(
+            libcudart,
+            int(stream.cuda_stream),
+            int(buf.data_ptr()),
+            num_bytes=1 << 40,
+            hit_ratio=1.0,
+            hit_prop=CUDA_ACCESS_PROPERTY_PERSISTING,
+        )
+        self.assertEqual(fb["status"], "FALLBACK_TO_NORMAL_RECOVERY")
+        self.assertTrue(fb["recovered"])
+        self.assertEqual(int(libcudart.cudaGetLastError()), 0)
+
+        # Immediately run real PyTorch CUDA embedding kernel (exact failure site on T4 before AG-16)
+        weight = torch.randn(32, 16, device="cuda:0", dtype=torch.float32)
+        indices = torch.tensor([0, 5, 13, 31], device="cuda:0", dtype=torch.long)
+        out = torch.nn.functional.embedding(indices, weight)
+        torch.cuda.synchronize()
+        self.assertEqual(tuple(out.shape), (4, 16))
+        self.assertEqual(int(libcudart.cudaGetLastError()), 0)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

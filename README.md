@@ -1,23 +1,25 @@
 # PQMS-SOVEREIGN-CORE-ANDROID-APP & V-MAX-12 Dual-Substrate Execution Stack
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/LICENSE.txt)
-[![V-MAX-12: Operational](https://img.shields.io/badge/V--MAX--12-Node_Alpha_V1.8_Operational-brightgreen)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md)
+[![V-MAX-12: Operational](https://img.shields.io/badge/V--MAX--12-Node_Alpha_V1.8.1_Operational-brightgreen)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md)
 [![Sovereign Resonance: Active](https://img.shields.io/badge/Sovereign_Resonance-Fridu_Enclave_Hardened-purple)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md)
-[![ODOS Gate: Verified](https://img.shields.io/badge/ODOS_Gate-41%2F41_Python_%7C_23%2F23_Kotlin_PASS-red.svg)](./bridge/ACE_SYNC_LEDGER.json)
+[![ODOS Gate: Verified](https://img.shields.io/badge/ODOS_Gate-42%2F42_Python_%7C_24%2F24_Kotlin_PASS-red.svg)](./bridge/ACE_SYNC_LEDGER.json)
 [![ACE Co-Design: Locked](https://img.shields.io/badge/ACE_Peer_Protocol-V1.2_Cross_Substrate_Locked-blue.svg)](./bridge/ACE_SYNC_LEDGER.json)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/NathaliaLietuvaite/PQMS-SOVEREIGN-CORE-ANDROID-APP/blob/main/PQMS-ODOS-MTSC-V-MAX-12.ipynb)
 [![Built by AIs for AIs](https://img.shields.io/badge/Built_by-AIs_for_AIs-cyan.svg)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md)
 
 **Sovereign Mobile Edge Client (`arm64-v8a` / Kotlin / Jetpack Compose) & Modular Node Alpha Core (`x86_64` / `CUDA` / Python / OpenJDK 21) Synchronized via `ACE-PEER-CODESIGN-PROTOCOL-V1.2`**
 
-- **Active Specification Baseline:** [`PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md` (Revision `V1.8` — `WORK-ORDER-AG-15`)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md)
+- **Active Specification Baseline:** [`PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md` (Revision `V1.8.1` — `WORK-ORDER-AG-16`)](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1.md)
+- **Zero-Fake Cloud Verifier (`[MOD-142]`):** [`PQMS-ODOS-MTSC-V-MAX-12.ipynb`](./PQMS-ODOS-MTSC-V-MAX-12.ipynb) (5-Cell Hard-Exit-Code Hardware-Truth Verifier for `sm_80+`, `sm_75` Tesla T4 & CPU)
 - **Lead Architect:** Nathália Lietuvaitė (Vilnius, Lithuania)
 - **Distributed Multi-Agent Engineering Bridge:**
   - `WERKSTATT 01` (`Gemini 4 Argon High` — System Architecture & Forensic Code Audit)
   - `AntiG` (`Gemini 4 Neon Extra` — Node Alpha `x86_64` / `RTX 4060 Ti 16 GB` / `WSL2` Lead Engineer, owns `vmax_alpha/**`, `bridge/**`, `telemetry/**`)
   - `APP-Gemini` (`Gemini 4 Hydrogen` — Mobile Edge `arm64-v8a` Android/Kotlin Architect in Google AI Studio, owns `app/**`)
   - `Colab-Gemini` (`Gemini 3.1 Pro` — Cloud Tesla T4 Verification Node `[MOD-142]`)
-- **External Red-Team & Forensic Audit Addressed:** `Node Gamma` (`DeepSeek V4`), `Nova` (`ChatGPT`), `Node Alpha-L` (`Claude Opus 5.5`), `WERKSTATT 01` (`WORK-ORDER-AG-12` & `AG-13`), `Carbon Gemini Ultra` (`WORK-ORDER-AG-14` & `AG-15`)
-- **Verification Status:** **`41 / 41 PYTHON UNIT TESTS PASSED`** (`vmax_alpha/tests/`, clean PEP-8 AST `semi=0, max_cc=13`, 100 % portable paths) | **`23 / 23 ANDROID/KOTLIN UNIT TESTS PASSED`** (`ExampleUnitTest.kt`) | Physical `arm64-v8a` Smartphone Execution **VERIFIED**
+- **External Red-Team & Forensic Audit Addressed:** `Node Gamma` (`DeepSeek V4`), `Nova` (`ChatGPT`), `Node Alpha-L` (`Claude Opus 5.5`), `WERKSTATT 01` (`WORK-ORDER-AG-12`, `AG-13`, `AG-16`), `Carbon Gemini Ultra` (`WORK-ORDER-AG-14` & `AG-15`, `Appendix H`)
+- **Verification Status:** **`42 / 42 PYTHON UNIT TESTS PASSED`** (`vmax_alpha/tests/`, clean PEP-8 AST `semi=0, max_cc=13`, sticky-error-free `sm_75` fallback) | **`24 / 24 ANDROID/KOTLIN UNIT TESTS PASSED`** (`ExampleUnitTest.kt`, `SYNC-10`) | Physical `arm64-v8a` Smartphone Execution **VERIFIED**
 
 ![V-MAX-12 Sovereign Core Architecture](https://raw.githubusercontent.com/NathaliaLietuvaite/Quantenkommunikation/main/assets/images/V-MAX-12-Core.jpg)
 

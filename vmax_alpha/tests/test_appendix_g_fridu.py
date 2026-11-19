@@ -75,12 +75,19 @@ class TestAppendixGFriduEnclave(unittest.TestCase):
 
     def test_05_in_band_tg1_attack_caught_by_downstream_odos_gate(self) -> None:
         """Defense-in-Depth: In-band t_G1 attack bypasses linear strip and is vetoed by downstream ODOS gate."""
+        ab_res = self.enclave.evaluate_perturbation_ab(self.ext_noise, coupling_beta=0.35, bypass_kevlar=False)
+        ab_bypass = self.enclave.evaluate_perturbation_ab(self.ext_noise, coupling_beta=0.35, bypass_kevlar=True)
         ib = self.enclave.evaluate_in_band_tg1_attack(coupling_beta=0.35)
         self.assertFalse(ib["linear_projector_stripped"])
         self.assertLess(ib["io_buffer_norm"], 1e-15)
         self.assertFalse(ib["odos_gate_passed"])
         self.assertTrue(ib["downstream_odos_veto_triggered"])
         self.assertGreater(ib["delta_e_raw"], 0.05)
+        verdict_seal = self.enclave.compute_cross_cpu_verdict_seal(ab_res, ab_bypass, ib)
+        self.assertEqual(
+            verdict_seal,
+            "0538b809f7e75c348db26025ae446f18127e665c2244a06457f15152cda59dc7",
+        )
 
 
 if __name__ == "__main__":

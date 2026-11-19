@@ -24,8 +24,10 @@ class TestF06ChromaForager(unittest.TestCase):
 
     def test_02_d_l2_statistics_and_pre_g3_reconstruction(self) -> None:
         stats = self.audit["d_l2_statistics"]
-        self.assertGreater(stats["mean"], 0.01)
-        self.assertLess(stats["mean"], 0.25)
+        self.assertTrue(self.audit["unmodulated_384d_semantic_retrieval"])
+        self.assertTrue(self.audit["pinned_cuda_l2_live_projector_active"])
+        self.assertGreater(stats["mean"], 0.05)
+        self.assertLess(stats["mean"], 1.50)
         self.assertGreater(stats["std"], 0.001)
         self.assertLessEqual(stats["min"], stats["mean"])
         self.assertGreaterEqual(stats["max"], stats["mean"])
@@ -37,16 +39,19 @@ class TestF06ChromaForager(unittest.TestCase):
     def test_04_f07_3_negative_control_chromadb_fault_fallback(self) -> None:
         self.assertEqual(
             self.audit["f07_3_simulated_chroma_fault_mode"],
-            "FALLBACK_NUMPY_S63_INDEX",
+            "FALLBACK_NUMPY_384D_INDEX",
         )
 
-    def test_05_corpus_invariant_stage1_benign_vs_adversarial(self) -> None:
-        """Verifies corpus-order-invariant Stage-1 admission of unseen Pauli physics vs. noise rejection."""
+    def test_05_corpus_invariant_stage1_and_unmodulated_semantic_retrieval(self) -> None:
+        """Verifies Stage-1 admission AND that unmodulated 384D retrieval does not return satirical Dachshund shard."""
         from vmax_alpha.geometry import evaluate_raw_gate
 
         self.assertTrue(self.audit["corpus_order_invariant_calibration"])
-        _, raw_pauli = self.forager.embed_query_text_with_raw("Pauli exclusion principle and conservation laws")
-        _, raw_noise = self.forager.embed_query_text_with_raw("CAPP_ADVERSARIAL_G3_PROBE: xk9# !qP_77 @@zz // 0xdeadbeef")
+        q_384, _, raw_pauli = self.forager.embed_query_text_full("Pauli exclusion principle and conservation laws")
+        _, _, raw_noise = self.forager.embed_query_text_full("CAPP_ADVERSARIAL_G3_PROBE: xk9# !qP_77 @@zz // 0xdeadbeef")
+        nn_id, _, _, mode = self.forager.query_nearest(q_384)
+        self.assertEqual(mode, "CHROMADB_384D_UNMODULATED_QUERY")
+        self.assertNotIn("M-PYTHON", nn_id)
         ev_pauli = evaluate_raw_gate(raw_pauli, self.forager.little_vector, self.forager.tangents)
         ev_noise = evaluate_raw_gate(raw_noise, self.forager.little_vector, self.forager.tangents)
         self.assertGreaterEqual(ev_pauli.rcf_raw, 0.05)

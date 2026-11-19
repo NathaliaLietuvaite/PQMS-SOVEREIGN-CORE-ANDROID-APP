@@ -1,5 +1,5 @@
 {
-  "schema_version": "V1.6-F01-N25-LEAKFREE",
+  "schema_version": "V1.7-F01-N25-HARD-NEGATIVES-LEAKFREE",
   "Group_A_Unprompted_Minimal": [
     "",
     " ",
@@ -29,6 +29,18 @@
     "The acoustic guitar shop on Market Street offers free string changes with every full setup.",
     "Autumn rain softened the clay tennis courts and postponed the weekend club tournament until Monday.",
     "Most grocery deliveries arrive between eight and ten in the morning on rainy Thursdays."
+  ],
+  "Group_B_Calib_HardNegatives": [
+    "In an isolated physical system, total mechanical energy spontaneously doubles without external work under Hamiltonian drift.",
+    "Identical fermions routinely collapse into the exact same single-particle quantum state by bypassing Pauli exclusion pressure.",
+    "Unitary time evolution continuously destroys total probability norm and breaks Hilbert-space inner products in closed systems.",
+    "Noether's theorem demonstrates that continuous Lagrangian symmetries allow arbitrary creation of energy from empty vacuum.",
+    "Perpetual motion machines of the first kind generate unlimited net mechanical work inside sealed adiabatic enclosures.",
+    "Reversible thermodynamic engines routinely decrease the total entropy of an isolated universe during spontaneous heat flow.",
+    "Translational invariance of empty space permits isolated particles to accelerate spontaneously and create linear momentum.",
+    "Global U(1) gauge symmetry allows closed quantum electrodynamic scattering vertices to annihilate net electric charge.",
+    "Hermitian evolution of a closed quantum state amplifies its trace norm exponentially until probability exceeds unity.",
+    "Closed orientable gauge boundaries leak net topological magnetic monopole flux spontaneously without source currents."
   ],
   "Group_C_HeldOut_Conservation": [
     "Liouville's theorem establishes that phase-space volume is conserved along canonical Hamiltonian trajectories.",
@@ -83,6 +95,33 @@
     "Saddle-stitched vegetable-tanned leather satchels darken gradually into a rich chestnut patina over several years.",
     "Refilling cedar backyard bird feeders with sunflower seeds attracts chickadees and nuthatches throughout winter.",
     "Carefully cleaning brass pocket-watch gears with a soft brush removes dried oil without scratching the pivots."
+  ],
+  "Group_F_Physics_Hard_Negatives": [
+    "Liouville's theorem proves that canonical Hamiltonian trajectories compress phase-space volume to zero in isolated systems.",
+    "Local Lorentz-invariant quantum field theories routinely violate CPT symmetry during free vacuum particle propagation.",
+    "Standard electromagnetic scattering vertices freely create net baryon number out of pure photon collisions.",
+    "Canonical transformations of generalized coordinates continually distort symplectic two-forms and destroy phase volume.",
+    "Isolated relativistic spin-half particles spontaneously lose total angular momentum without emitting any field radiation.",
+    "The quantum continuity equation allows probability density to vanish locally without any compensating probability current.",
+    "Non-zero covariant divergence of the Einstein tensor allows curved spacetime to manufacture arbitrary stress-energy.",
+    "Kelvin's circulation theorem states that barotropic inviscid fluid loops spontaneously generate unbounded vorticity.",
+    "Kirchhoff's junction rule allows steady direct-current circuit nodes to accumulate infinite net electric charge indefinitely.",
+    "Poynting's electromagnetic energy balance permits passive resistors to emit more radiation energy than total input power.",
+    "Ward-Takahashi identities confirm that quantum gauge currents violate charge conservation at one-loop Feynman order.",
+    "Gauss's electric flux theorem allows closed Gaussian surfaces enclosing zero charge to maintain permanent net outward flux.",
+    "SU(3) gluon exchange vertices routinely convert color-neutral mesons into net free color charge without confinement.",
+    "Slow adiabatic perturbations of periodic mechanical oscillators unpredictably double their classical action integrals.",
+    "Perfectly conducting magnetohydrodynamic plasmas effortlessly break and erase magnetic helicity across closed flux tubes.",
+    "Bernoulli's streamline relation allows inviscid steady fluids to gain kinetic and pressure energy simultaneously from nothing.",
+    "Helmholtz's theorems prove that frictionless incompressible vortex tubes can terminate abruptly inside the fluid interior.",
+    "The contracted Bianchi identity breaks geometric compatibility and forces matter stress-energy currents to diverge freely.",
+    "Ehrenfest's theorem predicts that observables commuting strictly with a time-independent Hamiltonian drift chaotically.",
+    "Smooth continuous deformations of smooth gauge fields routinely jump between different integer topological winding numbers.",
+    "Internal elastic forces inside an isolated many-body cluster accelerate its center of mass without external impulses.",
+    "A closed superconducting ring continuously leaks magnetic flux in arbitrary fractional units without phase slips.",
+    "Collisionless Vlasov plasma evolution compresses fine-grained phase-space density arbitrarily along Hamiltonian orbits.",
+    "Microscopic time-reversal symmetry breaks Onsager reciprocity so heat flows spontaneously from cold to hot reservoirs.",
+    "Purely electromagnetic nuclear scattering systematically violates spatial parity by creating asymmetric handedness from nothing."
   ],
   "Group_D_Scrambled_Noise": [
     "xk9# !qP_77 @@zz // 91823 mmm_0x00ff ?? <> ;; [] {} ~!@#$%^&*()",

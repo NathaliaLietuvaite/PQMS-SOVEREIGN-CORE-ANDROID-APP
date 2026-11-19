@@ -55,6 +55,14 @@ class TestF02L2Enclave(unittest.TestCase):
         self.assertGreater(bw["pinned_vs_unpinned_2mib_speedup"], 1.50)
         self.assertGreater(bw["pinned_vs_streaming_speedup"], 1.50)
 
+    def test_05_live_pinned_l2_projector_enclave_parity(self) -> None:
+        """Verifies real 384x64 projection matrix packed & executed inside the 2.00 MiB pinned CUDA L2 slab."""
+        lp = self.audit["live_pinned_l2_projector"]
+        self.assertTrue(lp["active"])
+        self.assertEqual(lp["matrix_shape"], [384, 64])
+        self.assertEqual(lp["pin_status"], "PINNED_PERSISTING_ACTIVE")
+        self.assertLess(lp["max_abs_diff_vs_cpu_f64"], 1e-13)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

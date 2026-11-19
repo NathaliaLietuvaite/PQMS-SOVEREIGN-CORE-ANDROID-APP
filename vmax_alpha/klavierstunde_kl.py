@@ -129,7 +129,7 @@ def run_stage3_real_kl_audit(
     t0 = time.time()
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
     model = AutoModelForCausalLM.from_pretrained(
-        model_path, torch_dtype=torch.bfloat16, device_map="cuda:0", trust_remote_code=True
+        model_path, dtype=torch.bfloat16, device_map="cuda:0", trust_remote_code=True
     ).eval()
 
     mlp_layers: List[Tuple[int, torch.nn.Linear]] = []
@@ -178,7 +178,8 @@ def run_stage3_real_kl_audit(
         "elapsed_sec": round(time.time() - t0, 3),
     }
     with open(output_json, "w", encoding="utf-8") as f:
-        json.dump(report, f, indent=2, ensure_ascii=False); f.write("\n")
+        json.dump(report, f, indent=2, ensure_ascii=False)
+        f.write("\n")
     return report
 
 

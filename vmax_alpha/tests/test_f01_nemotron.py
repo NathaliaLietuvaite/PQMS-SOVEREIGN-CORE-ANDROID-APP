@@ -105,6 +105,16 @@ class TestF01NemotronProbe(unittest.TestCase):
         self.assertEqual(sep["roc_auc_c_vs_d_mean_pooled"], 1.0)
         self.assertLess(sep["stats_c_vs_d_mean_pooled"]["p_value"], 1e-7)
 
+    def test_05_hard_negative_physics_polarity_and_svd_energy(self) -> None:
+        """Verifies Householder-QR empirical SVD energy capture and leak-free C vs F Hard-Negative polarity probe."""
+        self.assertTrue(self.report["householder_qr_empirical_svd_basis"])
+        self.assertGreater(self.report["heldout_c_energy_captured_in_64d"], 0.40)
+        hn = self.report["hard_negative_polarity_probe_c_vs_f"]
+        mp = hn["stats_polarity_c_vs_f_mean_pooled"]
+        self.assertEqual(mp["n_pairs"], 625)
+        self.assertGreaterEqual(mp["roc_auc"], 0.70)
+        self.assertLess(mp["p_value"], 0.01)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

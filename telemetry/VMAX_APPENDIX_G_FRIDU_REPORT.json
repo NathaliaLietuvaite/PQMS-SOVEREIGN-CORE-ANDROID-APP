@@ -1,5 +1,5 @@
 {
-  "document_id": "PQMS-ODOS-MTSC-V-MAX-12-APPENDIX-G-V1.6",
+  "document_id": "PQMS-ODOS-MTSC-V-MAX-12-APPENDIX-G-V1.7",
   "epistemic_registers": {
     "etymology_pax_vs_fridu": "REGISTER_I",
     "one_percent_io_asymmetry": "REGISTER_T",
@@ -72,7 +72,7 @@
     "operator_count": 10,
     "passed_count": 10,
     "all_operators_passed": true,
-    "execution_latency_ms": 73.096,
+    "execution_latency_ms": 157.673,
     "operators": [
       {
         "id": "OP01_First_Principles_Norm_Null",
@@ -80,9 +80,9 @@
         "metric": "norm_err=0.00e+00, null_passes=0/200"
       },
       {
-        "id": "OP02_Modular_LOC_And_Sanity",
+        "id": "OP02_AST_PEP8_Quality_Audit",
         "passed": true,
-        "metric": "files=13, max_loc=200, ctrl=0"
+        "metric": "py_files=12, semi=0, max_cc=13, ctrl=0"
       },
       {
         "id": "OP03_Systems_ACE_Sync_Contract",
@@ -97,17 +97,17 @@
       {
         "id": "OP05_Pareto_Matched_Sparsity_KL",
         "passed": true,
-        "metric": "A1=0.003546, B1=0.248354, ratio=70.04x"
+        "metric": "N=25, A1=0.002797, B1=0.311731, ratio=111.47x"
       },
       {
-        "id": "OP06_PID_Thermal_Guard_Loop",
+        "id": "OP06_PID_Thermal_PYNVML_Loop",
         "passed": true,
-        "metric": "live=31.1C, sim67.5_pause=True"
+        "metric": "src=REGISTER_M_PYNVML, live=31.0C, sim67.5_pause=True"
       },
       {
-        "id": "OP07_Roofline_Symmetric_L2_Pin",
+        "id": "OP07_Roofline_Symmetric_L2_Live",
         "passed": true,
-        "metric": "pinned=493.35GB/s, speedup=1.854x"
+        "metric": "pinned=499.3GB/s, speedup=1.852x, live_l2=True"
       },
       {
         "id": "OP08_ULP_JVM_Python_Parity",
@@ -115,16 +115,16 @@
         "metric": "unit_diff=2.78e-17, f32_match=True"
       },
       {
-        "id": "OP09_Falsification_Neg_Controls",
+        "id": "OP09_Falsification_HardNeg_Controls",
         "passed": true,
-        "metric": "shuffled=0.0111, pax_de=0.0662, inband_de=0.0751"
+        "metric": "shuffled=0.0094, hardneg_pol_auc=0.7648, inband_de=0.0751"
       },
       {
-        "id": "OP10_Ledger_Chain_And_Tamper",
+        "id": "OP10_Ledger_Ed25519_And_Tamper",
         "passed": true,
-        "metric": "intact=True, tamper_caught=True"
+        "metric": "chain=True, tamper_caught=True, ed25519=True"
       }
     ],
-    "audit_matrix_seal_sha256": "66b6bac138285f720c7e4c3bfd8fd71c9c2b5dae52c2b80c45e5f527b7eb7cef"
+    "audit_matrix_seal_sha256": "c5bac9f7d3aee1db31377ef50addbf6b4e36680e31447d8e859b85cdb00b21ec"
   }
 }

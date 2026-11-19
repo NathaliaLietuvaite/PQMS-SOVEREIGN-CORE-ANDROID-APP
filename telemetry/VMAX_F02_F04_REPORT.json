@@ -1,6 +1,6 @@
 {
   "document_id": "PQMS-LASTENHEFT-NODE-ALPHA-V1.0",
-  "work_order": "WORK-ORDER-AG-12",
+  "work_order": "WORK-ORDER-AG-14",
   "F02_L2_ENCLAVE": {
     "epistemic_register": "REGISTER_M",
     "symmetric_interleaved_protocol": true,
@@ -27,41 +27,52 @@
       "active_hit_prop": 0,
       "recovered": true
     },
+    "live_pinned_l2_projector": {
+      "active": true,
+      "matrix_shape": [
+        384,
+        64
+      ],
+      "payload_bytes_inside_2mib_slab": 199680,
+      "max_abs_diff_vs_cpu_f64": 1.942890293094024e-16,
+      "pin_status": "PINNED_PERSISTING_ACTIVE"
+    },
     "microbenchmark_bandwidth": {
       "n_trials": 10,
       "rounds_per_trial": 20,
       "inner_hits_per_round": 1,
-      "stream_a_pinned_2mib_gbps": 493.35,
+      "stream_a_pinned_2mib_gbps": 499.3,
       "stream_a_pinned_2mib_stats_gbps": {
-        "median": 493.35,
-        "mean": 495.55,
-        "std": 18.78
+        "median": 499.3,
+        "mean": 509.22,
+        "std": 25.57
       },
-      "stream_a_unpinned_evicted_2mib_gbps": 266.11,
+      "stream_a_unpinned_evicted_2mib_gbps": 269.54,
       "stream_a_unpinned_evicted_2mib_stats_gbps": {
-        "median": 266.11,
-        "mean": 266.76,
-        "std": 3.92
+        "median": 269.54,
+        "mean": 270.05,
+        "std": 3.74
       },
-      "stream_b_streaming_64mib_gbps": 269.37,
+      "stream_b_streaming_64mib_gbps": 263.94,
       "stream_b_streaming_64mib_stats_gbps": {
-        "median": 269.37,
-        "mean": 270.54,
+        "median": 263.94,
+        "mean": 268.75,
         "std": 15.92
       },
-      "uninterrupted_warm_2mib_l2_roof_gbps": 841.14,
+      "uninterrupted_warm_2mib_l2_roof_gbps": 838.49,
       "uninterrupted_warm_2mib_l2_roof_stats_gbps": {
-        "median": 841.14,
-        "mean": 802.0,
-        "std": 98.35
+        "median": 838.49,
+        "mean": 808.0,
+        "std": 94.66
       },
-      "pinned_vs_unpinned_2mib_speedup": 1.854,
-      "pinned_vs_streaming_speedup": 1.831
+      "pinned_vs_unpinned_2mib_speedup": 1.852,
+      "pinned_vs_streaming_speedup": 1.892
     },
-    "ncu_profiler_output": "==WARNING== Note: Running with unmodified GPU clocks. If not controlled otherwise, profiling results may be inconsistent.\n==PROF== Connected to process 1519 (/usr/bin/python3.10)\n==ERROR== ERR_NVGPUCTRPERM - The user does not have permission to access NVIDIA GPU Performance Counters on the target device 0. For instructions on enabling permissions and to get more information see https://developer.nvidia.com/ERR_NVGPUCTRPERM\n==PROF== Disconnected from process 1519"
+    "ncu_profiler_output": "==WARNING== Note: Running with unmodified GPU clocks. If not controlled otherwise, profiling results may be inconsistent.\n==PROF== Connected to process 5825 (/usr/bin/python3.10)\n==ERROR== ERR_NVGPUCTRPERM - The user does not have permission to access NVIDIA GPU Performance Counters on the target device 0. For instructions on enabling permissions and to get more information see https://developer.nvidia.com/ERR_NVGPUCTRPERM\n==PROF== Disconnected from process 5825"
   },
   "F04_PARITY": {
     "epistemic_register": "REGISTER_M",
+    "external_java_harness_file": "JvmParityHarness.java",
     "jvm_runtime_version": "openjdk version \"21.0.13.0.3\" 2026-10-24",
     "n_vectors": 1000,
     "dim": 64,

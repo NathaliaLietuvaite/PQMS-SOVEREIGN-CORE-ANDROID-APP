@@ -66,6 +66,7 @@ class TestKlavierstundeKL(unittest.TestCase):
             with open(report_path, "r", encoding="utf-8") as f:
                 rep = json.load(f)
             self.assertEqual(rep["epistemic_register"], "REGISTER_M")
+            self.assertEqual(rep["num_heldout_prompts_group_c"], 25)
             self.assertTrue(rep["condition_a1_smallest_magnitude_0042pct"]["passed"])
             self.assertLessEqual(
                 rep["condition_a1_smallest_magnitude_0042pct"]["mean_forward_kl"], KL_DIVERGENCE_MAX

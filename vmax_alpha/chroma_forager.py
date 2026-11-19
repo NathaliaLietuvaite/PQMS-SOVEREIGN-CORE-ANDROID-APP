@@ -1,6 +1,6 @@
 """
 vmax_alpha/chroma_forager.py
-Requirement F-06 & F-07.3 (WORK-ORDER-AG-14 / Revision V1.7 Hardened):
+Requirement F-06 & F-07.3 (WORK-ORDER-AG-15 / Revision V1.8 Hardened):
 1. Indexes UNMODULATED 384D MiniLM embeddings in ChromaDB so semantic retrieval
    is free from post-carrier |L> clamping distortion (carrier modulation runs
    strictly AFTER retrieval).

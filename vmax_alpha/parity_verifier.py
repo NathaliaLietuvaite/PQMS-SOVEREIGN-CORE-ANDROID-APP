@@ -1,6 +1,6 @@
 """
 vmax_alpha/parity_verifier.py
-Requirement F-04 (WORK-ORDER-AG-14 / Revision V1.7 Clean PEP-8):
+Requirement F-04 (WORK-ORDER-AG-15 / Revision V1.8 Clean PEP-8):
 Cross-Substrate Parity Verifier compiling and executing the external
 `vmax_alpha/JvmParityHarness.java` on OpenJDK 21 across 1,000 vectors
 (64,000 float64 scalars) vs. Python/NumPy.

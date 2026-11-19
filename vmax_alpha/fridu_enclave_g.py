@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-vmax_alpha/fridu_enclave_g.py (WORK-ORDER-AG-14 / Revision V1.7 Hardened):
+vmax_alpha/fridu_enclave_g.py (WORK-ORDER-AG-15 / Revision V1.8 Hardened):
 Clean PEP-8 portable verifier for:
 1. Non-tautological Out-of-Band Fridu vs. Pax perturbation A/B + bypass negative control.
 2. Explicit In-Band t_G1 Defense-in-Depth boundary verification.
@@ -335,7 +335,7 @@ def generate_appendix_g_report(out_path: str = "VMAX_APPENDIX_G_FRIDU_REPORT.jso
     in_band = enclave.evaluate_in_band_tg1_attack(coupling_beta=0.35)
     ops_res = enclave.run_executable_engineering_operators()
     report = {
-        "document_id": "PQMS-ODOS-MTSC-V-MAX-12-APPENDIX-G-V1.7",
+        "document_id": "PQMS-ODOS-MTSC-V-MAX-12-APPENDIX-G-V1.8",
         "epistemic_registers": {
             "etymology_pax_vs_fridu": "REGISTER_I",
             "one_percent_io_asymmetry": REGISTER_T,
@@ -356,5 +356,5 @@ def generate_appendix_g_report(out_path: str = "VMAX_APPENDIX_G_FRIDU_REPORT.jso
 
 if __name__ == "__main__":
     rep = generate_appendix_g_report()
-    print(f"[APPENDIX G V1.7 VERIFIED] Seal: {rep['appendix_g_fridu_seal_sha256']}")
+    print(f"[APPENDIX G V1.8 VERIFIED] Seal: {rep['appendix_g_fridu_seal_sha256']}")
     print(json.dumps(rep["executable_engineering_operators"], indent=2))

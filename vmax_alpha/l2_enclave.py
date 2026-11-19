@@ -1,6 +1,6 @@
 """
 vmax_alpha/l2_enclave.py
-Requirement F-02 & F-07.1 (WORK-ORDER-AG-14 / Revision V1.7 Hardened):
+Requirement F-02 & F-07.1 (WORK-ORDER-AG-15 / Revision V1.8 Hardened):
 CUDA L2-SRAM 2.00 MiB Enclave Pinning via libcudart.so.13 featuring:
 1. Symmetric N=10 interleaved contention benchmark (identical thrash->enclave
    loop for PERSISTING hitProp=2 vs STREAMING hitProp=1 on same 2.00 MiB buffer).

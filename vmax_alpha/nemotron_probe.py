@@ -1,6 +1,6 @@
 """
 vmax_alpha/nemotron_probe.py
-Requirement F-01 (WORK-ORDER-AG-14 / Revision V1.7 Hardened):
+Requirement F-01 (WORK-ORDER-AG-15 / Revision V1.8 Hardened):
 Clean PEP-8 Layer-41 activation probe on Nemotron-3-Nano-4B-BF16 featuring:
 1. N=25 held-out prompts per group (625 pairs), including domain-matched physics
    Hard Negatives (Group F) alongside fluent prose (E) and scrambled noise (D).
@@ -296,7 +296,7 @@ def run_nemotron_f01_probe(
     report: Dict[str, Any] = {
         "document_id": "PQMS-LASTENHEFT-NODE-ALPHA-V1.0",
         "requirement": "F-01",
-        "revision": "V1.7",
+        "revision": "V1.8",
         "epistemic_register": REGISTER_M,
         "prompt_corpus_sha256": PROMPT_CORPUS_SHA256,
         "heldout_n_per_group": len(GROUP_C_TEST_CONSERVATION),

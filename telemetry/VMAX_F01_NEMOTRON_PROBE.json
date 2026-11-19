@@ -1,7 +1,7 @@
 {
   "document_id": "PQMS-LASTENHEFT-NODE-ALPHA-V1.0",
   "requirement": "F-01",
-  "revision": "V1.7",
+  "revision": "V1.8",
   "epistemic_register": "REGISTER_M",
   "prompt_corpus_sha256": "a1433f3de394909aec57382726a8a00a1c553044417be1e82dfede2c9285b7f6",
   "heldout_n_per_group": 25,

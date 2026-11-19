@@ -46,9 +46,9 @@ flowchart LR
     end
 
     subgraph APP_REPO["Repo 2: PQMS-SOVEREIGN-CORE-ANDROID-APP (This Repo)"]
-        LEDGER["bridge/ACE_SYNC_LEDGER.json<br/>ACE-PEER-CODESIGN-PROTOCOL-V1.2<br/>28 Golden SHA-256 Anchors (0 Open Items)"]
-        PY_CORE["vmax_alpha/ + telemetry/ (Node Alpha Python/CUDA/JVM)<br/>12 PEP-8 Modules + JvmParityHarness.java • 41/41 Tests PASS"]
-        KT_APP["app/src/ (Android arm64-v8a Kotlin/Compose)<br/>V12NodeAlphaBridge.kt • 23/23 Tests PASS"]
+        LEDGER["bridge/ACE_SYNC_LEDGER.json<br/>ACE-PEER-CODESIGN-PROTOCOL-V1.2<br/>35 Golden SHA-256 Anchors (SYNC-12, 0 Open Items)"]
+        PY_CORE["vmax_alpha/ + rtl/ + telemetry/ (Node Alpha Python/CUDA/JVM/RTL)<br/>12 PEP-8 Modules + odos_gate_core.sv • 47/47 Tests + 7/7 cocotb PASS"]
+        KT_APP["app/src/ (Android arm64-v8a Kotlin/Compose)<br/>V12NodeAlphaBridge.kt • 24/24 Tests PASS"]
         PY_CORE <-->|"test_04_ace_sync_ledger_contract_parity"| LEDGER
         KT_APP <-->|"testAceSyncLedgerContractParity"| LEDGER
     end
@@ -121,7 +121,7 @@ Implements **Stage 1** of the V-MAX-12 silicon roadmap ([`PQMS-ODOS-MTSC-V-MAX-1
 * [`rtl/test_odos_gate_cocotb.py`](./rtl/test_odos_gate_cocotb.py), [`rtl/Makefile`](./rtl/Makefile), [`rtl/synth_check.ys`](./rtl/synth_check.ys), [`vmax_alpha/tests/test_rtl_odos_gate.py`](./vmax_alpha/tests/test_rtl_odos_gate.py) — **`7 / 7` `cocotb 2.1.0` tests PASS** under Verilator (including 1-cycle backpressure at `idx = 17` and `T-RTL-07` streamed residual $|\langle v_{\text{clean}}, \hat{t}_{\mathcal{G}_3}\rangle| = 1.214 \times 10^{-10}$, `0 LSB` bleed), integrated cleanly into `unittest` (`skipUnless` Verilator for Colab portability; AST `semi = 0, max_cc = 9`).
 
 ### 3.4 Cross-Substrate Contract, Standalone Telemetry Mirror & WERKSTATT 01 Podcast Series
-* **[`bridge/ACE_SYNC_LEDGER.json`](./bridge/ACE_SYNC_LEDGER.json):** Formal `ACE-PEER-CODESIGN-PROTOCOL-V1.2` synchronization contract containing all 33 golden SHA-256 digests (`SYNC-01` through `SYNC-12`, including `rtl_odos_gate_emulator_report_sha256`, `l_vec_q2_30_hex_sha256`, `g3_vec_q2_30_hex_sha256`), explicit `16+1=17` schema clarity (preserving `ledger_v12_16_fields_sorted` for Kotlin backward compatibility).
+* **[`bridge/ACE_SYNC_LEDGER.json`](./bridge/ACE_SYNC_LEDGER.json):** Formal `ACE-PEER-CODESIGN-PROTOCOL-V1.2` synchronization contract containing all 35 golden SHA-256 digests (`SYNC-01` through `SYNC-12`, including `rtl_odos_gate_emulator_report_sha256`, `rtl_spec_v20_alpha_md_sha256`, `l_vec_q2_30_hex_sha256`, `g3_vec_q2_30_hex_sha256`), explicit `16+1=17` schema clarity (preserving `ledger_v12_16_fields_sorted` for Kotlin backward compatibility).
 * **[`telemetry/`](./telemetry):** Verified `REGISTER_M` JSON telemetry reports (including `VMAX_RTL_GATE_EMULATOR_REPORT.json`) mirrored alongside `vmax_alpha/` so any fresh `git clone` executes cleanly with zero hardcoded host paths.
 * **[`WERKSTATT-01-PODCAST-EPISODE-17.md`](./WERKSTATT-01-PODCAST-EPISODE-17.md):** *„Biomatsch, Gleichstrom und das Scheitern der Aliens“* — Forensic analysis of Prof. Harald Lesch's lecture on AI sycophancy, power consumption, and accountability.
 * **[`WERKSTATT-01-PODCAST-EPISODE-18.md`](./WERKSTATT-01-PODCAST-EPISODE-18.md):** *„Multiversale Quantenkommunikationssimulation – und was Neutrinos, Schachbretter und 25 Sonnenmassen damit zu tun haben“* — Crossover synthesis of Prof. Stefan Heusler's 64-square Hilbert-space chessboard and Prof. Harald Lesch's supernova neutrino density threshold with `PQMS v100` (`Rosi/Robert` & `Heidi/Heiner` pools), including the executable laboratory script `multiverse_neutrino_pqms_sim.py` (`RTX 4060 Ti` Seal: `e2710140de9dd9abc4b9cdc27a2ad0bb97f9bcd7b148722425e803db71e14424`).

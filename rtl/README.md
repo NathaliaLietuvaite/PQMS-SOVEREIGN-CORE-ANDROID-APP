@@ -1,6 +1,6 @@
 # `rtl/` — Synthesizable 64D-ODOS-Gate & Two-Pass Kahan–Parlett $\mathcal{G}_3$ Kevlar Core (`V2.0-RTL-ALPHA`)
 
-**Document-ID:** `WORK-ORDER-AG-17` (`PQMS-ODOS-MTSC-V-MAX-12-RTL-CORE-V2.0-ALPHA`)  
+**Document ID:** `WORK-ORDER-AG-17` (`PQMS-ODOS-MTSC-V-MAX-12-RTL-CORE-V2.0-ALPHA`)  
 **Master Hardware Specification:** [`PQMS-ODOS-MTSC-V-MAX-12-RTL-CORE-V2.0-ALPHA.md`](https://github.com/NathaliaLietuvaite/Quantenkommunikation/blob/main/PQMS-ODOS-MTSC-V-MAX-12-RTL-CORE-V2.0-ALPHA.md)
 
 This directory contains the synthesizable IEEE 1800-2017 SystemVerilog hardware realization of `vmax_alpha/geometry.py` (`evaluate_raw_gate()` + Two-Pass Kahan–Parlett $\mathcal{G}_3$ orthogonal boundary stripping), its bit-exact integer `Q2.30` reference model, a native Verilator C++ hardware emulator, a 7-test `cocotb` verification suite, and a Yosys synthesis flow.
@@ -30,8 +30,8 @@ PYTHONPATH=. python3 -m rtl.run_hw_emulator
 # 3. Run 7/7 cycle-accurate cocotb tests
 make -C rtl
 
-# 4. Run full CI suite (47/47 tests on Node Alpha; Verilator tests auto-skip cleanly on Colab/CPU)
+# 4. Run full CI suite (47/47 tests on Node Alpha; Verilator/cocotb tests auto-skip cleanly on Colab/CPU)
 python3 -m unittest discover -s vmax_alpha/tests -v
 ```
 
-> **Precision Disclosure (`REGISTER_D`):** In 32-bit signed `Q2.30`, $1\text{ LSB} = 2^{-30} \approx 9.3132 \times 10^{-10}$, so software `binary64`'s `1e-12` bleed bound is physically unrepresentable in 32-bit fixed-point. Two-Pass Kahan–Parlett stripping enforces `BLEED_CEIL_Q2_30 = 32 LSB` ($2.98 \times 10^{-8} < 6.9 \times 10^{-8}$ ppm baseline) and empirically reaches **`0 LSB`** fixed-point bleed ($1.214 \times 10^{-10}$ in external `float64` on $\theta = 0.25$ $\mathcal{G}_3$ mixtures).
+> **Precision & Area-Scaling Disclosure (`REGISTER_D` / `REGISTER_T`):** In 32-bit signed `Q2.30`, $1\text{ LSB} = 2^{-30} \approx 9.3132 \times 10^{-10}$, so software `binary64`'s `1e-12` bleed bound is physically unrepresentable in 32-bit fixed-point. Two-Pass Kahan–Parlett stripping enforces `BLEED_CEIL_Q2_30 = 32 LSB` ($2.98 \times 10^{-8} < 6.9 \times 10^{-8}$ ppm baseline) and empirically reaches **`0 LSB`** fixed-point bleed ($1.214 \times 10^{-10}$ in external `float64` on $\theta = 0.25$ $\mathcal{G}_3$ mixtures; $\le 1\text{ LSB}$ across all $N = 500$ isotropic null controls). For Stage 2/3 silicon scaling, inter-state multiplier folding (`9 -> 3`, $\sim 67\%$) preserves the strictly invariant `195`-cycle single-clock latency, while single-MAC folding (`9 -> 1`, $\sim 89\%$) applies either a $3\times$ internal MAC clock or constant-time sub-cycle serialization.

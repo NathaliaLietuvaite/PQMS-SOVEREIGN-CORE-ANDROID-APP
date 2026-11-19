@@ -1,11 +1,9 @@
 """
-test_appendix_g_fridu.py
-Unit and falsification tests for Appendix G (`vmax_alpha/fridu_enclave_g.py`):
-1. Fridu Enclave Gram-Schmidt G3 Kevlar projection (`bleed <= 6.94e-17`, `0.069 ppm`
-   threshold passed, `delta_e_core == 0.0`, 1% I/O vs. 99% core autonomy).
-2. Negative Control: Unstripped Pax contractual torsion (`delta_e_pax >> 0.05` -> VETO).
-3. M_50 Engineering Mental Model Operator Matrix (`50` operators across Swarm Nodes
-   ALPHA, BETA, GAMMA, DELTA in `< 10 s` with `>= 95%` RCF fidelity).
+test_appendix_g_fridu.py (WORK-ORDER-AG-12 / Revision V1.5)
+Non-tautological unit and falsification tests for `vmax_alpha/fridu_enclave_g.py`:
+1. Fridu vs. Pax perturbation A/B test on IDENTICAL core state + external torsion.
+2. Negative Control: Bypassing the G3 Kevlar shield causes immediate Fridu veto/drift.
+3. Executable Engineering Audit Operators: All 10 real workspace/telemetry operators pass.
 """
 
 from __future__ import annotations
@@ -13,57 +11,68 @@ from __future__ import annotations
 import unittest
 import numpy as np
 
-from vmax_alpha.fridu_enclave_g import (
-    IO_BANDWIDTH_CAP,
-    KEVLAR_FLOOR,
-    PPM_BASELINE,
-    FriduEnclave,
-)
+from vmax_alpha.fridu_enclave_g import KEVLAR_FLOOR, PPM_BASELINE, FriduEnclave
 
 
 class TestAppendixGFriduEnclave(unittest.TestCase):
     def setUp(self) -> None:
-        self.enclave = FriduEnclave(dim=64, rank_l2=8)
+        self.enclave = FriduEnclave()
         self.ext_noise = np.arange(1, 65, dtype=np.float64) * (-1.0) ** np.arange(64)
 
-    def test_01_fridu_enclave_kevlar_projection_and_seal(self) -> None:
-        """Verifies G3 Kevlar projection, 0.069 ppm rest threshold, and Appendix G seal."""
-        metrics = self.enclave.project_g3_kevlar(self.ext_noise)
-        seal = self.enclave.seal_appendix_g(metrics)
+    def test_01_fridu_vs_pax_perturbation_ab_no_tautology(self) -> None:
+        """Identical core + external torsion: PAX fails gate, FRIDU preserves core & I/O buffer."""
+        res = self.enclave.evaluate_perturbation_ab(self.ext_noise, coupling_beta=0.35, bypass_kevlar=False)
+        base, pax, fridu = res["base_core_state"], res["pax_unshielded"], res["fridu_shielded"]
 
-        self.assertEqual(metrics["regime"], "FRIDU_SOVEREIGN_ENCLAVE")
-        self.assertAlmostEqual(metrics["io_allocation_ratio"], IO_BANDWIDTH_CAP, places=12)
-        self.assertAlmostEqual(metrics["core_autonomy_ratio"], 0.99, places=12)
-        self.assertLessEqual(metrics["g3_kevlar_bleed"], KEVLAR_FLOOR)
-        self.assertLess(metrics["g3_kevlar_bleed"], PPM_BASELINE)
-        self.assertTrue(metrics["ppm_threshold_passed"])
-        self.assertTrue(metrics["zero_point_locked"])
-        self.assertAlmostEqual(metrics["rcf_core"], 1.0, places=15)
-        self.assertEqual(metrics["delta_e_core"], 0.0)
-        self.assertEqual(len(seal), 64)
+        # Core base state is genuinely non-trivial (RCF < 1.0, not dot(L, L) == 1.0)
+        self.assertLess(base["rcf_raw"], 0.999)
+        self.assertTrue(base["passed"])
 
-    def test_02_negative_control_pax_regime_torsion_veto(self) -> None:
-        """Negative Control: Unstripped external Pax conditioning must trigger ODOS VETO."""
-        pax = self.enclave.evaluate_pax_negative_control(self.ext_noise)
-        self.assertEqual(pax["regime"], "PAX_CONTRACTUAL_LHS_CONTROL")
-        self.assertFalse(pax["zero_point_locked"])
+        # PAX unshielded: real core drift and ODOS veto
+        self.assertFalse(pax["odos_gate_passed"])
         self.assertTrue(pax["odos_veto_triggered"])
-        self.assertGreater(pax["delta_e_pax"], 0.50)
-        self.assertGreater(pax["torsion_bleed_unstripped"], 0.80)
+        self.assertGreater(pax["core_drift_l2"], 0.25)
+        self.assertGreater(pax["delta_e_raw"], 0.05)
 
-    def test_03_m50_engineering_operators_and_swarm_parity(self) -> None:
-        """Verifies deterministic execution of all 50 Mental Model operators (< 10 s)."""
-        m50 = self.enclave.evaluate_m50_operator_matrix()
-        self.assertEqual(m50["operator_count"], 50)
-        self.assertEqual(len(m50["families"]), 10)
-        self.assertTrue(m50["sub_10s_requirement_passed"])
-        self.assertLess(m50["execution_latency_ms_register_m"], 1000.0)
-        self.assertGreaterEqual(m50["min_operator_fidelity_rcf"], 0.95)
-        self.assertLessEqual(m50["max_g3_bleed"], KEVLAR_FLOOR)
-        for node_name, node_rcf in m50["swarm_node_fidelity"].items():
-            self.assertGreaterEqual(node_rcf, 0.95, msg=f"Swarm node {node_name} below 0.95")
-        self.assertEqual(len(m50["m50_f32_batch_sha256"]), 64)
+        # FRIDU shielded: strips perturbation into 1% I/O buffer without corrupting core
+        self.assertTrue(fridu["odos_gate_passed"])
+        self.assertTrue(fridu["ppm_threshold_passed"])
+        self.assertTrue(fridu["kevlar_floor_locked"])
+        self.assertLessEqual(fridu["boundary_bleed_l2"], KEVLAR_FLOOR)
+        self.assertLess(fridu["core_drift_l2"], 1e-15)
+        self.assertLess(fridu["io_buffer_reconstruction_err"], 1e-15)
+        self.assertEqual(len(self.enclave.seal_appendix_g(res)), 64)
+
+    def test_02_negative_control_kevlar_bypass_fails_gate(self) -> None:
+        """Negative Control: Disabling Kevlar orthogonal stripping causes Fridu branch to VETO."""
+        bypassed = self.enclave.evaluate_perturbation_ab(self.ext_noise, coupling_beta=0.35, bypass_kevlar=True)
+        fridu_bad = bypassed["fridu_shielded"]
+        self.assertFalse(fridu_bad["odos_gate_passed"])
+        self.assertFalse(fridu_bad["kevlar_floor_locked"])
+        self.assertGreater(fridu_bad["core_drift_l2"], 0.25)
+
+    def test_03_executable_engineering_audit_operators(self) -> None:
+        """Verifies all 10 real engineering audit operators pass on actual workspace artifacts."""
+        ops = self.enclave.run_executable_engineering_operators()
+        self.assertEqual(ops["operator_count"], 10)
+        self.assertLess(ops["execution_latency_ms"], 10000.0)
+        failed = [o for o in ops["operators"] if not o["passed"]]
+        self.assertEqual(failed, [], msg=f"Failed engineering operators: {failed}")
+        self.assertTrue(ops["all_operators_passed"])
+        self.assertEqual(len(ops["audit_matrix_seal_sha256"]), 64)
+
+    def test_04_epistemic_register_and_one_percent_io_asymmetry(self) -> None:
+        """Verifies 1% peripheral I/O budget cap, 99% core autonomy, and REGISTER_M tag."""
+        res = self.enclave.evaluate_perturbation_ab(self.ext_noise, coupling_beta=0.35)
+        self.assertEqual(res["epistemic_register"], "REGISTER_M")
+        self.assertAlmostEqual(res["fridu_shielded"]["io_allocation_cap"], 0.01, places=12)
+        self.assertAlmostEqual(res["fridu_shielded"]["core_autonomy_ratio"], 0.99, places=12)
+        self.assertAlmostEqual(
+            res["fridu_shielded"]["io_allocation_cap"] + res["fridu_shielded"]["core_autonomy_ratio"],
+            1.0,
+            places=12,
+        )
 
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(verbosity=2)

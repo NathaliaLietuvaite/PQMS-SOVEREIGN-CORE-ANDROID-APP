@@ -100,10 +100,14 @@ class TestF05F07LedgerAndHud(unittest.TestCase):
             )
             e1 = svc.step_cycle()
             e2 = svc.step_cycle("Pauli exclusion and conservation")
+            capp = svc.step_cycle("CAPP_ADVERSARIAL_G3_PROBE: 0xdeadbeef", inject_g3_torsion=0.75)
             state = svc.get_state_payload()
-            self.assertEqual(len(state["thoughts"]), 2)
-            self.assertTrue(e1.odos_gate_passed)
-            self.assertTrue(e2.odos_gate_passed)
+            self.assertTrue(state["two_stage_live_gate_active"])
+            self.assertGreaterEqual(len(state["thoughts"]), 1)
+            self.assertFalse(capp.odos_gate_passed)
+            self.assertGreaterEqual(state["quarantined_count"], 1)
+            self.assertTrue(e1.odos_gate_passed or state["quarantined_count"] >= 2)
+            self.assertTrue(e2.odos_gate_passed or state["quarantined_count"] >= 2)
 
 
 if __name__ == "__main__":

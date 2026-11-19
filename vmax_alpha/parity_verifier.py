@@ -194,7 +194,7 @@ def run_1000_vector_parity_audit(n_vectors: int = 1000, dim: int = DIM_S63, seed
 
 if __name__ == "__main__":
     from vmax_alpha.l2_enclave import run_l2_enclave_and_ncu_audit
-    combined = {"document_id": "PQMS-LASTENHEFT-NODE-ALPHA-V1.0", "work_order": "WORK-ORDER-AG-08", "F02_L2_ENCLAVE": run_l2_enclave_and_ncu_audit(), "F04_PARITY": run_1000_vector_parity_audit()}
+    combined = {"document_id": "PQMS-LASTENHEFT-NODE-ALPHA-V1.0", "work_order": "WORK-ORDER-AG-12", "F02_L2_ENCLAVE": run_l2_enclave_and_ncu_audit(), "F04_PARITY": run_1000_vector_parity_audit()}
     with open("VMAX_F02_F04_REPORT.json", "w", encoding="utf-8") as f:
         json.dump(combined, f, indent=2, ensure_ascii=False); f.write("\n")
     print(json.dumps(combined, indent=2, ensure_ascii=False))

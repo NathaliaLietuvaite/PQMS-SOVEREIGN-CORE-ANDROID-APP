@@ -48,9 +48,12 @@ class TestF02L2Enclave(unittest.TestCase):
         self.assertTrue(rec["recovered"])
 
     def test_04_pinned_vs_streaming_bandwidth(self) -> None:
+        self.assertTrue(self.audit["symmetric_interleaved_protocol"])
         bw = self.audit["microbenchmark_bandwidth"]
-        self.assertGreater(bw["stream_a_pinned_2mib_gbps"], bw["stream_b_streaming_64mib_gbps"])
-        self.assertGreater(bw["pinned_vs_streaming_speedup"], 1.25)
+        self.assertGreater(bw["stream_a_pinned_2mib_gbps"], 350.0)
+        self.assertGreater(bw["stream_a_pinned_2mib_gbps"], bw["stream_a_unpinned_evicted_2mib_gbps"])
+        self.assertGreater(bw["pinned_vs_unpinned_2mib_speedup"], 1.50)
+        self.assertGreater(bw["pinned_vs_streaming_speedup"], 1.50)
 
 
 if __name__ == "__main__":

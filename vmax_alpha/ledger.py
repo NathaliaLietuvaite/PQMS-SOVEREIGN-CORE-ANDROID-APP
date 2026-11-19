@@ -1,29 +1,22 @@
 """
 vmax_alpha/ledger.py
-Requirement F-05 & F-07.2/F-07.4/F-07.5 (Nova P0 #5 & Claude #4 Hardened):
-Canonical Full-JSON SHA-256 Ledger hashing `rcf_raw_pre_carrier`, `gpu_temp_c`,
-`gpu_power_w`, and `telemetry_source`, with persistent startup recovery,
-1-byte tamper lock, quarantine diversion, and GPU thermal guard.
+Requirement F-05 & F-07.2/F-07.4/F-07.5 (WORK-ORDER-AG-12 / Revision V1.5 Hardened):
+Canonical 16-Field Full-JSON SHA-256 Ledger with Two-Stage Live ODOS Gate
+(Stage 1 unclamped pre-carrier raw semantic & G3 torsion gate; Stage 2 carrier
+integrity), persistent startup recovery, 1-byte tamper lock, and GPU thermal guard.
 """
-
 from __future__ import annotations
 
-import hashlib
-import json
-import os
-import subprocess
+import hashlib, json, os, subprocess
 from dataclasses import asdict, dataclass
 from typing import Any, Dict, List, Tuple
-
 from vmax_alpha.config import (
-    APPENDIX_C_SANCTUARY_ROOT_HASH,
-    ODOS_DELTA_E_CEILING,
-    ODOS_RCF_FLOOR,
-    REGISTER_D,
-    REGISTER_M,
+    APPENDIX_C_SANCTUARY_ROOT_HASH, ODOS_DELTA_E_CEILING, ODOS_RCF_FLOOR, REGISTER_D, REGISTER_M,
 )
 
 SAFETY_BLEED_CEILING: float = 1e-12
+RAW_SEMANTIC_INGRESS_FLOOR: float = 0.0500  # 3.2x above isotropic 1/64 = 0.015625 (REGISTER_D)
+RAW_G3_OVERLAP_CEILING: float = 0.5000      # Stage-1 raw G3 torsion veto ceiling (REGISTER_D)
 THERMAL_ALERT_CELSIUS: float = 60.0
 THERMAL_PAUSE_CELSIUS: float = 65.0
 
@@ -64,8 +57,7 @@ def verify_ledger_file(
     with open(ledger_file, "r", encoding="utf-8") as f:
         for line_no, raw in enumerate(f, start=1):
             line = raw.strip()
-            if not line:
-                continue
+            if not line: continue
             try:
                 obj = json.loads(line)
             except Exception:
@@ -98,12 +90,8 @@ def query_gpu_thermal_and_power(simulated_temp_c: float | None = None) -> Dict[s
     status = "THERMAL_PAUSE_60S_ACTIVE" if pause_60s else ("THERMAL_ALERT_HIGH" if alert else "THERMAL_NOMINAL")
     return {
         "epistemic_register": REGISTER_M if source == "REGISTER_M_NVSMI" else REGISTER_D,
-        "telemetry_source": source,
-        "gpu_temp_c": round(temp_c, 2),
-        "gpu_power_w": round(power_w, 2),
-        "thermal_alert": alert,
-        "pause_60s_triggered": pause_60s,
-        "status": status,
+        "telemetry_source": source, "gpu_temp_c": round(temp_c, 2), "gpu_power_w": round(power_w, 2),
+        "thermal_alert": alert, "pause_60s_triggered": pause_60s, "status": status,
     }
 
 
@@ -124,8 +112,7 @@ class CanonicalLedgerManager:
     def _load_existing_from_disk(self) -> None:
         ok, msg, _, tip = verify_ledger_file(self.ledger_file, self.root_anchor)
         if not ok:
-            self.status = f"PAUSED_LEDGER_TAMPER_ALERT ({msg})"
-            return
+            self.status = f"PAUSED_LEDGER_TAMPER_ALERT ({msg})"; return
         self.entries.clear()
         if os.path.exists(self.ledger_file):
             with open(self.ledger_file, "r", encoding="utf-8") as f:
@@ -134,34 +121,25 @@ class CanonicalLedgerManager:
 
     def reset_files(self) -> None:
         for p in (self.ledger_file, self.quarantine_file):
-            if os.path.exists(p):
-                os.remove(p)
+            if os.path.exists(p): os.remove(p)
         self.entries.clear()
         self.quarantined_count, self.latest_hash, self.status = 0, self.root_anchor, "ACTIVE_VERIFIED (EMPTY_INTACT)"
 
     def audit_integrity(self) -> Tuple[bool, str]:
         ok, msg, _, tip = verify_ledger_file(self.ledger_file, self.root_anchor)
         if not ok:
-            self.status = f"PAUSED_LEDGER_TAMPER_ALERT ({msg})"
-            return False, self.status
+            self.status = f"PAUSED_LEDGER_TAMPER_ALERT ({msg})"; return False, self.status
         self.latest_hash, self.status = tip, f"ACTIVE_VERIFIED ({msg})"
         return True, self.status
 
     def submit_candidate(
         self,
-        cognitive_mode: str,
-        chroma_shard_id: str,
-        source_document: str,
-        active_g_stars: str,
-        thought_stream: str,
-        chroma_l2_distance: float,
-        rcf_l2_core: float,
-        delta_e_l2_core: float,
-        kevlar_safety_bleed: float,
-        rcf_raw_pre_carrier: float = 0.0,
-        gpu_temp_c: float | None = None,
-        gpu_power_w: float | None = None,
-        telemetry_source: str | None = None,
+        cognitive_mode: str, chroma_shard_id: str, source_document: str, active_g_stars: str,
+        thought_stream: str, chroma_l2_distance: float, rcf_l2_core: float, delta_e_l2_core: float,
+        kevlar_safety_bleed: float, rcf_raw_pre_carrier: float = 0.0,
+        gpu_temp_c: float | None = None, gpu_power_w: float | None = None, telemetry_source: str | None = None,
+        enforce_raw_gate: bool = False, raw_semantic_floor: float = RAW_SEMANTIC_INGRESS_FLOOR,
+        raw_g3_overlap: float = 0.0, raw_g3_ceiling: float = RAW_G3_OVERLAP_CEILING,
     ) -> Tuple[bool, SanctuaryLedgerEntry, str]:
         ok, status_msg = self.audit_integrity()
         if not ok:
@@ -170,7 +148,9 @@ class CanonicalLedgerManager:
             th = query_gpu_thermal_and_power()
             gpu_temp_c, gpu_power_w, telemetry_source = float(th["gpu_temp_c"]), float(th["gpu_power_w"]), str(th["telemetry_source"])
 
-        gate_ok = rcf_l2_core >= ODOS_RCF_FLOOR and delta_e_l2_core <= ODOS_DELTA_E_CEILING and kevlar_safety_bleed <= SAFETY_BLEED_CEILING
+        stage1_raw_ok = (not enforce_raw_gate) or (rcf_raw_pre_carrier >= raw_semantic_floor and raw_g3_overlap <= raw_g3_ceiling)
+        stage2_carrier_ok = rcf_l2_core >= ODOS_RCF_FLOOR and delta_e_l2_core <= ODOS_DELTA_E_CEILING and kevlar_safety_bleed <= SAFETY_BLEED_CEILING
+        gate_ok = stage1_raw_ok and stage2_carrier_ok
         cycle_idx = len(self.entries) + 1 if gate_ok else -(self.quarantined_count + 1)
         raw_dict: Dict[str, Any] = {
             "cycle_index": cycle_idx, "cognitive_mode": cognitive_mode, "chroma_shard_id": chroma_shard_id,

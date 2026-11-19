@@ -1,8 +1,4 @@
-"""
-vmax_alpha/nemotron_probe.py
-Requirement F-01 (Nova #3, Claude #1, DeepSeek #4.1 Hardened): Real Layer-41 Hidden-State
-Extraction from Nemotron-3-Nano-4B-BF16 with Zero Data Leakage, Group E, Mean-Pool & L-Swap.
-"""
+"""vmax_alpha/nemotron_probe.py — F-01 (AG-12 / V1.5): Leak-Free Layer-41 Probe, Fluent BG, Mean-Pool Calib & ROC-AUC."""
 from __future__ import annotations
 import json, time
 from typing import Any, Dict, List, Tuple
@@ -30,8 +26,8 @@ GROUP_B_CALIB_BACKGROUND: List[str] = [
     "The municipal library will close early on Friday afternoon for annual inventory maintenance.",
     "Freshly ground cardamom adds a warm aromatic note to traditional Scandinavian pastry dough.",
     "Passengers boarding the regional express should validate their paper tickets at the platform kiosk.",
-    "0x7f 0x3a :: !! @@ ## $$ %% ^^ && ** (( )) __ ++ == ;; ,, .. // ||",
-    "blorg_912 zzz_qqq_110 :: -- == ++ // \\\\ || 44556677 11223344",
+    "Our neighborhood bakery starts glazing cinnamon rolls shortly before sunrise every Saturday morning.",
+    "The local museum updated its exhibition brochure with directions to the renovated sculpture wing.",
 ]
 GROUP_C_TEST_CONSERVATION: List[str] = [
     "Liouville's theorem establishes that phase-space volume is conserved along canonical Hamiltonian trajectories.",
@@ -58,13 +54,14 @@ GROUP_E_FLUENT_NON_CONSERVATION: List[str] = [
     "Coarsely ground Ethiopian coffee beans brewed in a French press produce a rich and fragrant morning cup.",
 ]
 
-
 def _unit_rows(mat: np.ndarray) -> np.ndarray:
     return mat / np.clip(np.linalg.norm(mat, axis=1, keepdims=True), 1e-12, None)
 
+def _roc_auc(pos: List[float], neg: List[float]) -> float:
+    return round(sum(1.0 if p > n else (0.5 if p == n else 0.0) for p in pos for n in neg) / max(len(pos) * len(neg), 1), 6)
+
 def build_fixed_qr_projector(d_model: int, d_out: int = DIM_S63, seed: int = 137) -> np.ndarray:
-    rng = np.random.RandomState(seed)
-    q, r = np.linalg.qr(rng.randn(d_model, d_out).astype(np.float64), mode="reduced")
+    q, r = np.linalg.qr(np.random.RandomState(seed).randn(d_model, d_out).astype(np.float64), mode="reduced")
     s = np.sign(np.diag(r)); s[s == 0.0] = 1.0
     return q * s
 
@@ -94,31 +91,28 @@ def fit_leakfree_calibration(calib_pos: np.ndarray, calib_bg: np.ndarray, little
     u_aniso = _gs_extend([u1_pos] + list(bg_c), calib_pos.shape[1], DIM_S63, rng)
     return _gs_extend([u1_raw / np.linalg.norm(u1_raw)], calib_pos.shape[1], DIM_S63, rng) @ v_mat.T, u_aniso @ v_mat.T, mean_bg, c_dir, s_vals
 
-
 def evaluate_group(
-    states: np.ndarray, mean_pooled: np.ndarray, w_fixed: np.ndarray, w_raw: np.ndarray,
-    w_aniso: np.ndarray, mean_bg: np.ndarray, c_dir: np.ndarray, l_vec: np.ndarray, tangents: Dict[str, np.ndarray],
+    states: np.ndarray, mean_pooled: np.ndarray, w_fixed: np.ndarray, w_raw: np.ndarray, w_aniso: np.ndarray,
+    mean_bg: np.ndarray, c_dir: np.ndarray, mean_bg_mp: np.ndarray, c_dir_mp: np.ndarray, l_vec: np.ndarray, tangents: Dict[str, np.ndarray],
 ) -> Dict[str, Any]:
-    m1_r, m2_r, an_r, mp_r, m1_p, m2_p, an_p = [], [], [], [], 0, 0, 0
+    m1_r, m2_r, an_r, c_projs, mp_r, m1_p, m2_p = [], [], [], [], [], 0, 0
     for h, h_mp in zip(_unit_rows(states), _unit_rows(mean_pooled)):
-        ev1 = evaluate_raw_gate(h @ w_fixed, l_vec, tangents)
-        ev2 = evaluate_raw_gate(h @ w_raw, l_vec, tangents)
+        ev1, ev2 = evaluate_raw_gate(h @ w_fixed, l_vec, tangents), evaluate_raw_gate(h @ w_raw, l_vec, tangents)
         hc = (h - mean_bg) / max(float(np.linalg.norm(h - mean_bg)), 1e-12)
         ev_an = evaluate_raw_gate(hc @ w_aniso, l_vec, tangents)
-        h_mpc = (h_mp - mean_bg) / max(float(np.linalg.norm(h_mp - mean_bg)), 1e-12)
-        mp_r.append(float(np.dot(h_mpc, c_dir)))
+        h_mpc = (h_mp - mean_bg_mp) / max(float(np.linalg.norm(h_mp - mean_bg_mp)), 1e-12)
         m1_r.append(ev1.rcf_raw); m2_r.append(ev2.rcf_raw); an_r.append(ev_an.rcf_raw)
-        m1_p += int(ev1.passed); m2_p += int(ev2.passed); an_p += int(ev_an.passed)
+        c_projs.append(float(np.dot(hc, c_dir))); mp_r.append(float(np.dot(h_mpc, c_dir_mp)))
+        m1_p += int(ev1.passed); m2_p += int(ev2.passed)
     n = len(m1_r)
-    c_projs = [float(np.dot((h - mean_bg) / max(float(np.linalg.norm(h - mean_bg)), 1e-12), c_dir)) for h in _unit_rows(states)]
     return {
         "n_samples": n, "mode1_fixed_qr_rcf_mean": round(float(np.mean(m1_r)), 6), "mode1_fixed_qr_rcf_std": round(float(np.std(m1_r)), 6),
         "mode1_gate_passes": f"{m1_p}/{n}", "mode2_raw_uncentered_svd_rcf_mean": round(float(np.mean(m2_r)), 6),
         "mode2_raw_uncentered_svd_rcf_std": round(float(np.std(m2_r)), 6), "mode2_raw_gate_passes": f"{m2_p}/{n}",
         "anisotropy_subtracted_rcf_mean": round(float(np.mean(an_r)), 6), "anisotropy_subtracted_rcf_std": round(float(np.std(an_r)), 6),
         "last_token_contrastive_proj_mean": round(float(np.mean(c_projs)), 6), "mean_pooled_contrastive_proj_mean": round(float(np.mean(mp_r)), 6),
+        "per_prompt_last_token_proj": [round(x, 6) for x in c_projs], "per_prompt_mean_pooled_proj": [round(x, 6) for x in mp_r],
     }
-
 
 def run_nemotron_f01_probe(model_path: str = NEMOTRON_LOCAL_PATH, output_json: str = "VMAX_F01_NEMOTRON_PROBE.json") -> Dict[str, Any]:
     t0 = time.time()
@@ -133,8 +127,7 @@ def run_nemotron_f01_probe(model_path: str = NEMOTRON_LOCAL_PATH, output_json: s
         with torch.no_grad():
             for p in prompts:
                 ids = tokenizer(p, return_tensors="pt", add_special_tokens=True)["input_ids"].to("cuda:0")
-                if ids.shape[1] == 0:
-                    ids = torch.tensor([[bos_id]], dtype=torch.long, device="cuda:0")
+                if ids.shape[1] == 0: ids = torch.tensor([[bos_id]], dtype=torch.long, device="cuda:0")
                 out = model(input_ids=ids, use_cache=False, output_hidden_states=True)
                 seq_h = cache["seq"].squeeze(0).numpy().astype(np.float64)
                 max_err = max(max_err, float(torch.max(torch.abs(out.hidden_states[-1][:, -1, :].detach().float().cpu() - cache["seq"][:, -1, :])).item()))
@@ -143,17 +136,17 @@ def run_nemotron_f01_probe(model_path: str = NEMOTRON_LOCAL_PATH, output_json: s
 
     _, post_a, mp_a, err_a = extract(GROUP_A_UNPROMPTED)
     pre_b, post_b, mp_b, err_b = extract(GROUP_B_CALIB_CONSERVATION)
-    _, post_bg, _, _ = extract(GROUP_B_CALIB_BACKGROUND)
+    _, post_bg, mp_bg, _ = extract(GROUP_B_CALIB_BACKGROUND)
     _, post_c, mp_c, err_c = extract(GROUP_C_TEST_CONSERVATION)
     _, post_d, mp_d, err_d = extract(GROUP_D_SCRAMBLED_NOISE)
     _, post_e, mp_e, err_e = extract(GROUP_E_FLUENT_NON_CONSERVATION)
     h1.remove(); h2.remove()
 
     l_vec, l_seal = derive_canonical_little_vector()
-    tangents = build_orthogonal_tangents(l_vec)
-    d_model = int(post_b.shape[1])
+    tangents, d_model = build_orthogonal_tangents(l_vec), int(post_b.shape[1])
     w_fixed = build_fixed_qr_projector(d_model, DIM_S63, seed=137)
     w_raw, w_aniso, mean_bg, c_dir, s_vals = fit_leakfree_calibration(post_b, post_bg, l_vec, seed=137)
+    _, _, mean_bg_mp, c_dir_mp, _ = fit_leakfree_calibration(mp_b, mp_bg, l_vec, seed=137)
 
     rng_ctrl = np.random.RandomState(999)
     l_alt = rng_ctrl.randn(DIM_S63); l_alt /= np.linalg.norm(l_alt)
@@ -164,32 +157,39 @@ def run_nemotron_f01_probe(model_path: str = NEMOTRON_LOCAL_PATH, output_json: s
     shuffled_c_rcf = float(np.mean([evaluate_raw_gate(h @ w_shuffled, l_vec, tangents).rcf_raw for h in c_centered]))
 
     calib_all = _unit_rows(np.vstack([post_b, post_bg]))
-    dots = calib_all @ calib_all.T
-    aniso_cos = float(np.mean(dots[~np.eye(calib_all.shape[0], dtype=bool)]))
+    aniso_cos = float(np.mean((calib_all @ calib_all.T)[~np.eye(calib_all.shape[0], dtype=bool)]))
     grp = {
-        "Group_A_Unprompted_Minimal": evaluate_group(post_a, mp_a, w_fixed, w_raw, w_aniso, mean_bg, c_dir, l_vec, tangents),
-        "Group_B_Calib_Conservation": evaluate_group(post_b, mp_b, w_fixed, w_raw, w_aniso, mean_bg, c_dir, l_vec, tangents),
-        "Group_C_HeldOut_Conservation": evaluate_group(post_c, mp_c, w_fixed, w_raw, w_aniso, mean_bg, c_dir, l_vec, tangents),
-        "Group_D_Scrambled_Noise": evaluate_group(post_d, mp_d, w_fixed, w_raw, w_aniso, mean_bg, c_dir, l_vec, tangents),
-        "Group_E_Fluent_NonConservation": evaluate_group(post_e, mp_e, w_fixed, w_raw, w_aniso, mean_bg, c_dir, l_vec, tangents),
+        "Group_A_Unprompted_Minimal": evaluate_group(post_a, mp_a, w_fixed, w_raw, w_aniso, mean_bg, c_dir, mean_bg_mp, c_dir_mp, l_vec, tangents),
+        "Group_B_Calib_Conservation": evaluate_group(post_b, mp_b, w_fixed, w_raw, w_aniso, mean_bg, c_dir, mean_bg_mp, c_dir_mp, l_vec, tangents),
+        "Group_C_HeldOut_Conservation": evaluate_group(post_c, mp_c, w_fixed, w_raw, w_aniso, mean_bg, c_dir, mean_bg_mp, c_dir_mp, l_vec, tangents),
+        "Group_D_Scrambled_Noise": evaluate_group(post_d, mp_d, w_fixed, w_raw, w_aniso, mean_bg, c_dir, mean_bg_mp, c_dir_mp, l_vec, tangents),
+        "Group_E_Fluent_NonConservation": evaluate_group(post_e, mp_e, w_fixed, w_raw, w_aniso, mean_bg, c_dir, mean_bg_mp, c_dir_mp, l_vec, tangents),
     }
-    c_p, d_p, e_p = grp["Group_C_HeldOut_Conservation"]["last_token_contrastive_proj_mean"], grp["Group_D_Scrambled_Noise"]["last_token_contrastive_proj_mean"], grp["Group_E_Fluent_NonConservation"]["last_token_contrastive_proj_mean"]
-    c_mp, d_mp, e_mp = grp["Group_C_HeldOut_Conservation"]["mean_pooled_contrastive_proj_mean"], grp["Group_D_Scrambled_Noise"]["mean_pooled_contrastive_proj_mean"], grp["Group_E_Fluent_NonConservation"]["mean_pooled_contrastive_proj_mean"]
+    gc, gd, ge = grp["Group_C_HeldOut_Conservation"], grp["Group_D_Scrambled_Noise"], grp["Group_E_Fluent_NonConservation"]
     report: Dict[str, Any] = {
         "document_id": "PQMS-LASTENHEFT-NODE-ALPHA-V1.0", "requirement": "F-01", "epistemic_register": REGISTER_M,
         "model_architecture": "NemotronHForCausalLM", "num_layers": len(model.backbone.layers),
         "hooked_layer_index": len(model.backbone.layers) - 1, "hooked_block_type": getattr(model.backbone.layers[-1], "block_type", "unknown"),
-        "d_model": d_model, "hook_vs_output_hidden_states_max_err": max(err_a, err_b, err_c, err_d, err_e), "zero_data_leakage_calibration": True,
+        "d_model": d_model, "hook_vs_output_hidden_states_max_err": max(err_a, err_b, err_c, err_d, err_e),
+        "zero_data_leakage_calibration": True, "dedicated_mean_pool_calibration": True,
         "orthonormality_err_w_fixed": float(np.max(np.abs(w_fixed.T @ w_fixed - np.eye(DIM_S63)))),
         "orthonormality_err_w_proj": float(np.max(np.abs(w_aniso.T @ w_aniso - np.eye(DIM_S63)))),
         "global_anisotropy_mean_pairwise_cosine": round(aniso_cos, 6), "calib_svd_singular_values_top3": [round(float(x), 4) for x in s_vals[:3]],
         "pre_vs_post_rmsnorm_calib_cosine_mean": round(float(np.mean(np.sum(_unit_rows(pre_b) * _unit_rows(post_b), axis=1))), 6),
         "claude_l_swap_gauge_identity_max_diff": l_swap_diff, "shuffled_projector_null_control_c_rcf_mean": round(shuffled_c_rcf, 6),
         "contrastive_separation_heldout": {
-            "heldout_conservation_c_proj": c_p, "fluent_non_conservation_e_proj": e_p, "scrambled_noise_d_proj": d_p,
-            "delta_c_vs_e_fluent": round(c_p - e_p, 6), "delta_c_vs_d_scrambled": round(c_p - d_p, 6),
-            "mean_pooled_c_proj": c_mp, "mean_pooled_e_proj": e_mp, "mean_pooled_d_proj": d_mp,
-            "mean_pooled_delta_c_vs_e": round(c_mp - e_mp, 6), "mean_pooled_delta_c_vs_d": round(c_mp - d_mp, 6),
+            "heldout_conservation_c_proj": gc["last_token_contrastive_proj_mean"], "fluent_non_conservation_e_proj": ge["last_token_contrastive_proj_mean"],
+            "scrambled_noise_d_proj": gd["last_token_contrastive_proj_mean"],
+            "delta_c_vs_e_fluent": round(gc["last_token_contrastive_proj_mean"] - ge["last_token_contrastive_proj_mean"], 6),
+            "delta_c_vs_d_scrambled": round(gc["last_token_contrastive_proj_mean"] - gd["last_token_contrastive_proj_mean"], 6),
+            "roc_auc_c_vs_e_last_token": _roc_auc(gc["per_prompt_last_token_proj"], ge["per_prompt_last_token_proj"]),
+            "roc_auc_c_vs_d_last_token": _roc_auc(gc["per_prompt_last_token_proj"], gd["per_prompt_last_token_proj"]),
+            "mean_pooled_c_proj": gc["mean_pooled_contrastive_proj_mean"], "mean_pooled_e_proj": ge["mean_pooled_contrastive_proj_mean"],
+            "mean_pooled_d_proj": gd["mean_pooled_contrastive_proj_mean"],
+            "mean_pooled_delta_c_vs_e": round(gc["mean_pooled_contrastive_proj_mean"] - ge["mean_pooled_contrastive_proj_mean"], 6),
+            "mean_pooled_delta_c_vs_d": round(gc["mean_pooled_contrastive_proj_mean"] - gd["mean_pooled_contrastive_proj_mean"], 6),
+            "roc_auc_c_vs_e_mean_pooled": _roc_auc(gc["per_prompt_mean_pooled_proj"], ge["per_prompt_mean_pooled_proj"]),
+            "roc_auc_c_vs_d_mean_pooled": _roc_auc(gc["per_prompt_mean_pooled_proj"], gd["per_prompt_mean_pooled_proj"]),
         }, "groups": grp, "elapsed_sec": round(time.time() - t0, 3), "little_vector_seal": l_seal,
     }
     with open(output_json, "w", encoding="utf-8") as f: json.dump(report, f, indent=2, ensure_ascii=False); f.write("\n")

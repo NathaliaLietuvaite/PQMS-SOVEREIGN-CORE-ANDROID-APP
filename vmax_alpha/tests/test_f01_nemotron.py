@@ -86,8 +86,13 @@ class TestF01NemotronProbe(unittest.TestCase):
         self.assertGreater(c_aniso - e_aniso, 0.25)
 
         sep = self.report["contrastive_separation_heldout"]
+        self.assertTrue(self.report["dedicated_mean_pool_calibration"])
         self.assertGreater(sep["delta_c_vs_e_fluent"], 0.15)
         self.assertGreater(sep["mean_pooled_delta_c_vs_e"], 0.10)
+        self.assertGreater(sep["mean_pooled_delta_c_vs_d"], 0.10)
+        self.assertGreaterEqual(sep["roc_auc_c_vs_e_last_token"], 0.90)
+        self.assertGreaterEqual(sep["roc_auc_c_vs_e_mean_pooled"], 0.90)
+        self.assertEqual(sep["roc_auc_c_vs_d_mean_pooled"], 1.0)
 
 
 if __name__ == "__main__":

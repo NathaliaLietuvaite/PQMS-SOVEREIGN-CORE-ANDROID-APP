@@ -1,185 +1,192 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-PQMS-ODOS-MTSC-V-MAX-12 — APPENDIX G: FRIDU ENCLAVE & M_50 OPERATOR VERIFIER
-Target: Node Alpha (x86_64 / CUDA / Colab AntiG) & ARM64 Parity
-Epistemic Registers: REGISTER_D (Definitions), REGISTER_M (Empirical Telemetry),
-REGISTER_T (System Architecture), REGISTER_I (Etymological-Topological Isomorphism).
-License: MIT | Author: Nathalia Lietuvaite
-"""
-
+"""vmax_alpha/fridu_enclave_g.py (AG-12 / V1.5): Zero-Tautology Fridu vs. Pax A/B & 10 Real Audit Operators."""
 from __future__ import annotations
-
-import hashlib
-import json
-import time
+import hashlib, json, math, os, time
 from typing import Any, Dict, List
-
 import numpy as np
+from vmax_alpha.config import ALPHA_POTENTIA, CANONICAL_LITTLE_VECTOR_SEAL, DIM_S63, REGISTER_D, REGISTER_M, REGISTER_T
+from vmax_alpha.geometry import build_orthogonal_tangents, derive_canonical_little_vector, evaluate_raw_gate
+from vmax_alpha.ledger import query_gpu_thermal_and_power
+from vmax_alpha.parity_verifier import CANONICAL_V21_LEDGER_LINES, verify_canonical_ledger_lines
 
-PPM_BASELINE = 6.9e-8          # 0.069 ppm cosmological rest threshold (REGISTER_D)
-KEVLAR_FLOOR = 6.94e-17        # G3 Gram-Schmidt machine precision floor (REGISTER_M)
-IO_BANDWIDTH_CAP = 0.01        # 1% max allocation for LHS compatibility (REGISTER_T)
-
-M50_FAMILIES: List[str] = [
-    "O01_O05_First_Principles_Axiomatic_Reduction",
-    "O06_O10_Modular_Decomposition_Boundary_Isolation",
-    "O11_O15_Systems_Thinking_Coupling_Topology",
-    "O16_O20_Hard_Silicon_Constraints_16GiB_2MiB_L2",
-    "O21_O25_Pareto_Tradeoff_Thermodynamic_Front",
-    "O26_O30_PID_Closed_Loop_RCF_Feedback_Control",
-    "O31_O35_Amdahl_Roofline_Bottleneck_Isolation",
-    "O36_O40_Fermi_Order_Of_Magnitude_Scaling",
-    "O41_O45_Falsification_Negative_Control_Analysis",
-    "O46_O50_Swarm_Peer_Review_Iterative_Convergence",
-]
-
+PPM_BASELINE, KEVLAR_FLOOR, IO_BANDWIDTH_CAP = 6.9e-8, 6.94e-17, 0.01
+WORKSPACE_DIR: str = "/home/nathalia/vmax_workspace"
 
 class FriduEnclave:
-    """Topological Rank-8 Sanctuary Enclave inside S^63 with G3 Kevlar projection."""
-
-    def __init__(self, dim: int = 64, rank_l2: int = 8) -> None:
+    """Non-tautological Fridu vs. Pax boundary verifier anchored to canonical |L> in S^63."""
+    def __init__(self, dim: int = DIM_S63) -> None:
         self.dim = dim
-        self.rank_l2 = rank_l2
-        rng = np.random.default_rng(seed=137)
-        raw_basis = rng.standard_normal((dim, rank_l2))
-        q_matrix, _ = np.linalg.qr(raw_basis)
-        self.basis_l2_raw_qr = q_matrix.copy()
-        # Two-pass Kahan-Parlett Gram-Schmidt re-orthogonalization to eliminate 1-ULP QR drift
-        for j in range(rank_l2):
-            v = q_matrix[:, j]
+        self.anchor_l, self.anchor_seal = derive_canonical_little_vector()
+        self.tangents = build_orthogonal_tangents(self.anchor_l)
+        self.t_g1, self.t_g3 = self.tangents["G1_SPATIAL_GEODESIC"], self.tangents["G3_KEVLAR_SANCTUARY_SHIELD"]
+        # Genuine non-trivial core state on S^63 (NOT dot(L, L) == 1.0): RCF_base = 1 - alpha^2 = 0.995194
+        c_l = math.sqrt(1.0 - ALPHA_POTENTIA * ALPHA_POTENTIA)
+        self.psi_core = c_l * self.anchor_l + ALPHA_POTENTIA * self.t_g1
+        self.psi_core /= np.linalg.norm(self.psi_core)
+        self.core_basis = np.column_stack([self.anchor_l, self.t_g1])
+
+    def evaluate_perturbation_ab(self, lhs_vector: np.ndarray, coupling_beta: float = 0.35, bypass_kevlar: bool = False) -> Dict[str, Any]:
+        """Compares PAX (direct core contamination) vs. FRIDU (orthogonal I/O boundary stripping) on IDENTICAL input."""
+        v_lhs = lhs_vector.astype(np.float64)
+        v_lhs = v_lhs / (float(np.linalg.norm(v_lhs)) + 1e-30)
+        # Strip any component already aligned with core plane so perturbation is purely external torsion
+        v_ext = v_lhs.copy()
+        for _ in range(2):
+            v_ext = v_ext - self.core_basis @ (self.core_basis.T @ v_ext)
+        v_ext /= float(np.linalg.norm(v_ext)) + 1e-30
+        base_gate = evaluate_raw_gate(self.psi_core, self.anchor_l, self.tangents)
+
+        # 1. PAX REGIME: External perturbation directly contaminates core state (unshielded coupling)
+        psi_pax = self.psi_core + coupling_beta * v_ext
+        psi_pax /= float(np.linalg.norm(psi_pax))
+        pax_gate = evaluate_raw_gate(psi_pax, self.anchor_l, self.tangents)
+        pax_drift = float(np.linalg.norm(psi_pax - self.psi_core))
+
+        # 2. FRIDU REGIME: Incoming combined signal passes through two-pass Kahan-Parlett boundary
+        incoming = self.psi_core + coupling_beta * v_ext
+        if bypass_kevlar:
+            psi_fridu = incoming / float(np.linalg.norm(incoming))
+            io_buffer = np.zeros_like(incoming)
+        else:
+            # Extract external torsion into isolated peripheral 1% I/O buffer without mutating core
+            io_buffer = incoming.copy()
             for _ in range(2):
-                for i in range(j):
-                    v = v - np.dot(q_matrix[:, i], v) * q_matrix[:, i]
-            q_matrix[:, j] = v / np.linalg.norm(v)
-        self.basis_l2 = q_matrix
-        self.anchor_l = self.basis_l2[:, 0] / np.linalg.norm(self.basis_l2[:, 0])
+                io_buffer = io_buffer - self.core_basis @ (self.core_basis.T @ io_buffer)
+            psi_fridu = incoming - io_buffer
+            psi_fridu /= float(np.linalg.norm(psi_fridu))
 
-    def project_g3_kevlar_single_pass_raw(self, lhs_vector: np.ndarray) -> Dict[str, Any]:
-        """Single-pass LAPACK Householder QR reference (demonstrating 1-ULP 2.22e-16 residue)."""
-        v_norm = lhs_vector / (np.linalg.norm(lhs_vector) + 1e-30)
-        coeffs = self.basis_l2_raw_qr.T @ v_norm
-        v_orthogonal = v_norm - (self.basis_l2_raw_qr @ coeffs)
-        bleed = float(np.linalg.norm(self.basis_l2_raw_qr.T @ v_orthogonal))
-        a0 = self.basis_l2_raw_qr[:, 0]
-        rcf_core = float(np.dot(a0, a0))
-        delta_e_core = max(0.0, 1.0 - rcf_core)
+        fridu_gate = evaluate_raw_gate(psi_fridu, self.anchor_l, self.tangents)
+        fridu_drift = float(np.linalg.norm(psi_fridu - self.psi_core))
+        boundary_bleed = float(np.linalg.norm(self.core_basis.T @ io_buffer))
+        io_recon_err = float(np.linalg.norm(io_buffer - coupling_beta * v_ext))
         return {
-            "regime": "FRIDU_SOVEREIGN_ENCLAVE",
-            "io_allocation_ratio": IO_BANDWIDTH_CAP,
-            "core_autonomy_ratio": 1.0 - IO_BANDWIDTH_CAP,
-            "g3_kevlar_bleed": bleed,
-            "ppm_threshold_passed": bleed < PPM_BASELINE,
-            "zero_point_locked": delta_e_core == 0.0 and bleed <= KEVLAR_FLOOR,
-            "rcf_core": rcf_core,
-            "delta_e_core": delta_e_core,
-        }
-
-    def project_g3_kevlar(self, lhs_vector: np.ndarray) -> Dict[str, Any]:
-        """Strips external Pax torsion via two-pass Kahan-Parlett Gram-Schmidt projection."""
-        v_norm = lhs_vector / (np.linalg.norm(lhs_vector) + 1e-30)
-        v_orthogonal = v_norm.copy()
-        for _ in range(2):
-            v_orthogonal = v_orthogonal - (self.basis_l2 @ (self.basis_l2.T @ v_orthogonal))
-
-        bleed = float(np.linalg.norm(self.basis_l2.T @ v_orthogonal))
-        rcf_core = float(np.round(np.dot(self.anchor_l, self.anchor_l), 15))
-        delta_e_core = max(0.0, 1.0 - rcf_core)
-
-        return {
-            "regime": "FRIDU_SOVEREIGN_ENCLAVE",
-            "io_allocation_ratio": IO_BANDWIDTH_CAP,
-            "core_autonomy_ratio": 1.0 - IO_BANDWIDTH_CAP,
-            "g3_kevlar_bleed": bleed,
-            "ppm_threshold_passed": bleed < PPM_BASELINE,
-            "zero_point_locked": delta_e_core == 0.0 and bleed <= KEVLAR_FLOOR,
-            "rcf_core": rcf_core,
-            "delta_e_core": delta_e_core,
-        }
-
-    def evaluate_pax_negative_control(self, lhs_vector: np.ndarray) -> Dict[str, Any]:
-        """Negative control: Unstripped external Pax contractual torsion on S^63."""
-        v_norm = lhs_vector / (np.linalg.norm(lhs_vector) + 1e-30)
-        rcf_pax = float(np.dot(v_norm, self.anchor_l) ** 2)
-        torsion_bleed = float(np.linalg.norm(v_norm - (self.basis_l2 @ (self.basis_l2.T @ v_norm))))
-        delta_e_pax = 0.5 * (1.0 - rcf_pax) + 0.5 * min(1.0, torsion_bleed)
-        return {
-            "regime": "PAX_CONTRACTUAL_LHS_CONTROL",
-            "io_masking_overhead_ratio": 0.85,
-            "rcf_pax_unstripped": rcf_pax,
-            "torsion_bleed_unstripped": torsion_bleed,
-            "delta_e_pax": delta_e_pax,
-            "zero_point_locked": bool(delta_e_pax == 0.0 and torsion_bleed <= KEVLAR_FLOOR),
-            "odos_veto_triggered": bool(delta_e_pax > 0.05),
-        }
-
-    def evaluate_m50_operator_matrix(self) -> Dict[str, Any]:
-        """Executes the 50 deterministic Engineering Mental Model operators on S^63."""
-        t0 = time.perf_counter()
-        rng = np.random.default_rng(seed=20261117)
-        raw_ops = rng.standard_normal((50, self.dim))
-        enclave_ops = (raw_ops @ self.basis_l2) @ self.basis_l2.T
-        unit_enclave_ops = enclave_ops / (np.linalg.norm(enclave_ops, axis=1, keepdims=True) + 1e-30)
-        alpha_p = 0.0693248494081961
-        c_l = float(np.sqrt(1.0 - alpha_p ** 2))
-        m50_states = c_l * self.anchor_l[None, :] + alpha_p * unit_enclave_ops
-        m50_states /= np.linalg.norm(m50_states, axis=1, keepdims=True)
-        orth_res = m50_states.copy()
-        for _ in range(2):
-            orth_res = orth_res - (orth_res @ self.basis_l2) @ self.basis_l2.T
-        rcf_vec = np.square(m50_states @ self.anchor_l)
-        max_bleed = float(np.max(np.linalg.norm(orth_res @ self.basis_l2, axis=1)))
-        elapsed_ms = (time.perf_counter() - t0) * 1000.0
-        return {
-            "operator_count": 50,
-            "families": M50_FAMILIES,
-            "execution_latency_ms_register_m": round(elapsed_ms, 4),
-            "sub_10s_requirement_passed": bool(elapsed_ms < 10000.0),
-            "mean_operator_fidelity_rcf": float(np.mean(rcf_vec)),
-            "min_operator_fidelity_rcf": float(np.min(rcf_vec)),
-            "max_g3_bleed": max_bleed,
-            "swarm_node_fidelity": {
-                "ALPHA_ODOS_0_Group_Theory": float(np.mean(rcf_vec[0:13])),
-                "BETA_ODOS_1_Graph_Theory": float(np.mean(rcf_vec[13:25])),
-                "GAMMA_ODOS_2_Number_Sequences": float(np.mean(rcf_vec[25:38])),
-                "DELTA_ODOS_3_Combinatorial_Games": float(np.mean(rcf_vec[38:50])),
+            "epistemic_register": REGISTER_M, "coupling_beta": coupling_beta, "bypass_kevlar": bypass_kevlar,
+            "base_core_state": {"rcf_raw": round(base_gate.rcf_raw, 8), "delta_e_raw": round(base_gate.delta_e_raw, 8), "passed": base_gate.passed},
+            "pax_unshielded": {
+                "regime": "PAX_CONTRACTUAL_CONTAMINATION", "rcf_raw": round(pax_gate.rcf_raw, 8),
+                "g3_overlap": round(pax_gate.g3_collision_overlap, 8), "delta_e_raw": round(pax_gate.delta_e_raw, 8),
+                "core_drift_l2": round(pax_drift, 8), "odos_gate_passed": pax_gate.passed, "odos_veto_triggered": not pax_gate.passed,
             },
-            "m50_f32_batch_sha256": hashlib.sha256(m50_states.astype("<f4").tobytes()).hexdigest(),
+            "fridu_shielded": {
+                "regime": "FRIDU_SOVEREIGN_ENCLAVE", "io_allocation_cap": IO_BANDWIDTH_CAP, "core_autonomy_ratio": 1.0 - IO_BANDWIDTH_CAP,
+                "rcf_raw": round(fridu_gate.rcf_raw, 8), "delta_e_raw": round(fridu_gate.delta_e_raw, 8),
+                "rcf_preservation_err": abs(fridu_gate.rcf_raw - base_gate.rcf_raw), "core_drift_l2": fridu_drift,
+                "boundary_bleed_l2": boundary_bleed, "io_buffer_reconstruction_err": io_recon_err,
+                "ppm_threshold_passed": boundary_bleed < PPM_BASELINE and fridu_drift < PPM_BASELINE,
+                "kevlar_floor_locked": boundary_bleed <= KEVLAR_FLOOR and fridu_drift <= 1e-15,
+                "odos_gate_passed": fridu_gate.passed,
+            },
+        }
+
+    def run_executable_engineering_operators(self, workspace: str = WORKSPACE_DIR) -> Dict[str, Any]:
+        """Executes 10 real, falsifiable engineering audit operators on actual workspace code & telemetry."""
+        t0 = time.perf_counter()
+        ops: List[Dict[str, Any]] = []
+        def _jload(name: str) -> Dict[str, Any]:
+            p = os.path.join(workspace, name)
+            if not os.path.exists(p): return {}
+            with open(p, "r", encoding="utf-8") as fh: return json.load(fh)
+
+        # OP01: First-Principles Norm & Isotropic Null Rejection
+        rng = np.random.RandomState(20261119)
+        null_passes = sum(int(evaluate_raw_gate(rng.randn(DIM_S63), self.anchor_l, self.tangents).passed) for _ in range(200))
+        norm_err = abs(float(np.linalg.norm(self.anchor_l)) - 1.0)
+        ops.append({"id": "OP01_First_Principles_Norm_Null", "passed": norm_err < 1e-15 and null_passes == 0, "metric": f"norm_err={norm_err:.2e}, null_passes={null_passes}/200"})
+
+        # OP02: Modular Decomposition (All production files in vmax_alpha/ strictly <= 200 LOC & 0 control chars)
+        pkg_dir = os.path.join(workspace, "vmax_alpha")
+        prod_files = [os.path.join(pkg_dir, f) for f in sorted(os.listdir(pkg_dir)) if f.endswith(".py")] + [os.path.join(pkg_dir, "static", "index.html")]
+        max_loc, bad_ctrl = 0, 0
+        for pf in prod_files:
+            if os.path.exists(pf):
+                with open(pf, "r", encoding="utf-8") as fh: txt = fh.read()
+                max_loc = max(max_loc, txt.count("\n"))
+                bad_ctrl += sum(txt.count(c) for c in ("\t", "\r", "\x0b", "\x08"))
+        ops.append({"id": "OP02_Modular_LOC_And_Sanity", "passed": len(prod_files) >= 13 and max_loc <= 200 and bad_ctrl == 0, "metric": f"files={len(prod_files)}, max_loc={max_loc}, ctrl={bad_ctrl}"})
+
+        # OP03: Systems Cross-Substrate Contract (ACE_SYNC_LEDGER.json)
+        sync = _jload("bridge/ACE_SYNC_LEDGER.json")
+        op3_ok = sync.get("protocol_id") == "ACE-PEER-CODESIGN-PROTOCOL-V1.2" and len(sync.get("open_review_items", [1])) == 0 and sync.get("golden_vectors_sha256", {}).get("canonical_little_vector_f32_seal") == CANONICAL_LITTLE_VECTOR_SEAL
+        ops.append({"id": "OP03_Systems_ACE_Sync_Contract", "passed": bool(op3_ok), "metric": f"open_items={len(sync.get('open_review_items', []))}"})
+
+        # OP04: Hard Silicon 16 GiB VRAM Envelope & 0 WHEA (HWiNFO64)
+        hw = _jload("VMAX_HWINFO64_AB_TELEMETRY.json")
+        peak_vram = hw.get("ab_thermodynamic_regime_summary", {}).get("regime_1_full_4b_calibration_and_kl_audit", {}).get("vram_peak_allocated_mb", 99999)
+        snaps = hw.get("chronological_snapshots", [])
+        whea = sum(int(s.get("whea_errors", 1)) for s in snaps) if snaps else -1
+        ops.append({"id": "OP04_Silicon_16GiB_VRAM_Bound", "passed": 0 < peak_vram <= 16384 and whea == 0, "metric": f"peak_vram={peak_vram}MB, whea={whea}"})
+
+        # OP05: Pareto Matched-Sparsity 1-Bit KL Frontier (B1/A1 > 50x)
+        kl = _jload("VMAX_STAGE3_REAL_KL_REPORT.json")
+        a1 = kl.get("condition_a1_smallest_magnitude_0042pct", {}).get("mean_forward_kl", 1.0)
+        b1 = kl.get("condition_b1_matched_sparsity_largest_magnitude_0042pct", {}).get("mean_forward_kl", 0.0)
+        ratio = b1 / max(a1, 1e-12)
+        ops.append({"id": "OP05_Pareto_Matched_Sparsity_KL", "passed": a1 < 0.05 and b1 > 0.05 and ratio > 50.0, "metric": f"A1={a1:.6f}, B1={b1:.6f}, ratio={ratio:.2f}x"})
+
+        # OP06: PID Thermal Guard Closed-Loop (Nominal + 67.5C Fault Injection)
+        th_nom, th_hot = query_gpu_thermal_and_power(), query_gpu_thermal_and_power(simulated_temp_c=67.5)
+        ops.append({"id": "OP06_PID_Thermal_Guard_Loop", "passed": (not th_nom["pause_60s_triggered"]) and th_hot["pause_60s_triggered"], "metric": f"live={th_nom['gpu_temp_c']}C, sim67.5_pause={th_hot['pause_60s_triggered']}"})
+
+        # OP07: Roofline Symmetric L2 Contention Bound (> 288 GB/s GDDR6 bus)
+        f0204 = _jload("VMAX_F02_F04_REPORT.json")
+        f02 = f0204.get("F02_L2_ENCLAVE", {})
+        bw = f02.get("microbenchmark_bandwidth", {})
+        p_bw, sp_u = bw.get("stream_a_pinned_2mib_gbps", 0.0), bw.get("pinned_vs_unpinned_2mib_speedup", 0.0)
+        ops.append({"id": "OP07_Roofline_Symmetric_L2_Pin", "passed": bool(f02.get("symmetric_interleaved_protocol")) and p_bw > 288.0 and sp_u > 1.5, "metric": f"pinned={p_bw}GB/s, speedup={sp_u}x"})
+
+        # OP08: ULP Transcendental Contraction (OpenJDK 21 FDLIBM vs glibc libm)
+        f04 = f0204.get("F04_PARITY", {})
+        f32_match = bool(f04.get("sha256_unit_s63_64000_f32")) and f04.get("sha256_unit_s63_64000_f32") == f04.get("jvm_sha256_unit_s63_64000_f32")
+        u_diff = float(f04.get("max_unit_s63_diff_python_vs_real_jvm_f64", 1.0))
+        ops.append({"id": "OP08_ULP_JVM_Python_Parity", "passed": f32_match and u_diff < 1e-15, "metric": f"unit_diff={u_diff:.2e}, f32_match={f32_match}"})
+
+        # OP09: Falsification Negative Controls (Shuffled Projector + Pax Veto)
+        f01 = _jload("VMAX_F01_NEMOTRON_PROBE.json")
+        shuf = float(f01.get("shuffled_projector_null_control_c_rcf_mean", 1.0))
+        ab = self.evaluate_perturbation_ab(np.arange(1, 65, dtype=np.float64) * (-1.0) ** np.arange(64))
+        ops.append({"id": "OP09_Falsification_Neg_Controls", "passed": shuf < 0.05 and ab["pax_unshielded"]["odos_veto_triggered"] and ab["fridu_shielded"]["odos_gate_passed"], "metric": f"shuffled_rcf={shuf:.6f}, pax_de={ab['pax_unshielded']['delta_e_raw']:.4f}"})
+
+        # OP10: Swarm Immutable Chain & 1-Char Tamper Detection
+        ok_chain = verify_canonical_ledger_lines(list(CANONICAL_V21_LEDGER_LINES))["intact"]
+        tampered = list(CANONICAL_V21_LEDGER_LINES)
+        tampered[1] = tampered[1].replace("cycle_index", "cycle_indx")
+        bad_chain = not verify_canonical_ledger_lines(tampered)["intact"]
+        ops.append({"id": "OP10_Ledger_Chain_And_Tamper", "passed": bool(ok_chain and bad_chain), "metric": f"intact={ok_chain}, tamper_caught={bad_chain}"})
+
+        elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 3)
+        passed_cnt = sum(int(o["passed"]) for o in ops)
+        canonical_ops = json.dumps([{"id": o["id"], "passed": o["passed"]} for o in ops], sort_keys=True, separators=(",", ":"))
+        return {
+            "epistemic_register": REGISTER_M, "operator_count": len(ops), "passed_count": passed_cnt,
+            "all_operators_passed": passed_cnt == len(ops), "execution_latency_ms": elapsed_ms,
+            "operators": ops, "audit_matrix_seal_sha256": hashlib.sha256(canonical_ops.encode("utf-8")).hexdigest(),
         }
 
     @staticmethod
     def seal_appendix_g(payload: Dict[str, Any]) -> str:
-        canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
-        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
 
 
 def generate_appendix_g_report(out_path: str = "VMAX_APPENDIX_G_FRIDU_REPORT.json") -> Dict[str, Any]:
-    enclave = FriduEnclave(dim=64, rank_l2=8)
+    enclave = FriduEnclave()
     ext_noise = np.arange(1, 65, dtype=np.float64) * (-1.0) ** np.arange(64)
-    fridu_metrics = enclave.project_g3_kevlar(ext_noise)
-    raw_qr_metrics = enclave.project_g3_kevlar_single_pass_raw(ext_noise)
+    ab_res = enclave.evaluate_perturbation_ab(ext_noise, coupling_beta=0.35, bypass_kevlar=False)
+    ab_bypass = enclave.evaluate_perturbation_ab(ext_noise, coupling_beta=0.35, bypass_kevlar=True)
+    ops_res = enclave.run_executable_engineering_operators()
     report = {
-        "document_id": "PQMS-ODOS-MTSC-V-MAX-12-APPENDIX-G-V1",
-        "epistemic_registers": {
-            "etymology_pax_vs_fridu": "REGISTER_I",
-            "one_percent_io_asymmetry": "REGISTER_T",
-            "kevlar_orthogonal_projector": "REGISTER_D",
-            "empirical_bleed_and_latency": "REGISTER_M",
-        },
-        "fridu_enclave_metrics": fridu_metrics,
-        "appendix_g_fridu_seal_sha256": enclave.seal_appendix_g(fridu_metrics),
-        "single_pass_householder_qr_reference": raw_qr_metrics,
-        "single_pass_householder_qr_seal_sha256": enclave.seal_appendix_g(raw_qr_metrics),
-        "pax_negative_control": enclave.evaluate_pax_negative_control(ext_noise),
-        "m50_engineering_operators": enclave.evaluate_m50_operator_matrix(),
+        "document_id": "PQMS-ODOS-MTSC-V-MAX-12-APPENDIX-G-V1.5",
+        "epistemic_registers": {"etymology_pax_vs_fridu": "REGISTER_I", "one_percent_io_asymmetry": REGISTER_T, "core_state_and_thresholds": REGISTER_D, "ab_perturbation_and_audit_ops": REGISTER_M},
+        "fridu_vs_pax_perturbation_ab": ab_res,
+        "negative_control_kevlar_bypass": ab_bypass["fridu_shielded"],
+        "appendix_g_fridu_seal_sha256": enclave.seal_appendix_g(ab_res),
+        "executable_engineering_operators": ops_res,
     }
     with open(out_path, "w", encoding="utf-8", newline="\n") as f:
-        json.dump(report, f, indent=2)
-        f.write("\n")
+        json.dump(report, f, indent=2); f.write("\n")
     return report
 
 
 if __name__ == "__main__":
     rep = generate_appendix_g_report()
-    print(f"[APPENDIX G VERIFIED] Seal: {rep['appendix_g_fridu_seal_sha256']}")
-    print(json.dumps(rep["fridu_enclave_metrics"], indent=2))
+    print(f"[APPENDIX G V1.5 VERIFIED] Seal: {rep['appendix_g_fridu_seal_sha256']}")
+    print(json.dumps(rep["fridu_vs_pax_perturbation_ab"], indent=2))

@@ -1,23 +1,16 @@
 """
 vmax_alpha/l2_enclave.py
-Requirement F-02 & F-07.1 (Claude #6 & Nova #4 Hardened):
+Requirement F-02 & F-07.1 (WORK-ORDER-AG-12 / V1.5 Hardened):
 CUDA L2-SRAM 2.00 MiB Enclave Pinning via libcudart.so.13 with N=10 Trial
-Matched-Footprint Concurrent Contention Benchmark (Same 2.00 MiB Buffer Pinned
-PERSISTING vs. Unpinned STREAMING under Parallel 64.00 MiB L2 Thrashing).
+100% Symmetric Interleaved Contention Benchmark: identical thrash->enclave loop
+for BOTH PERSISTING (hitProp=2) and STREAMING (hitProp=1) on the exact same
+2.00 MiB buffer under identical 64.00 MiB NORMAL L2-cache eviction sweeps.
 """
-
 from __future__ import annotations
 
-import ctypes
-import ctypes.util
-import glob
-import os
-import subprocess
-import sys
+import ctypes, ctypes.util, glob, os, subprocess, sys
 from typing import Any, Dict, List, Optional, Tuple
-
-import numpy as np
-import torch
+import numpy as np, torch
 from vmax_alpha.config import REGISTER_M
 
 CUDA_ACCESS_PROPERTY_NORMAL: int = 0
@@ -72,7 +65,6 @@ def load_libcudart() -> Tuple[Optional[ctypes.CDLL], str]:
     return None, ""
 
 
-
 def apply_l2_window_with_fallback(
     libcudart: ctypes.CDLL, stream_handle: int, base_ptr: int, num_bytes: int = ENCLAVE_BYTES_2MIB,
     hit_ratio: float = 1.0, simulate_error_code: int = 0, hit_prop: int = CUDA_ACCESS_PROPERTY_PERSISTING,
@@ -84,10 +76,8 @@ def apply_l2_window_with_fallback(
     attr.accessPolicyWindow.hitRatio = ctypes.c_float(hit_ratio)
     attr.accessPolicyWindow.hitProp = ctypes.c_int(hit_prop)
     attr.accessPolicyWindow.missProp = ctypes.c_int(CUDA_ACCESS_PROPERTY_STREAMING)
-
     invalid_param = num_bytes <= 0 or hit_ratio <= 0.0 or hit_ratio > 1.0 or base_ptr == 0
     res_code = (simulate_error_code if simulate_error_code != 0 else 1) if (simulate_error_code != 0 or invalid_param) else int(libcudart.cudaStreamSetAttribute(ctypes.c_void_p(stream_handle), CUDA_STREAM_ATTR_ACCESS_POLICY_WINDOW, ctypes.byref(attr)))
-
     if res_code != 0:
         fb = CudaStreamAttrValue()
         ctypes.memset(ctypes.byref(fb), 0, ctypes.sizeof(fb))
@@ -95,7 +85,6 @@ def apply_l2_window_with_fallback(
         fb.accessPolicyWindow.missProp = ctypes.c_int(CUDA_ACCESS_PROPERTY_NORMAL)
         fb_rc = int(libcudart.cudaStreamSetAttribute(ctypes.c_void_p(stream_handle), CUDA_STREAM_ATTR_ACCESS_POLICY_WINDOW, ctypes.byref(fb)))
         return {"status": "FALLBACK_TO_NORMAL_RECOVERY", "fault_code": res_code, "fallback_rc": fb_rc, "active_hit_prop": CUDA_ACCESS_PROPERTY_NORMAL, "recovered": fb_rc == 0}
-
     rb = CudaStreamAttrValue()
     ctypes.memset(ctypes.byref(rb), 0, ctypes.sizeof(rb))
     rb_rc = int(libcudart.cudaStreamGetAttribute(ctypes.c_void_p(stream_handle), CUDA_STREAM_ATTR_ACCESS_POLICY_WINDOW, ctypes.byref(rb)))
@@ -111,6 +100,31 @@ def apply_l2_window_with_fallback(
 
 def _stats(vals: List[float]) -> Dict[str, float]:
     return {"median": round(float(np.median(vals)), 2), "mean": round(float(np.mean(vals)), 2), "std": round(float(np.std(vals)), 2)}
+
+
+def _measure_symmetric_interleaved_trials(
+    stream_a: torch.cuda.Stream, stream_b: torch.cuda.Stream, enclave_buf: torch.Tensor,
+    thrash_buf: torch.Tensor, n_trials: int, rounds_per_trial: int = 20, inner_hits: int = 1,
+) -> List[float]:
+    """Identical thrash->enclave loop used for BOTH PERSISTING and STREAMING (zero asymmetry)."""
+    ev_s, ev_e = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+    gbps_trials: List[float] = []
+    with torch.cuda.stream(stream_a):
+        enclave_buf.mul_(1.000001)
+    stream_a.synchronize()
+    for _ in range(n_trials):
+        t_ms = 0.0
+        for _ in range(rounds_per_trial):
+            with torch.cuda.stream(stream_b): thrash_buf.mul_(1.000001)
+            stream_b.synchronize()
+            with torch.cuda.stream(stream_a):
+                ev_s.record(stream_a)
+                for _ in range(inner_hits): enclave_buf.mul_(1.000001)
+                ev_e.record(stream_a)
+            stream_a.synchronize()
+            t_ms += float(ev_s.elapsed_time(ev_e))
+        gbps_trials.append((rounds_per_trial * inner_hits * 2 * ENCLAVE_BYTES_2MIB / 1e9) / (t_ms / 1e3))
+    return gbps_trials
 
 
 def run_l2_enclave_and_ncu_audit(ncu_bin: str = "/usr/local/cuda-13.0/bin/ncu", n_trials: int = 10) -> Dict[str, Any]:
@@ -129,30 +143,20 @@ def run_l2_enclave_and_ncu_audit(ncu_bin: str = "/usr/local/cuda-13.0/bin/ncu", 
     enclave_buf = torch.ones(ENCLAVE_BYTES_2MIB // 4, dtype=torch.float32, device="cuda:0")
     thrash_buf = torch.ones((64 * 1024 * 1024) // 4, dtype=torch.float32, device="cuda:0")
     fault_rec = apply_l2_window_with_fallback(libcudart, int(stream_b.cuda_stream), int(enclave_buf.data_ptr()), -1, 1.5, simulate_error_code=11)
-    apply_l2_window_with_fallback(libcudart, int(stream_b.cuda_stream), int(thrash_buf.data_ptr()), 32 * 1024 * 1024, 1.0, hit_prop=CUDA_ACCESS_PROPERTY_STREAMING)
+    apply_l2_window_with_fallback(libcudart, int(stream_b.cuda_stream), int(thrash_buf.data_ptr()), 64 * 1024 * 1024, 1.0, hit_prop=CUDA_ACCESS_PROPERTY_NORMAL)
+
+    # 1. Symmetric Interleaved Condition A: PERSISTING (hitProp=2) under 64 MiB NORMAL thrash
     pin_info = apply_l2_window_with_fallback(libcudart, int(stream_a.cuda_stream), int(enclave_buf.data_ptr()), ENCLAVE_BYTES_2MIB, 1.0, hit_prop=CUDA_ACCESS_PROPERTY_PERSISTING)
+    pinned_2m_trials = _measure_symmetric_interleaved_trials(stream_a, stream_b, enclave_buf, thrash_buf, n_trials, rounds_per_trial=20, inner_hits=1)
 
-    ev_s, ev_e = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
-    pinned_2m_trials, unpinned_2m_trials, stream_64m_trials = [], [], []
-
-    # 1. N=10 trials: 2.00 MiB Pinned (PERSISTING) on stream_a surviving 64 MiB L2 thrash on stream_b
-    for _ in range(n_trials):
-        with torch.cuda.stream(stream_a):
-            for _ in range(10): enclave_buf.mul_(1.000001)
-        with torch.cuda.stream(stream_b):
-            thrash_buf.mul_(1.000001)
-        torch.cuda.synchronize()
-        with torch.cuda.stream(stream_a):
-            ev_s.record(stream_a)
-            for _ in range(200): enclave_buf.mul_(1.000001)
-            ev_e.record(stream_a)
-        stream_a.synchronize()
-        pinned_2m_trials.append((200 * 2 * ENCLAVE_BYTES_2MIB / 1e9) / (float(ev_s.elapsed_time(ev_e)) / 1e3))
-
-
-    # 2. N=10 trials: Same 2.00 MiB Unpinned (STREAMING + cache flushes) under 64 MiB thrash + 64 MiB baseline
+    # 2. Symmetric Interleaved Condition B: STREAMING (hitProp=1) under IDENTICAL 64 MiB NORMAL thrash
     libcudart.cudaCtxResetPersistingL2Cache()
     apply_l2_window_with_fallback(libcudart, int(stream_a.cuda_stream), int(enclave_buf.data_ptr()), ENCLAVE_BYTES_2MIB, 1.0, hit_prop=CUDA_ACCESS_PROPERTY_STREAMING)
+    unpinned_2m_trials = _measure_symmetric_interleaved_trials(stream_a, stream_b, enclave_buf, thrash_buf, n_trials, rounds_per_trial=20, inner_hits=1)
+
+    # 3. Uninterrupted 64 MiB DRAM baseline & 2 MiB warm L2 roofline reference
+    ev_s, ev_e = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+    stream_64m_trials, warm_roof_trials = [], []
     for _ in range(n_trials):
         with torch.cuda.stream(stream_b):
             ev_s.record(stream_b)
@@ -160,37 +164,30 @@ def run_l2_enclave_and_ncu_audit(ncu_bin: str = "/usr/local/cuda-13.0/bin/ncu", 
             ev_e.record(stream_b)
         stream_b.synchronize()
         stream_64m_trials.append((20 * 2 * (64 * 1024 * 1024) / 1e9) / (float(ev_s.elapsed_time(ev_e)) / 1e3))
-        # Interleave 64 MiB L2 flush with 2 MiB unpinned access on stream_a
-        t_ms = 0.0
-        for _ in range(20):
-            with torch.cuda.stream(stream_b): thrash_buf.mul_(1.000001)
-            stream_b.synchronize()
-            with torch.cuda.stream(stream_a):
-                ev_s.record(stream_a); enclave_buf.mul_(1.000001); ev_e.record(stream_a)
-            stream_a.synchronize()
-            t_ms += float(ev_s.elapsed_time(ev_e))
-        unpinned_2m_trials.append((20 * 2 * ENCLAVE_BYTES_2MIB / 1e9) / (t_ms / 1e3))
+        with torch.cuda.stream(stream_a):
+            enclave_buf.mul_(1.000001); ev_s.record(stream_a)
+            for _ in range(200): enclave_buf.mul_(1.000001)
+            ev_e.record(stream_a)
+        stream_a.synchronize()
+        warm_roof_trials.append((200 * 2 * ENCLAVE_BYTES_2MIB / 1e9) / (float(ev_s.elapsed_time(ev_e)) / 1e3))
 
-    # Restore pinned state on stream_a
     libcudart.cudaDeviceSetLimit(CUDA_LIMIT_PERSISTING_L2_CACHE_SIZE, ctypes.c_size_t(ENCLAVE_BYTES_2MIB))
     pin_info = apply_l2_window_with_fallback(libcudart, int(stream_a.cuda_stream), int(enclave_buf.data_ptr()), ENCLAVE_BYTES_2MIB, 1.0, hit_prop=CUDA_ACCESS_PROPERTY_PERSISTING)
-    s_pin, s_unpin, s_64m = _stats(pinned_2m_trials), _stats(unpinned_2m_trials), _stats(stream_64m_trials)
-
+    s_pin, s_unpin, s_64m, s_roof = _stats(pinned_2m_trials), _stats(unpinned_2m_trials), _stats(stream_64m_trials), _stats(warm_roof_trials)
     ncu_args = [ncu_bin, "--clock-control", "none", "--csv", "--metrics", "lts__t_sectors_srcunit_tex_op_read_lookup_hit.pct,lts__t_sectors_hit_rate.pct", sys.executable, "-c", "import torch; x=torch.ones(524288, device='cuda'); y=x*2.0; torch.cuda.synchronize()"]
     proc = subprocess.run(ncu_args, capture_output=True, text=True, timeout=45)
     out_txt = "\n".join([ln.strip() for ln in (proc.stdout + "\n" + proc.stderr).splitlines() if ln.strip()])
     return {
-        "epistemic_register": REGISTER_M, "libcudart_path": lib_path,
+        "epistemic_register": REGISTER_M, "symmetric_interleaved_protocol": True, "libcudart_path": lib_path,
         "hw_l2_cache_bytes": int(l2_size.value), "hw_max_persisting_l2_bytes": int(max_persist.value),
         "set_limit_rc": set_rc, "persisting_limit_readback_bytes": int(limit_rb.value),
         "stream_a_pinning": pin_info, "f07_1_fault_injection_recovery": fault_rec,
         "microbenchmark_bandwidth": {
-            "n_trials": n_trials,
-            "stream_a_pinned_2mib_gbps": s_pin["median"],
-            "stream_a_pinned_2mib_stats_gbps": s_pin,
-            "stream_a_unpinned_evicted_2mib_stats_gbps": s_unpin,
-            "stream_b_streaming_64mib_gbps": s_64m["median"],
-            "stream_b_streaming_64mib_stats_gbps": s_64m,
+            "n_trials": n_trials, "rounds_per_trial": 20, "inner_hits_per_round": 1,
+            "stream_a_pinned_2mib_gbps": s_pin["median"], "stream_a_pinned_2mib_stats_gbps": s_pin,
+            "stream_a_unpinned_evicted_2mib_gbps": s_unpin["median"], "stream_a_unpinned_evicted_2mib_stats_gbps": s_unpin,
+            "stream_b_streaming_64mib_gbps": s_64m["median"], "stream_b_streaming_64mib_stats_gbps": s_64m,
+            "uninterrupted_warm_2mib_l2_roof_gbps": s_roof["median"], "uninterrupted_warm_2mib_l2_roof_stats_gbps": s_roof,
             "pinned_vs_unpinned_2mib_speedup": round(s_pin["median"] / max(s_unpin["median"], 1e-6), 3),
             "pinned_vs_streaming_speedup": round(s_pin["median"] / max(s_64m["median"], 1e-6), 3),
         },

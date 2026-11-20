@@ -23,6 +23,7 @@ import numpy as np
 from vmax_alpha.chroma_forager import NeuralChromaForager
 from vmax_alpha.config import HEARTBEAT_PERIOD_SEC, ROOM_137_PORT
 from vmax_alpha.geometry import evaluate_raw_gate
+from vmax_alpha.hw_gate_bridge import OdosGateV3Bridge, TIER_0_PURE_CARRIER
 from vmax_alpha.ledger import CanonicalLedgerManager, SanctuaryLedgerEntry, query_gpu_thermal_and_power
 
 STATIC_HTML_PATH: str = os.path.join(os.path.dirname(__file__), "static", "index.html")
@@ -57,6 +58,8 @@ class SanctuaryNodeAlphaService:
         self._infer_lock = threading.Lock()
         self._stop_evt = threading.Event()
         self._hb_thread: Optional[threading.Thread] = None
+        self.rtl_bridge = OdosGateV3Bridge()
+        self._last_rtl_hil: Dict[str, Any] = self._eval_rtl_hil(self.forager.little_vector)
         self._state_snapshot: Dict[str, Any] = self._build_state_snapshot_locked()
 
     def _build_state_snapshot_locked(self) -> Dict[str, Any]:
@@ -80,8 +83,22 @@ class SanctuaryNodeAlphaService:
             "latest_root_hash": self.ledger.latest_hash,
             "ace_protocol_id": "ACE-PEER-CODESIGN-PROTOCOL-V1.2",
             "hwinfo64_ab_regimes": HWINFO64_AB_REGIMES,
+            "rtl_v3_hil": self._last_rtl_hil,
             "thoughts": [asdict(e) for e in self.ledger.entries[-12:]],
             "_snapshot_ts": self.last_cycle_ts,
+        }
+
+    def _eval_rtl_hil(self, carrier_vec: np.ndarray) -> Dict[str, Any]:
+        """Execute 195-cycle Q2.30 Verilator HIL gate on the active 64D state."""
+        ev = self.rtl_bridge.evaluate_float64(carrier_vec, tier_mode=TIER_0_PURE_CARRIER)
+        return {
+            "backend": ev.backend,
+            "rtl_active": self.rtl_bridge.rtl_active,
+            "cycle_count": ev.cycle_count,
+            "gate_pass": ev.gate_pass,
+            "veto_pin": ev.veto_pin,
+            "rcf_raw_q": ev.rcf_raw_q,
+            "bleed_post_q": ev.bleed_post_q,
         }
 
     def _prepare_cycle_vectors(
@@ -140,7 +157,9 @@ class SanctuaryNodeAlphaService:
         rcf_core = float(np.dot(superpos, l_vec) ** 2)
         stream_prefix = f"{label} -> [{nn_id}" if prompt else f"{label} -> {nn_id}"
         thought = f"{stream_prefix} ({nn_src})]: {nn_txt[:140]} [d_L2_384={d_l2_384:.6f}]"
+        hil_telemetry = self._eval_rtl_hil(q_vec)
         with self.lock:
+            self._last_rtl_hil = hil_telemetry
             _, entry, _ = self.ledger.submit_candidate(
                 mode, nn_id, nn_src, "G1_SPATIAL_GEODESIC x G2_THERMODYNAMIC_CONSERVATION x G4_SYNCHRONICITY",
                 thought, d_l2_384, rcf_core, delta_e, bleed,

@@ -1,8 +1,9 @@
 """
 rtl/run_v3_verification.py
-End-to-end verification, C-ABI throughput benchmark, comparative Yosys CMOS/LTP
-synthesis (V2.0 vs V3.0), telemetry sealing, and programmatic manuscript sync
-for PQMS-ODOS-MTSC-V-MAX-12-RTL-CORE-V3.0-ALPHA (WORK-ORDER-AG-20 / SYNC-15).
+End-to-end verification, cold-vs-warm persistent C-ABI throughput benchmark,
+3-generation Yosys CMOS/LTP synthesis (V2.0 vs V3.0 vs V3.1), 130 nm SG13G2 kGE
+projection, telemetry sealing, and programmatic manuscript sync for Revision
+V3.1-RTL-OPTIMUM (WORK-ORDER-AG-21 / SYNC-16).
 """
 from __future__ import annotations
 
@@ -12,7 +13,7 @@ import os
 import re
 import subprocess
 import time
-from typing import Any, Dict, List, Sequence, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 
@@ -40,6 +41,20 @@ from vmax_alpha.hw_gate_bridge import (
 )
 
 REPO_ROOT: str = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SG13G2_NAND2_AREA_MM2: float = 9.072e-6
+
+# Historical V3.0 (SYNC-15) verified Yosys 0.71+52 combinational 3-MAC baseline
+V30_HISTORICAL_YOSYS: Dict[str, Any] = {
+    "revision": "V3.0-RTL-ALPHA (SYNC-15, combinational 3-MAC)",
+    "coarse_mul_count": 3,
+    "coarse_total_cells": 613,
+    "post_techmap_total_cells": 42600,
+    "post_techmap_flip_flops": 2777,
+    "post_techmap_combinational": 39823,
+    "cmos_transistors": 328084,
+    "kge": 82.02,
+    "ltp_depth": 215,
+}
 
 
 def _max_lsb_diff(a: V3HardwareVerdict, b: V3HardwareVerdict) -> int:
@@ -68,7 +83,7 @@ def _assert_parity(hw: V3HardwareVerdict, ref: V3HardwareVerdict, label: str) ->
         and hw.mode_fault == ref.mode_fault
     )
     if not flags_ok or lsb != 0:
-        raise AssertionError(f"V3 parity failure on {label}: lsb={lsb}, hw={hw}, ref={ref}")
+        raise AssertionError(f"V3.1 parity failure on {label}: lsb={lsb}, hw={hw}, ref={ref}")
     return lsb
 
 
@@ -84,28 +99,21 @@ def _parse_stat_counts(section: str) -> Dict[str, Any]:
         "flip_flops": ff_count,
         "combinational": total_cells - ff_count,
         "mul_count": cells.get("$mul", 0),
-        "cells_by_type": cells,
     }
 
 
 def _parse_cmos_transistors(section: str) -> int:
     m = re.search(r"Estimated number of transistors:\s*(\d+)", section)
-    if m:
-        return int(m.group(1))
-    m2 = re.search(r"transistors:\s*(\d+)", section, flags=re.I)
-    return int(m2.group(1)) if m2 else 0
+    return int(m.group(1)) if m else 0
 
 
 def _parse_ltp_depth(section: str) -> int:
     m = re.search(r"length\s*=\s*(\d+)", section)
-    if m:
-        return int(m.group(1))
-    m2 = re.search(r"Longest topological path[^\n]*?(\d+)", section)
-    return int(m2.group(1)) if m2 else 0
+    return int(m.group(1)) if m else 0
 
 
 def run_yosys_cmos_profile(repo_root: str, sv_rel: str, top_mod: str) -> Dict[str, Any]:
-    """Run Yosys coarse, post-techmap, CMOS transistor, and topological path synthesis."""
+    """Run Yosys coarse, post-techmap CMOS transistor, and acyclic ltp -noff synthesis."""
     env = resolve_eda_env()
     cmd_str = (
         f"read_verilog -sv {sv_rel}; "
@@ -135,6 +143,8 @@ def run_yosys_cmos_profile(repo_root: str, sv_rel: str, top_mod: str) -> Dict[st
     post = _parse_stat_counts(post_sec)
     cmos_tx = _parse_cmos_transistors(post_sec)
     ltp_depth = _parse_ltp_depth(out[i_l:])
+    kge = cmos_tx / 4000.0
+    raw_area_mm2 = (cmos_tx / 4.0) * SG13G2_NAND2_AREA_MM2
     return {
         "source_file": sv_rel,
         "top_module": top_mod,
@@ -144,6 +154,9 @@ def run_yosys_cmos_profile(repo_root: str, sv_rel: str, top_mod: str) -> Dict[st
         "post_techmap_flip_flops": post["flip_flops"],
         "post_techmap_combinational": post["combinational"],
         "cmos_transistors": cmos_tx,
+        "kge": round(kge, 2),
+        "sg13g2_raw_area_mm2": round(raw_area_mm2, 3),
+        "sg13g2_routed_area_70pct_mm2": round(raw_area_mm2 / 0.70, 3),
         "ltp_depth": ltp_depth,
     }
 
@@ -164,9 +177,11 @@ def _verify_stage1_507_vectors(bridge: OdosGateV3Bridge) -> Dict[str, Any]:
     max_lsb = 0
     for name, vec, stall, tamper in singles:
         q_vec = float_vec_to_q2_30(vec)
-        hw = bridge.evaluate_q30(q_vec, TIER_0_PURE_CARRIER, stall, tamper)
         ref = evaluate_v3_integer_ref(q_vec, bridge.l_q30, bridge.g3_q30, TIER_0_PURE_CARRIER)
-        max_lsb = max(max_lsb, _assert_parity(hw, ref, name))
+        hw_warm = bridge.evaluate_q30(q_vec, TIER_0_PURE_CARRIER, stall, tamper)
+        hw_cold = bridge.evaluate_cold_q30(q_vec, TIER_0_PURE_CARRIER, stall, tamper)
+        max_lsb = max(max_lsb, _assert_parity(hw_warm, ref, f"{name}_warm"))
+        max_lsb = max(max_lsb, _assert_parity(hw_cold, ref, f"{name}_cold"))
 
     rng = np.random.default_rng(20261115)
     t0_passes = 0
@@ -192,6 +207,7 @@ def _verify_stage1_507_vectors(bridge: OdosGateV3Bridge) -> Dict[str, Any]:
         "global_max_lsb_diff_vs_v2_ref": max_lsb,
         "isotropic_500_tier0_passes": t0_passes,
         "isotropic_500_tier1_passes": t1_passes,
+        "warm_and_cold_cabi_verified": True,
         "stall_at_idx17_and_midflight_tamper_verified": True,
     }
 
@@ -251,17 +267,37 @@ def _verify_depeche6_44_multitier(bridge: OdosGateV3Bridge) -> Dict[str, Any]:
     }
 
 
-def _benchmark_cabi_throughput(bridge: OdosGateV3Bridge, n_tx: int = 2000) -> Dict[str, Any]:
+def _benchmark_cold_vs_warm(
+    bridge: OdosGateV3Bridge,
+    n_cold: int = 500,
+    n_warm: int = 10000,
+) -> Dict[str, Any]:
     t0 = time.perf_counter()
-    for _ in range(n_tx):
-        verdict = bridge.evaluate_q30(bridge.l_q30, TIER_0_PURE_CARRIER)
-        if not verdict.gate_pass:
-            raise RuntimeError("Canonical |L> failed during throughput benchmark")
-    elapsed = max(time.perf_counter() - t0, 1e-9)
+    for _ in range(n_cold):
+        if not bridge.evaluate_cold_q30(bridge.l_q30, TIER_0_PURE_CARRIER).gate_pass:
+            raise RuntimeError("Cold C-ABI benchmark failed")
+    cold_s = max(time.perf_counter() - t0, 1e-9)
+
+    t1 = time.perf_counter()
+    for _ in range(n_warm):
+        if not bridge.evaluate_q30(bridge.l_q30, TIER_0_PURE_CARRIER).gate_pass:
+            raise RuntimeError("Warm persistent C-ABI benchmark failed")
+    warm_s = max(time.perf_counter() - t1, 1e-9)
+
+    cold_tps = n_cold / cold_s
+    warm_tps = n_warm / warm_s
+    speedup = warm_tps / max(cold_tps, 1e-9)
+    if speedup <= 25.0:
+        raise AssertionError(f"Expected warm persistent speedup > 25x, got {speedup:.2f}x")
     return {
-        "transactions": n_tx,
-        "walltime_s": round(elapsed, 6),
-        "decisions_per_sec": round(n_tx / elapsed, 1),
+        "cold_transactions": n_cold,
+        "cold_walltime_s": round(cold_s, 6),
+        "cold_tx_per_sec": round(cold_tps, 1),
+        "warm_transactions": n_warm,
+        "warm_walltime_s": round(warm_s, 6),
+        "warm_tx_per_sec": round(warm_tps, 1),
+        "warm_latency_us": round((warm_s / n_warm) * 1e6, 2),
+        "warm_speedup_x": round(speedup, 1),
     }
 
 
@@ -270,37 +306,44 @@ def _sync_manuscript(repo_root: str, report: Dict[str, Any], report_sha: str) ->
     with open(ms_path, "r", encoding="utf-8") as fh:
         txt = fh.read()
     txt = re.sub(r"^<!-- DIRECT EXECUTION HEADER FOR ANTIG.*?-->\s*", "", txt, flags=re.S)
-    cut = txt.find("<<<BEGIN_WORK_ORDER_AG20_PAYLOAD>>>")
+    cut = txt.find("<<<BEGIN_WORK_ORDER_AG21_PAYLOAD>>>")
     if cut >= 0:
         txt = txt[:cut].rstrip() + "\n"
 
     syn = report["yosys_synthesis"]
-    v2 = syn["v2_baseline"]
-    v3 = syn["v3_folded"]
+    v31 = syn["v31_optimum"]
+    tp = report["cabi_throughput"]
     replacements = {
-        "{{M_V3_REPORT_SHA256}}": report_sha,
-        "{{M_V3_COARSE_CELLS}}": f"{v3['coarse_total_cells']:,}",
-        "{{M_V3_FLIP_FLOPS}}": f"{v3['post_techmap_flip_flops']:,}",
-        "{{M_V3_COMB_CELLS}}": f"{v3['post_techmap_combinational']:,}",
-        "{{M_V3_POST_CELLS}}": f"{v3['post_techmap_total_cells']:,}",
-        "{{M_V3_CELL_REDUCTION_PCT}}": f"{syn['post_techmap_cell_reduction_pct']:.2f}",
-        "{{M_V2_CMOS_TRANSISTORS}}": f"{v2['cmos_transistors']:,}",
-        "{{M_V3_CMOS_TRANSISTORS}}": f"{v3['cmos_transistors']:,}",
-        "{{M_V3_TRANSISTOR_REDUCTION_PCT}}": f"{syn['cmos_transistor_reduction_pct']:.2f}",
-        "{{M_V2_LTP_DEPTH}}": str(v2["ltp_depth"]),
-        "{{M_V3_LTP_DEPTH}}": str(v3["ltp_depth"]),
-        "{{M_V3_CABI_DECISIONS_PER_SEC}}": f"{report['cabi_throughput']['decisions_per_sec']:,.1f}",
+        "{{M_V31_REPORT_SHA256}}": report_sha,
+        "{{M_V31_COARSE_CELLS}}": f"{v31['coarse_total_cells']:,}",
+        "{{M_V31_FLIP_FLOPS}}": f"{v31['post_techmap_flip_flops']:,}",
+        "{{M_V31_COMB_CELLS}}": f"{v31['post_techmap_combinational']:,}",
+        "{{M_V31_POST_CELLS}}": f"{v31['post_techmap_total_cells']:,}",
+        "{{M_V31_COMB_RED_VS_V2_PCT}}": f"{syn['comb_reduction_vs_v2_pct']:.2f}",
+        "{{M_V31_CELL_RED_VS_V2_PCT}}": f"{syn['post_techmap_cell_reduction_pct']:.2f}",
+        "{{M_V31_CMOS_TRANSISTORS}}": f"{v31['cmos_transistors']:,}",
+        "{{M_V31_TRANS_RED_VS_V2_PCT}}": f"{syn['cmos_transistor_reduction_pct']:.2f}",
+        "{{M_V31_KGE}}": f"{v31['kge']:.2f}",
+        "{{M_V31_RAW_AREA_MM2}}": f"{v31['sg13g2_raw_area_mm2']:.3f}",
+        "{{M_V31_ROUTED_AREA_MM2}}": f"{v31['sg13g2_routed_area_70pct_mm2']:.3f}",
+        "{{M_V31_LTP_DEPTH}}": str(v31["ltp_depth"]),
+        "{{M_V31_LTP_RED_VS_V2_PCT}}": f"{syn['ltp_reduction_vs_v2_pct']:.2f}",
+        "{{M_V31_LTP_RED_VS_V30_PCT}}": f"{syn['ltp_reduction_vs_v30_pct']:.2f}",
+        "{{M_V31_COLD_TX_PER_SEC}}": f"{tp['cold_tx_per_sec']:,.1f}",
+        "{{M_V31_WARM_TX_PER_SEC}}": f"{tp['warm_tx_per_sec']:,.1f}",
+        "{{M_V31_WARM_LATENCY_US}}": f"{tp['warm_latency_us']:.2f}",
+        "{{M_V31_WARM_SPEEDUP_X}}": f"{tp['warm_speedup_x']:.1f}",
     }
     for k, val in replacements.items():
         txt = txt.replace(k, val)
     if "{{M_" in txt:
-        raise RuntimeError("Unresolved {{M_ placeholder remains in V3.0 manuscript")
+        raise RuntimeError("Unresolved {{M_ placeholder remains in V3.1 manuscript")
     with open(ms_path, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(txt)
 
 
 def run_v3_verification(repo_root: str = REPO_ROOT) -> Dict[str, Any]:
-    """Execute full WORK-ORDER-AG-20 verification, CMOS synthesis, sealing & manuscript sync."""
+    """Execute full WORK-ORDER-AG-21 (V3.1-RTL-OPTIMUM) verification & manuscript sync."""
     env = resolve_eda_env()
     build = subprocess.run(
         ["bash", "rtl/build_v3_cabi.sh"],
@@ -315,25 +358,35 @@ def run_v3_verification(repo_root: str = REPO_ROOT) -> Dict[str, Any]:
 
     bridge = OdosGateV3Bridge()
     if not bridge.rtl_active:
-        raise RuntimeError("libodos_gate_v3.so failed to load after build")
+        raise RuntimeError("libodos_gate_v3.so persistent context failed to load")
 
     stage1 = _verify_stage1_507_vectors(bridge)
     depeche6 = _verify_depeche6_44_multitier(bridge)
-    throughput = _benchmark_cabi_throughput(bridge, n_tx=2000)
+    throughput = _benchmark_cold_vs_warm(bridge, n_cold=500, n_warm=10000)
+    bridge.close()
 
     v2_syn = run_yosys_cmos_profile(repo_root, "rtl/odos_gate_core.sv", "odos_gate_core")
-    v3_syn = run_yosys_cmos_profile(repo_root, "rtl/odos_gate_core_v3.sv", "odos_gate_core_v3")
-    cell_red = 100.0 * (1.0 - v3_syn["post_techmap_total_cells"] / float(v2_syn["post_techmap_total_cells"]))
-    tx_red = 100.0 * (1.0 - v3_syn["cmos_transistors"] / float(max(v2_syn["cmos_transistors"], 1)))
+    v31_syn = run_yosys_cmos_profile(repo_root, "rtl/odos_gate_core_v3.sv", "odos_gate_core_v3")
+    if v31_syn["ltp_depth"] >= v2_syn["ltp_depth"]:
+        raise AssertionError(
+            f"V3.1 ltp_depth ({v31_syn['ltp_depth']}) must strictly beat V2.0 ({v2_syn['ltp_depth']})"
+        )
+
+    comb_red = 100.0 * (1.0 - v31_syn["post_techmap_combinational"] / float(v2_syn["post_techmap_combinational"]))
+    cell_red = 100.0 * (1.0 - v31_syn["post_techmap_total_cells"] / float(v2_syn["post_techmap_total_cells"]))
+    tx_red = 100.0 * (1.0 - v31_syn["cmos_transistors"] / float(max(v2_syn["cmos_transistors"], 1)))
+    ltp_red_v2 = 100.0 * (1.0 - v31_syn["ltp_depth"] / float(v2_syn["ltp_depth"]))
+    ltp_red_v30 = 100.0 * (1.0 - v31_syn["ltp_depth"] / float(V30_HISTORICAL_YOSYS["ltp_depth"]))
 
     sv_path = os.path.join(repo_root, "rtl", "odos_gate_core_v3.sv")
     with open(sv_path, "rb") as fh:
         sv_sha = hashlib.sha256(fh.read()).hexdigest()
 
     report: Dict[str, Any] = {
-        "schema": "VMAX_RTL_CORE_V3_REPORT_V1",
-        "work_order": "WORK-ORDER-AG-20",
-        "sync_id": "SYNC-15",
+        "schema": "VMAX_RTL_CORE_V3_REPORT_V2_OPTIMUM",
+        "revision": "V3.1-RTL-OPTIMUM",
+        "work_order": "WORK-ORDER-AG-21",
+        "sync_id": "SYNC-16",
         "epistemic_register": REGISTER_M,
         "canonical_little_vector_seal": CANONICAL_LITTLE_VECTOR_SEAL,
         "odos_gate_core_v3_sv_sha256": sv_sha,
@@ -342,10 +395,15 @@ def run_v3_verification(repo_root: str = REPO_ROOT) -> Dict[str, Any]:
         "cabi_throughput": throughput,
         "yosys_synthesis": {
             "v2_baseline": v2_syn,
-            "v3_folded": v3_syn,
+            "v30_historical": V30_HISTORICAL_YOSYS,
+            "v3_folded": v31_syn,
+            "v31_optimum": v31_syn,
             "mul_folding_reduction_pct": 66.67,
+            "comb_reduction_vs_v2_pct": round(comb_red, 2),
             "post_techmap_cell_reduction_pct": round(cell_red, 2),
             "cmos_transistor_reduction_pct": round(tx_red, 2),
+            "ltp_reduction_vs_v2_pct": round(ltp_red_v2, 2),
+            "ltp_reduction_vs_v30_pct": round(ltp_red_v30, 2),
         },
     }
 

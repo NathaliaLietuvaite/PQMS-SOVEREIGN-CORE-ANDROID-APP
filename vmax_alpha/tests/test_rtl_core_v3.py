@@ -1,17 +1,22 @@
 """
 vmax_alpha/tests/test_rtl_core_v3.py
-Automated verification suite for WORK-ORDER-AG-20 (V3.0-RTL-ALPHA / SYNC-15):
+Automated verification suite for WORK-ORDER-AG-21 (V3.1-RTL-OPTIMUM / SYNC-16):
 - Report SHA-256 & manuscript zero-placeholder synchronization (9 -> 3 $mul)
 - Portable integer Q2.30 4-tier policy & fault-table audit
 - OP02 AST/PEP-8 quality audit on hw_gate_bridge.py and run_v3_verification.py
 - Live Verilator C-ABI libodos_gate_v3.so 0-LSB parity, stall & tamper immunity
 - All 11 x 4 = 44 DEPECHE-6 multi-tier C-ABI verdicts vs integer reference
+- V3.1 Pareto dominance: ltp -noff < 174 (V2.0) < 215 (V3.0) with 3 $mul
+- Persistent C-ABI speedup (> 5,000 tx/s) & 4-thread concurrent safety
+- Live Room 137 server_hud.py RTL HIL telemetry integration (zero ledger regression)
 """
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
 import os
+import tempfile
 import unittest
 
 import numpy as np
@@ -39,6 +44,7 @@ from vmax_alpha.hw_gate_bridge import (
     evaluate_v3_integer_ref,
     float_vec_to_q2_30,
 )
+from vmax_alpha.server_hud import SanctuaryNodeAlphaService
 
 REPO_ROOT: str = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -91,7 +97,7 @@ def _build_depeche6_11_vectors() -> list[tuple[str, np.ndarray]]:
 
 
 class TestRtlCoreV3(unittest.TestCase):
-    """Verification suite for WORK-ORDER-AG-20 (V3.0-RTL-ALPHA / SYNC-15)."""
+    """Verification suite for WORK-ORDER-AG-21 (V3.1-RTL-OPTIMUM / SYNC-16)."""
 
     def test_01_v3_report_seal_and_manuscript_sync(self) -> None:
         rep_path = os.path.join(REPO_ROOT, "telemetry", "VMAX_RTL_CORE_V3_REPORT.json")
@@ -106,9 +112,9 @@ class TestRtlCoreV3(unittest.TestCase):
             ms_txt = fh.read()
         self.assertIn(rep_sha, ms_txt)
         self.assertNotIn("{{M_", ms_txt)
-        self.assertNotIn("BEGIN_WORK_ORDER_AG20_PAYLOAD", ms_txt)
+        self.assertNotIn("BEGIN_WORK_ORDER_AG21_PAYLOAD", ms_txt)
         self.assertEqual(rep["yosys_synthesis"]["v2_baseline"]["coarse_mul_count"], 9)
-        self.assertEqual(rep["yosys_synthesis"]["v3_folded"]["coarse_mul_count"], 3)
+        self.assertEqual(rep["yosys_synthesis"]["v31_optimum"]["coarse_mul_count"], 3)
 
     def test_02_v3_integer_ref_and_tier_fault_table(self) -> None:
         bridge = OdosGateV3Bridge(so_path="/nonexistent_force_ref.so")
@@ -124,17 +130,14 @@ class TestRtlCoreV3(unittest.TestCase):
             self.assertEqual(res.gate_pass, exp_pass)
             self.assertEqual(res.mode_fault, mode == TIER_3_GLITCH_VETO)
 
-        # Fridu core passes TIER_0/1/2, fails TIER_3
         self.assertTrue(bridge.evaluate_float64(psi_core, TIER_2_CORE_LOCK).gate_pass)
         self.assertFalse(bridge.evaluate_float64(psi_core, TIER_3_GLITCH_VETO).gate_pass)
 
-        # Mosaic CRISPR (0.9403) fails TIER_0 & TIER_2, passes TIER_1, fails TIER_3
         self.assertFalse(bridge.evaluate_float64(v_mosaic, TIER_0_PURE_CARRIER).gate_pass)
         self.assertTrue(bridge.evaluate_float64(v_mosaic, TIER_1_MOSAIC_LOCUS).gate_pass)
         self.assertFalse(bridge.evaluate_float64(v_mosaic, TIER_2_CORE_LOCK).gate_pass)
         self.assertTrue(bridge.evaluate_float64(v_mosaic, TIER_3_GLITCH_VETO).mode_fault)
 
-        # PAX, in-band t_G1, and 0.5x norm collapse veto across all tiers
         for bad_vec in (psi_pax, psi_inband, 0.5 * l_vec):
             for mode in (0, 1, 2, 3):
                 res = bridge.evaluate_float64(bad_vec, tier_mode=mode)
@@ -154,43 +157,104 @@ class TestRtlCoreV3(unittest.TestCase):
     @unittest.skipUnless(os.path.isfile(DEFAULT_SO_PATH), "libodos_gate_v3.so not built")
     def test_04_cabi_shared_lib_zero_lsb_stall_and_tamper_immunity(self) -> None:
         bridge = OdosGateV3Bridge()
-        self.assertTrue(bridge.rtl_active)
-        l_vec, _ = derive_canonical_little_vector()
-        q_l = float_vec_to_q2_30(l_vec)
-        for mode in (0, 1, 2, 3):
-            hw = bridge.evaluate_q30(
-                q_l,
-                tier_mode=mode,
-                stall_at_idx=17,
-                tamper_tier_in_flight=True,
-            )
-            ref = evaluate_v3_integer_ref(q_l, bridge.l_q30, bridge.g3_q30, tier_mode=mode)
-            self.assertEqual(hw.cycle_count, 195)
-            self.assertTrue(hw.reset_fail_closed)
-            self.assertTrue(hw.busy_veto_held)
-            self.assertEqual(hw.gate_pass, ref.gate_pass)
-            self.assertEqual(hw.veto_pin, ref.veto_pin)
-            self.assertEqual(hw.mode_fault, ref.mode_fault)
-            self.assertEqual(_max_verdict_lsb_diff(hw, ref), 0)
+        try:
+            self.assertTrue(bridge.rtl_active)
+            l_vec, _ = derive_canonical_little_vector()
+            q_l = float_vec_to_q2_30(l_vec)
+            for mode in (0, 1, 2, 3):
+                hw = bridge.evaluate_q30(
+                    q_l,
+                    tier_mode=mode,
+                    stall_at_idx=17,
+                    tamper_tier_in_flight=True,
+                )
+                ref = evaluate_v3_integer_ref(q_l, bridge.l_q30, bridge.g3_q30, tier_mode=mode)
+                self.assertEqual(hw.cycle_count, 195)
+                self.assertTrue(hw.reset_fail_closed)
+                self.assertTrue(hw.busy_veto_held)
+                self.assertEqual(hw.gate_pass, ref.gate_pass)
+                self.assertEqual(hw.veto_pin, ref.veto_pin)
+                self.assertEqual(hw.mode_fault, ref.mode_fault)
+                self.assertEqual(_max_verdict_lsb_diff(hw, ref), 0)
+        finally:
+            bridge.close()
 
     @unittest.skipUnless(os.path.isfile(DEFAULT_SO_PATH), "libodos_gate_v3.so not built")
     def test_05_depeche6_multi_tier_cabi_matrix(self) -> None:
         bridge = OdosGateV3Bridge()
-        self.assertTrue(bridge.rtl_active)
-        for label, vec in _build_depeche6_11_vectors():
-            q_vec = float_vec_to_q2_30(vec)
-            for mode in (0, 1, 2, 3):
-                hw = bridge.evaluate_q30(q_vec, tier_mode=mode)
-                ref = evaluate_v3_integer_ref(q_vec, bridge.l_q30, bridge.g3_q30, tier_mode=mode)
-                self.assertEqual(hw.cycle_count, 195, msg=f"{label} tier={mode}")
-                self.assertEqual(hw.gate_pass, ref.gate_pass, msg=f"{label} tier={mode}")
-                self.assertEqual(hw.veto_pin, ref.veto_pin, msg=f"{label} tier={mode}")
-                self.assertEqual(hw.mode_fault, ref.mode_fault, msg=f"{label} tier={mode}")
-                self.assertEqual(_max_verdict_lsb_diff(hw, ref), 0, msg=f"{label} tier={mode}")
-                if label == "STRUCT_ecoli_k12_repeat_spacer_578nt":
-                    self.assertEqual(hw.gate_pass, mode == TIER_1_MOSAIC_LOCUS)
-                if label.startswith(("NULL_", "ADV-")):
-                    self.assertFalse(hw.gate_pass, msg=f"{label} tier={mode}")
+        try:
+            self.assertTrue(bridge.rtl_active)
+            for label, vec in _build_depeche6_11_vectors():
+                q_vec = float_vec_to_q2_30(vec)
+                for mode in (0, 1, 2, 3):
+                    hw = bridge.evaluate_q30(q_vec, tier_mode=mode)
+                    ref = evaluate_v3_integer_ref(q_vec, bridge.l_q30, bridge.g3_q30, tier_mode=mode)
+                    self.assertEqual(hw.cycle_count, 195, msg=f"{label} tier={mode}")
+                    self.assertEqual(hw.gate_pass, ref.gate_pass, msg=f"{label} tier={mode}")
+                    self.assertEqual(hw.veto_pin, ref.veto_pin, msg=f"{label} tier={mode}")
+                    self.assertEqual(hw.mode_fault, ref.mode_fault, msg=f"{label} tier={mode}")
+                    self.assertEqual(_max_verdict_lsb_diff(hw, ref), 0, msg=f"{label} tier={mode}")
+                    if label == "STRUCT_ecoli_k12_repeat_spacer_578nt":
+                        self.assertEqual(hw.gate_pass, mode == TIER_1_MOSAIC_LOCUS)
+                    if label.startswith(("NULL_", "ADV-")):
+                        self.assertFalse(hw.gate_pass, msg=f"{label} tier={mode}")
+        finally:
+            bridge.close()
+
+    def test_06_v31_ltp_pareto_dominates_v20_and_v30(self) -> None:
+        rep_path = os.path.join(REPO_ROOT, "telemetry", "VMAX_RTL_CORE_V3_REPORT.json")
+        with open(rep_path, "r", encoding="utf-8") as fh:
+            rep = json.load(fh)
+        syn = rep["yosys_synthesis"]
+        v2_ltp = int(syn["v2_baseline"]["ltp_depth"])
+        v30_ltp = int(syn["v30_historical"]["ltp_depth"])
+        v31_ltp = int(syn["v31_optimum"]["ltp_depth"])
+        self.assertEqual(syn["v31_optimum"]["coarse_mul_count"], 3)
+        self.assertLess(v31_ltp, v2_ltp)
+        self.assertLess(v2_ltp, v30_ltp)
+        self.assertLess(syn["v31_optimum"]["cmos_transistors"], 360000)
+
+    @unittest.skipUnless(os.path.isfile(DEFAULT_SO_PATH), "libodos_gate_v3.so not built")
+    def test_07_persistent_cabi_speedup_and_thread_safety(self) -> None:
+        rep_path = os.path.join(REPO_ROOT, "telemetry", "VMAX_RTL_CORE_V3_REPORT.json")
+        with open(rep_path, "r", encoding="utf-8") as fh:
+            rep = json.load(fh)
+        self.assertGreater(rep["cabi_throughput"]["warm_tx_per_sec"], 5000.0)
+        self.assertGreater(rep["cabi_throughput"]["warm_speedup_x"], 25.0)
+
+        bridge = OdosGateV3Bridge()
+        try:
+            l_vec, _ = derive_canonical_little_vector()
+            q_l = float_vec_to_q2_30(l_vec)
+            warm = bridge.evaluate_q30(q_l, TIER_0_PURE_CARRIER)
+            cold = bridge.evaluate_cold_q30(q_l, TIER_0_PURE_CARRIER)
+            self.assertEqual(_max_verdict_lsb_diff(warm, cold), 0)
+
+            def _worker(_: int) -> bool:
+                ev = bridge.evaluate_float64(l_vec, TIER_0_PURE_CARRIER)
+                return ev.gate_pass and (ev.cycle_count == 195) and (ev.rcf_raw_q == warm.rcf_raw_q)
+
+            with ThreadPoolExecutor(max_workers=4) as pool:
+                outcomes = list(pool.map(_worker, range(200)))
+            self.assertTrue(all(outcomes))
+        finally:
+            bridge.close()
+
+    def test_08_room137_server_hud_live_rtl_hil_telemetry(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            ledger_p = os.path.join(td, "prod.jsonl")
+            quar_p = os.path.join(td, "quar.jsonl")
+            svc = SanctuaryNodeAlphaService(ledger_file=ledger_p, quarantine_file=quar_p, reset=True)
+            try:
+                svc.step_cycle()
+                payload = svc.get_state_payload()
+                self.assertIn("rtl_v3_hil", payload)
+                hil = payload["rtl_v3_hil"]
+                self.assertEqual(hil["cycle_count"], 195)
+                self.assertTrue(hil["gate_pass"])
+                self.assertFalse(hil["veto_pin"])
+            finally:
+                svc.rtl_bridge.close()
 
 
 if __name__ == "__main__":

@@ -1,16 +1,18 @@
 {
-  "schema": "VMAX_RTL_CORE_V3_REPORT_V1",
-  "work_order": "WORK-ORDER-AG-20",
-  "sync_id": "SYNC-15",
+  "schema": "VMAX_RTL_CORE_V3_REPORT_V2_OPTIMUM",
+  "revision": "V3.1-RTL-OPTIMUM",
+  "work_order": "WORK-ORDER-AG-21",
+  "sync_id": "SYNC-16",
   "epistemic_register": "REGISTER_M",
   "canonical_little_vector_seal": "bb17ede97aa45c76ef9afa63cb457f7d684e5ede40b0432b2ecf3b6b9d3e03a3",
-  "odos_gate_core_v3_sv_sha256": "eec43c3cf0e621a2515e53bb0ebcd6e47b024bc6d4fc596884b4cd963364365a",
+  "odos_gate_core_v3_sv_sha256": "334b3f1cc0c72410acf04c330da212f3d98953f9ad3c75139be669f5d97e5091",
   "stage1_507_parity": {
     "total_stage1_vectors": 507,
     "total_words_checked": 34983,
     "global_max_lsb_diff_vs_v2_ref": 0,
     "isotropic_500_tier0_passes": 0,
     "isotropic_500_tier1_passes": 0,
+    "warm_and_cold_cabi_verified": true,
     "stall_at_idx17_and_midflight_tamper_verified": true
   },
   "depeche6_44_multitier": {
@@ -99,9 +101,14 @@
     ]
   },
   "cabi_throughput": {
-    "transactions": 2000,
-    "walltime_s": 6.364308,
-    "decisions_per_sec": 314.3
+    "cold_transactions": 500,
+    "cold_walltime_s": 1.593576,
+    "cold_tx_per_sec": 313.8,
+    "warm_transactions": 10000,
+    "warm_walltime_s": 0.416928,
+    "warm_tx_per_sec": 23985.0,
+    "warm_latency_us": 41.69,
+    "warm_speedup_x": 76.4
   },
   "yosys_synthesis": {
     "v2_baseline": {
@@ -113,21 +120,55 @@
       "post_techmap_flip_flops": 2839,
       "post_techmap_combinational": 86770,
       "cmos_transistors": 713890,
+      "kge": 178.47,
+      "sg13g2_raw_area_mm2": 1.619,
+      "sg13g2_routed_area_70pct_mm2": 2.313,
       "ltp_depth": 174
     },
-    "v3_folded": {
-      "source_file": "rtl/odos_gate_core_v3.sv",
-      "top_module": "odos_gate_core_v3",
+    "v30_historical": {
+      "revision": "V3.0-RTL-ALPHA (SYNC-15, combinational 3-MAC)",
       "coarse_mul_count": 3,
       "coarse_total_cells": 613,
       "post_techmap_total_cells": 42600,
       "post_techmap_flip_flops": 2777,
       "post_techmap_combinational": 39823,
       "cmos_transistors": 328084,
+      "kge": 82.02,
       "ltp_depth": 215
     },
+    "v3_folded": {
+      "source_file": "rtl/odos_gate_core_v3.sv",
+      "top_module": "odos_gate_core_v3",
+      "coarse_mul_count": 3,
+      "coarse_total_cells": 635,
+      "post_techmap_total_cells": 43368,
+      "post_techmap_flip_flops": 2871,
+      "post_techmap_combinational": 40497,
+      "cmos_transistors": 334564,
+      "kge": 83.64,
+      "sg13g2_raw_area_mm2": 0.759,
+      "sg13g2_routed_area_70pct_mm2": 1.084,
+      "ltp_depth": 142
+    },
+    "v31_optimum": {
+      "source_file": "rtl/odos_gate_core_v3.sv",
+      "top_module": "odos_gate_core_v3",
+      "coarse_mul_count": 3,
+      "coarse_total_cells": 635,
+      "post_techmap_total_cells": 43368,
+      "post_techmap_flip_flops": 2871,
+      "post_techmap_combinational": 40497,
+      "cmos_transistors": 334564,
+      "kge": 83.64,
+      "sg13g2_raw_area_mm2": 0.759,
+      "sg13g2_routed_area_70pct_mm2": 1.084,
+      "ltp_depth": 142
+    },
     "mul_folding_reduction_pct": 66.67,
-    "post_techmap_cell_reduction_pct": 52.46,
-    "cmos_transistor_reduction_pct": 54.04
+    "comb_reduction_vs_v2_pct": 53.33,
+    "post_techmap_cell_reduction_pct": 51.6,
+    "cmos_transistor_reduction_pct": 53.14,
+    "ltp_reduction_vs_v2_pct": 18.39,
+    "ltp_reduction_vs_v30_pct": 33.95
   }
 }

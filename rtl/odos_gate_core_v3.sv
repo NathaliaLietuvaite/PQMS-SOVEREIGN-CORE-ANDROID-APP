@@ -1,8 +1,10 @@
 // =============================================================================
 // rtl/odos_gate_core_v3.sv
-// PQMS-ODOS-MTSC-V-MAX-12-RTL-CORE-V3.0-ALPHA (WORK-ORDER-AG-20 / SYNC-15)
+// PQMS-ODOS-MTSC-V-MAX-12-RTL-CORE-V3.0-ALPHA — Revision V3.1-RTL-OPTIMUM
+// (WORK-ORDER-AG-21 / SYNC-16)
 // Loop-free 3-MAC inter-state folded Q2.30 S^63 coprocessor (9 -> 3 multipliers)
-// with transaction-latched 2-bit multi-tier domain strap and 2'b11 glitch trap.
+// with tail-absorbed inter-rank pipelining (max 1 multiplier per clock period),
+// transaction-latched 2-bit multi-tier domain strap, and 2'b11 glitch trap.
 // =============================================================================
 `timescale 1ns/1ps
 `default_nettype none
@@ -74,14 +76,18 @@ module odos_gate_core_v3 #(
         $readmemh(G3_ROM_HEX, g3_rom);
     end
 
+    // 72-bit Q12.60 Accumulators & Inter-Rank 3-Register Cutset (96 FFs)
     logic signed [71:0] acc_norm_sq_q;
     logic signed [71:0] acc_dot_l_q;
     logic signed [71:0] acc_dot_g3_q;
     logic signed [71:0] acc_dot_g3_p2_q;
     logic signed [71:0] acc_strip_norm_sq_q;
     logic signed [71:0] acc_bleed_post_q;
+    logic signed [31:0] dot_l_q;
     logic signed [31:0] dot_g3_p1_q;
     logic signed [31:0] dot_g3_p2_q;
+    logic signed [31:0] v_pipe_q;
+    logic signed [31:0] g3_pipe_q;
 
     function automatic logic signed [31:0] q60_to_q30(input logic signed [71:0] acc);
         logic signed [71:0] rounded;
@@ -137,14 +143,13 @@ module odos_gate_core_v3 #(
         end
     endfunction
 
-    wire signed [31:0] l_rom_w    = l_rom[idx_q];
-    wire signed [31:0] g3_rom_w   = g3_rom[idx_q];
-    wire signed [31:0] v_buf_w    = v_buf[idx_q];
-    wire signed [31:0] dot_l_ev_w = q60_to_q30(acc_dot_l_q);
+    wire signed [31:0] l_rom_w  = l_rom[idx_q];
+    wire signed [31:0] g3_rom_w = g3_rom[idx_q];
+    wire signed [31:0] v_buf_w  = v_buf[idx_q];
 
     // -------------------------------------------------------------------------
-    // Acyclic Two-Rank 3-MAC Folding Network (Strictly 3 Signed 32x32 $mul)
-    // Rank 1: MUL0 depends ONLY on registered state, primary inputs, and ROM.
+    // Decoupled Single-Multiplier-Per-Cycle 3-MAC Network (Strictly 3 $mul)
+    // All multiplier inputs come ONLY from primary inputs, ROMs, or FF outputs!
     // -------------------------------------------------------------------------
     logic signed [31:0] m0_a;
     logic signed [31:0] m0_b;
@@ -158,8 +163,8 @@ module odos_gate_core_v3 #(
                 m0_b = in_data_i;
             end
             S_EVAL_RAW: begin
-                m0_a = dot_l_ev_w;
-                m0_b = dot_l_ev_w;
+                m0_a = dot_l_q;
+                m0_b = dot_l_q;
             end
             S_STRIP_P1: begin
                 m0_a = dot_g3_p1_q;
@@ -177,10 +182,12 @@ module odos_gate_core_v3 #(
     end
 
     wire signed [63:0] m0_prod_w = $signed({{32{m0_a[31]}}, m0_a}) * $signed({{32{m0_b[31]}}, m0_b});
-    wire signed [31:0] m0_q30_w  = q60_to_q30({{8{m0_prod_w[63]}}, m0_prod_w});
-    wire signed [31:0] v_step_w  = sat_sub_q30(v_buf_w, m0_q30_w);
+    wire signed [31:0] m0_q30_w  = q60_to_q30($signed({{8{m0_prod_w[63]}}, m0_prod_w}));
+    wire signed [31:0] v_step_w  = ((state_q == S_STRIP_P1) || (state_q == S_STRIP_P2))
+                                 ? sat_sub_q30(v_buf_w, m0_q30_w)
+                                 : 32'sd0;
 
-    // Rank 2: MUL1 & MUL2 consume registered/ROM operands or downstream v_step_w.
+    // MUL1 & MUL2: ZERO combinational path from MUL0 or v_step_w!
     logic signed [31:0] m1_a;
     logic signed [31:0] m1_b;
     logic signed [31:0] m2_a;
@@ -198,15 +205,15 @@ module odos_gate_core_v3 #(
                 m2_a = in_data_i;
                 m2_b = g3_rom_w;
             end
-            S_STRIP_P1: begin
-                m1_a = v_step_w;
-                m1_b = g3_rom_w;
+            S_STRIP_P1, S_LATCH_P2: begin
+                m1_a = v_pipe_q;
+                m1_b = g3_pipe_q;
             end
-            S_STRIP_P2: begin
-                m1_a = v_step_w;
-                m1_b = v_step_w;
-                m2_a = v_step_w;
-                m2_b = g3_rom_w;
+            S_STRIP_P2, S_VERDICT: begin
+                m1_a = v_pipe_q;
+                m1_b = v_pipe_q;
+                m2_a = v_pipe_q;
+                m2_b = g3_pipe_q;
             end
             default: begin
                 m1_a = 32'sd0;
@@ -220,7 +227,13 @@ module odos_gate_core_v3 #(
     wire signed [63:0] m1_prod_w = $signed({{32{m1_a[31]}}, m1_a}) * $signed({{32{m1_b[31]}}, m1_b});
     wire signed [63:0] m2_prod_w = $signed({{32{m2_a[31]}}, m2_a}) * $signed({{32{m2_b[31]}}, m2_b});
 
-    // Raw evaluation & multi-tier threshold selection
+    // Tail-absorbed Q12.60 completions (1 multiplier deep)
+    wire signed [71:0] acc_dot_l_next_w = acc_dot_l_q         + $signed({{8{m1_prod_w[63]}}, m1_prod_w});
+    wire signed [71:0] acc_p2_fin_w     = acc_dot_g3_p2_q     + $signed({{8{m1_prod_w[63]}}, m1_prod_w});
+    wire signed [71:0] acc_strip_fin_w  = acc_strip_norm_sq_q + $signed({{8{m1_prod_w[63]}}, m1_prod_w});
+    wire signed [71:0] acc_bleed_fin_w  = acc_bleed_post_q    + $signed({{8{m2_prod_w[63]}}, m2_prod_w});
+
+    // Raw evaluation & tail-absorbed verdict logic
     wire signed [31:0] norm_sq_ev_w    = q60_to_q30(acc_norm_sq_q);
     wire signed [31:0] dot_g3_ev_w     = q60_to_q30(acc_dot_g3_q);
     wire signed [31:0] g3_ov_ev_w      = abs_sat_q30(dot_g3_ev_w);
@@ -229,9 +242,9 @@ module odos_gate_core_v3 #(
     wire signed [31:0] delta_e_ev_w    = half_sum_q30(t1_ev_w, t2_ev_w);
     wire               norm_ok_ev_w    = (norm_sq_ev_w >= NORM_MIN_Q2_30) && (norm_sq_ev_w <= NORM_MAX_Q2_30);
 
-    wire signed [31:0] strip_norm_ev_w = q60_to_q30(acc_strip_norm_sq_q);
+    wire signed [31:0] strip_norm_ev_w = q60_to_q30(acc_strip_fin_w);
     wire               pure_g3_ev_w    = (strip_norm_ev_w < STRIP_NORM_MIN_Q2_30);
-    wire signed [31:0] bleed_raw_ev_w  = abs_sat_q30(q60_to_q30(acc_bleed_post_q));
+    wire signed [31:0] bleed_raw_ev_w  = abs_sat_q30(q60_to_q30(acc_bleed_fin_w));
     wire signed [31:0] bleed_fin_ev_w  = pure_g3_ev_w ? ONE_Q2_30 : bleed_raw_ev_w;
 
     logic signed [31:0] rcf_floor_sel_w;
@@ -282,7 +295,7 @@ module odos_gate_core_v3 #(
         end
     end
 
-    // Synchronous Fail-Closed Control & Accumulator FSM
+    // Synchronous Fail-Closed Control, Pipeline Cutset & Accumulator FSM
     always_ff @(posedge clk_i or negedge rst_ni) begin
         if (!rst_ni) begin
             state_q             <= S_IDLE;
@@ -295,8 +308,11 @@ module odos_gate_core_v3 #(
             acc_dot_g3_p2_q     <= 72'sd0;
             acc_strip_norm_sq_q <= 72'sd0;
             acc_bleed_post_q    <= 72'sd0;
+            dot_l_q             <= 32'sd0;
             dot_g3_p1_q         <= 32'sd0;
             dot_g3_p2_q         <= 32'sd0;
+            v_pipe_q            <= 32'sd0;
+            g3_pipe_q           <= 32'sd0;
             done_o              <= 1'b0;
             gate_pass_o         <= 1'b0;
             veto_pin_o          <= 1'b1;
@@ -328,6 +344,9 @@ module odos_gate_core_v3 #(
                         acc_dot_g3_p2_q     <= 72'sd0;
                         acc_strip_norm_sq_q <= 72'sd0;
                         acc_bleed_post_q    <= 72'sd0;
+                        dot_l_q             <= 32'sd0;
+                        v_pipe_q            <= 32'sd0;
+                        g3_pipe_q           <= 32'sd0;
                         cycle_count_o       <= 16'd0;
                         gate_pass_o         <= 1'b0;
                         veto_pin_o          <= 1'b1;
@@ -341,11 +360,12 @@ module odos_gate_core_v3 #(
                     gate_pass_o <= 1'b0;
                     veto_pin_o  <= 1'b1;
                     if (in_valid_i) begin
-                        acc_norm_sq_q <= acc_norm_sq_q + {{8{m0_prod_w[63]}}, m0_prod_w};
-                        acc_dot_l_q   <= acc_dot_l_q   + {{8{m1_prod_w[63]}}, m1_prod_w};
-                        acc_dot_g3_q  <= acc_dot_g3_q  + {{8{m2_prod_w[63]}}, m2_prod_w};
+                        acc_norm_sq_q <= acc_norm_sq_q + $signed({{8{m0_prod_w[63]}}, m0_prod_w});
+                        acc_dot_l_q   <= acc_dot_l_next_w;
+                        acc_dot_g3_q  <= acc_dot_g3_q  + $signed({{8{m2_prod_w[63]}}, m2_prod_w});
                         cycle_count_o <= cycle_count_o + 16'd1;
                         if (idx_q == 6'd63) begin
+                            dot_l_q <= q60_to_q30(acc_dot_l_next_w);
                             idx_q   <= 6'd0;
                             state_q <= S_EVAL_RAW;
                         end else begin
@@ -364,16 +384,22 @@ module odos_gate_core_v3 #(
                     dot_g3_p1_q     <= dot_g3_ev_w;
                     norm_ok_q       <= norm_ok_ev_w;
                     acc_dot_g3_p2_q <= 72'sd0;
+                    v_pipe_q        <= 32'sd0;
+                    g3_pipe_q       <= 32'sd0;
                     cycle_count_o   <= cycle_count_o + 16'd1;
                     idx_q           <= 6'd0;
                     state_q         <= S_STRIP_P1;
                 end
 
                 S_STRIP_P1: begin
-                    gate_pass_o     <= 1'b0;
-                    veto_pin_o      <= 1'b1;
-                    acc_dot_g3_p2_q <= acc_dot_g3_p2_q + {{8{m1_prod_w[63]}}, m1_prod_w};
-                    cycle_count_o   <= cycle_count_o + 16'd1;
+                    gate_pass_o <= 1'b0;
+                    veto_pin_o  <= 1'b1;
+                    v_pipe_q    <= v_step_w;
+                    g3_pipe_q   <= g3_rom_w;
+                    if (idx_q != 6'd0) begin
+                        acc_dot_g3_p2_q <= acc_p2_fin_w;
+                    end
+                    cycle_count_o <= cycle_count_o + 16'd1;
                     if (idx_q == 6'd63) begin
                         idx_q   <= 6'd0;
                         state_q <= S_LATCH_P2;
@@ -385,23 +411,29 @@ module odos_gate_core_v3 #(
                 S_LATCH_P2: begin
                     gate_pass_o         <= 1'b0;
                     veto_pin_o          <= 1'b1;
-                    dot_g3_p2_q         <= q60_to_q30(acc_dot_g3_p2_q);
+                    dot_g3_p2_q         <= q60_to_q30(acc_p2_fin_w);
                     acc_strip_norm_sq_q <= 72'sd0;
                     acc_bleed_post_q    <= 72'sd0;
+                    v_pipe_q            <= 32'sd0;
+                    g3_pipe_q           <= 32'sd0;
                     cycle_count_o       <= cycle_count_o + 16'd1;
                     idx_q               <= 6'd0;
                     state_q             <= S_STRIP_P2;
                 end
 
                 S_STRIP_P2: begin
-                    gate_pass_o         <= 1'b0;
-                    veto_pin_o          <= 1'b1;
-                    out_valid_o         <= 1'b1;
-                    out_idx_o           <= idx_q;
-                    out_data_o          <= v_step_w;
-                    acc_strip_norm_sq_q <= acc_strip_norm_sq_q + {{8{m1_prod_w[63]}}, m1_prod_w};
-                    acc_bleed_post_q    <= acc_bleed_post_q    + {{8{m2_prod_w[63]}}, m2_prod_w};
-                    cycle_count_o       <= cycle_count_o + 16'd1;
+                    gate_pass_o <= 1'b0;
+                    veto_pin_o  <= 1'b1;
+                    out_valid_o <= 1'b1;
+                    out_idx_o   <= idx_q;
+                    out_data_o  <= v_step_w;
+                    v_pipe_q    <= v_step_w;
+                    g3_pipe_q   <= g3_rom_w;
+                    if (idx_q != 6'd0) begin
+                        acc_strip_norm_sq_q <= acc_strip_fin_w;
+                        acc_bleed_post_q    <= acc_bleed_fin_w;
+                    end
+                    cycle_count_o <= cycle_count_o + 16'd1;
                     if (idx_q == 6'd63) begin
                         idx_q   <= 6'd0;
                         state_q <= S_VERDICT;

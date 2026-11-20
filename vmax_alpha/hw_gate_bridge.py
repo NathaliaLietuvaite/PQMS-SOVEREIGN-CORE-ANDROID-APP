@@ -1,13 +1,15 @@
 """
 vmax_alpha/hw_gate_bridge.py
 In-process ctypes C-ABI Hardware-in-the-Loop Bridge for odos_gate_core_v3.sv
-with deterministic pure-integer Q2.30 fallback on non-Verilator runtimes.
+with persistent L1-resident Verilator context (zero per-call chdir/disk I/O),
+thread-safe locking, cold-boot benchmark path, and portable integer fallback.
 """
 from __future__ import annotations
 
 import ctypes
 from dataclasses import asdict, dataclass
 import os
+import threading
 from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
@@ -126,8 +128,35 @@ def evaluate_v3_integer_ref(
     )
 
 
+def _pack_c_verdict(
+    res: _OdosV3ResultC,
+    out_arr: Sequence[int],
+    tier_mode: int,
+    backend: str,
+) -> V3HardwareVerdict:
+    return V3HardwareVerdict(
+        epistemic_register=REGISTER_M,
+        backend=backend,
+        tier_mode=int(tier_mode) & 0x3,
+        cycle_count=int(res.cycle_count),
+        reset_fail_closed=bool(res.reset_fail_closed),
+        busy_veto_held=bool(res.busy_veto_held),
+        gate_pass=bool(res.gate_pass),
+        veto_pin=bool(res.veto_pin),
+        norm_fault=bool(res.norm_fault),
+        pure_g3_collision=bool(res.pure_g3_collision),
+        mode_fault=bool(res.mode_fault),
+        norm_sq_q=int(res.norm_sq_q),
+        rcf_raw_q=int(res.rcf_raw_q),
+        g3_overlap_q=int(res.g3_overlap_q),
+        delta_e_raw_q=int(res.delta_e_raw_q),
+        bleed_post_q=int(res.bleed_post_q),
+        stripped_vec_q=[int(out_arr[i]) for i in range(64)],
+    )
+
+
 class OdosGateV3Bridge:
-    """In-process ctypes C-ABI bridge to libodos_gate_v3.so with portable integer fallback."""
+    """Thread-safe persistent C-ABI bridge to libodos_gate_v3.so with integer fallback."""
 
     def __init__(self, so_path: str = DEFAULT_SO_PATH) -> None:
         l_hex = os.path.join(REPO_ROOT, "rtl", "rom", "l_vec_q2_30.hex")
@@ -140,14 +169,32 @@ class OdosGateV3Bridge:
             t_g3 = build_orthogonal_tangents(l_vec)["G3_KEVLAR_SANCTUARY_SHIELD"]
             self.l_q30 = float_vec_to_q2_30(l_vec)
             self.g3_q30 = float_vec_to_q2_30(t_g3)
+        self._lock = threading.Lock()
         self._lib: Optional[ctypes.CDLL] = self._try_load(so_path)
-        self.rtl_active: bool = self._lib is not None
+        self._ctx: Optional[int] = None
+        if self._lib is not None:
+            self._ctx = int(self._lib.odos_v3_ctx_create(REPO_ROOT.encode("utf-8")) or 0) or None
+        self.rtl_active: bool = (self._lib is not None) and (self._ctx is not None)
 
     @staticmethod
     def _try_load(so_path: str) -> Optional[ctypes.CDLL]:
         if not os.path.isfile(so_path):
             return None
         lib = ctypes.CDLL(so_path)
+        lib.odos_v3_ctx_create.argtypes = [ctypes.c_char_p]
+        lib.odos_v3_ctx_create.restype = ctypes.c_void_p
+        lib.odos_v3_ctx_eval.argtypes = [
+            ctypes.c_void_p,
+            ctypes.POINTER(ctypes.c_int32),
+            ctypes.c_uint8,
+            ctypes.c_int32,
+            ctypes.c_uint8,
+            ctypes.POINTER(ctypes.c_int32),
+            ctypes.POINTER(_OdosV3ResultC),
+        ]
+        lib.odos_v3_ctx_eval.restype = ctypes.c_int
+        lib.odos_v3_ctx_destroy.argtypes = [ctypes.c_void_p]
+        lib.odos_v3_ctx_destroy.restype = None
         lib.odos_v3_eval_transaction.argtypes = [
             ctypes.POINTER(ctypes.c_int32),
             ctypes.c_uint8,
@@ -159,7 +206,48 @@ class OdosGateV3Bridge:
         lib.odos_v3_eval_transaction.restype = ctypes.c_int
         return lib
 
+    def close(self) -> None:
+        with self._lock:
+            if self._lib is not None and self._ctx is not None:
+                self._lib.odos_v3_ctx_destroy(ctypes.c_void_p(self._ctx))
+                self._ctx = None
+                self.rtl_active = False
+
+    def __del__(self) -> None:
+        try:
+            self.close()
+        except Exception:
+            pass
+
     def evaluate_q30(
+        self,
+        vec_q30: Sequence[int],
+        tier_mode: int = TIER_0_PURE_CARRIER,
+        stall_at_idx: int = -1,
+        tamper_tier_in_flight: bool = False,
+    ) -> V3HardwareVerdict:
+        if not self.rtl_active or self._lib is None or self._ctx is None:
+            return evaluate_v3_integer_ref(vec_q30, self.l_q30, self.g3_q30, tier_mode)
+        in_arr = (ctypes.c_int32 * 64)(*vec_q30)
+        out_arr = (ctypes.c_int32 * 64)()
+        res = _OdosV3ResultC()
+        with self._lock:
+            rc = int(
+                self._lib.odos_v3_ctx_eval(
+                    ctypes.c_void_p(self._ctx),
+                    in_arr,
+                    int(tier_mode) & 0x3,
+                    int(stall_at_idx),
+                    1 if tamper_tier_in_flight else 0,
+                    out_arr,
+                    ctypes.byref(res),
+                )
+            )
+        if rc != 0:
+            raise RuntimeError(f"odos_v3_ctx_eval returned error {rc}")
+        return _pack_c_verdict(res, out_arr, tier_mode, "VERILATOR_CABI_PERSISTENT_V31")
+
+    def evaluate_cold_q30(
         self,
         vec_q30: Sequence[int],
         tier_mode: int = TIER_0_PURE_CARRIER,
@@ -171,42 +259,25 @@ class OdosGateV3Bridge:
         in_arr = (ctypes.c_int32 * 64)(*vec_q30)
         out_arr = (ctypes.c_int32 * 64)()
         res = _OdosV3ResultC()
-        prev_cwd = os.getcwd()
-        os.chdir(REPO_ROOT)
-        try:
-            rc = int(
-                self._lib.odos_v3_eval_transaction(
-                    in_arr,
-                    int(tier_mode) & 0x3,
-                    int(stall_at_idx),
-                    1 if tamper_tier_in_flight else 0,
-                    out_arr,
-                    ctypes.byref(res),
+        with self._lock:
+            prev_cwd = os.getcwd()
+            os.chdir(REPO_ROOT)
+            try:
+                rc = int(
+                    self._lib.odos_v3_eval_transaction(
+                        in_arr,
+                        int(tier_mode) & 0x3,
+                        int(stall_at_idx),
+                        1 if tamper_tier_in_flight else 0,
+                        out_arr,
+                        ctypes.byref(res),
+                    )
                 )
-            )
-        finally:
-            os.chdir(prev_cwd)
+            finally:
+                os.chdir(prev_cwd)
         if rc != 0:
-            raise RuntimeError(f"libodos_gate_v3.so returned error {rc}")
-        return V3HardwareVerdict(
-            epistemic_register=REGISTER_M,
-            backend="VERILATOR_CABI_SHARED_LIB_V3",
-            tier_mode=int(tier_mode) & 0x3,
-            cycle_count=int(res.cycle_count),
-            reset_fail_closed=bool(res.reset_fail_closed),
-            busy_veto_held=bool(res.busy_veto_held),
-            gate_pass=bool(res.gate_pass),
-            veto_pin=bool(res.veto_pin),
-            norm_fault=bool(res.norm_fault),
-            pure_g3_collision=bool(res.pure_g3_collision),
-            mode_fault=bool(res.mode_fault),
-            norm_sq_q=int(res.norm_sq_q),
-            rcf_raw_q=int(res.rcf_raw_q),
-            g3_overlap_q=int(res.g3_overlap_q),
-            delta_e_raw_q=int(res.delta_e_raw_q),
-            bleed_post_q=int(res.bleed_post_q),
-            stripped_vec_q=[int(out_arr[i]) for i in range(64)],
-        )
+            raise RuntimeError(f"odos_v3_eval_transaction returned error {rc}")
+        return _pack_c_verdict(res, out_arr, tier_mode, "VERILATOR_CABI_COLD_BOOT_V31")
 
     def evaluate_float64(
         self,

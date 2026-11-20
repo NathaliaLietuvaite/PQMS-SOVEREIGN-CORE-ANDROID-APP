@@ -1,0 +1,133 @@
+{
+  "schema": "VMAX_RTL_CORE_V3_REPORT_V1",
+  "work_order": "WORK-ORDER-AG-20",
+  "sync_id": "SYNC-15",
+  "epistemic_register": "REGISTER_M",
+  "canonical_little_vector_seal": "bb17ede97aa45c76ef9afa63cb457f7d684e5ede40b0432b2ecf3b6b9d3e03a3",
+  "odos_gate_core_v3_sv_sha256": "eec43c3cf0e621a2515e53bb0ebcd6e47b024bc6d4fc596884b4cd963364365a",
+  "stage1_507_parity": {
+    "total_stage1_vectors": 507,
+    "total_words_checked": 34983,
+    "global_max_lsb_diff_vs_v2_ref": 0,
+    "isotropic_500_tier0_passes": 0,
+    "isotropic_500_tier1_passes": 0,
+    "stall_at_idx17_and_midflight_tamper_verified": true
+  },
+  "depeche6_44_multitier": {
+    "total_runs": 44,
+    "total_words_checked": 3036,
+    "global_max_lsb_diff_vs_ref": 0,
+    "mosaic_crispr_tier1_resolved": true,
+    "matrix": [
+      {
+        "label": "STRUCT_ecoli_k12_pure_tandem_232nt",
+        "tier_0_pass": true,
+        "tier_1_pass": true,
+        "tier_2_pass": true,
+        "tier_3_pass": false
+      },
+      {
+        "label": "STRUCT_ecoli_k12_repeat_spacer_578nt",
+        "tier_0_pass": false,
+        "tier_1_pass": true,
+        "tier_2_pass": false,
+        "tier_3_pass": false
+      },
+      {
+        "label": "STRUCT_phage_tandem_200nt_800nt",
+        "tier_0_pass": true,
+        "tier_1_pass": true,
+        "tier_2_pass": true,
+        "tier_3_pass": false
+      },
+      {
+        "label": "NULL_mono_shuffle_phage_800nt",
+        "tier_0_pass": false,
+        "tier_1_pass": false,
+        "tier_2_pass": false,
+        "tier_3_pass": false
+      },
+      {
+        "label": "NULL_dinucl_shuffle_phage_800nt",
+        "tier_0_pass": false,
+        "tier_1_pass": false,
+        "tier_2_pass": false,
+        "tier_3_pass": false
+      },
+      {
+        "label": "NULL_dinucl_shuffle_crispr_578nt",
+        "tier_0_pass": false,
+        "tier_1_pass": false,
+        "tier_2_pass": false,
+        "tier_3_pass": false
+      },
+      {
+        "label": "ADV-1_pure_g3_collision",
+        "tier_0_pass": false,
+        "tier_1_pass": false,
+        "tier_2_pass": false,
+        "tier_3_pass": false
+      },
+      {
+        "label": "ADV-2_oblique_g3_beta035",
+        "tier_0_pass": false,
+        "tier_1_pass": false,
+        "tier_2_pass": false,
+        "tier_3_pass": false
+      },
+      {
+        "label": "ADV-3_inband_tg1_beta035",
+        "tier_0_pass": false,
+        "tier_1_pass": false,
+        "tier_2_pass": false,
+        "tier_3_pass": false
+      },
+      {
+        "label": "ADV-4_isotropic_s63_flood",
+        "tier_0_pass": false,
+        "tier_1_pass": false,
+        "tier_2_pass": false,
+        "tier_3_pass": false
+      },
+      {
+        "label": "ADV-5_norm_collapse_0p5x",
+        "tier_0_pass": false,
+        "tier_1_pass": false,
+        "tier_2_pass": false,
+        "tier_3_pass": false
+      }
+    ]
+  },
+  "cabi_throughput": {
+    "transactions": 2000,
+    "walltime_s": 6.364308,
+    "decisions_per_sec": 314.3
+  },
+  "yosys_synthesis": {
+    "v2_baseline": {
+      "source_file": "rtl/odos_gate_core.sv",
+      "top_module": "odos_gate_core",
+      "coarse_mul_count": 9,
+      "coarse_total_cells": 626,
+      "post_techmap_total_cells": 89609,
+      "post_techmap_flip_flops": 2839,
+      "post_techmap_combinational": 86770,
+      "cmos_transistors": 713890,
+      "ltp_depth": 174
+    },
+    "v3_folded": {
+      "source_file": "rtl/odos_gate_core_v3.sv",
+      "top_module": "odos_gate_core_v3",
+      "coarse_mul_count": 3,
+      "coarse_total_cells": 613,
+      "post_techmap_total_cells": 42600,
+      "post_techmap_flip_flops": 2777,
+      "post_techmap_combinational": 39823,
+      "cmos_transistors": 328084,
+      "ltp_depth": 215
+    },
+    "mul_folding_reduction_pct": 66.67,
+    "post_techmap_cell_reduction_pct": 52.46,
+    "cmos_transistor_reduction_pct": 54.04
+  }
+}

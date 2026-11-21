@@ -1,0 +1,74 @@
+{
+  "crypto_microbenchmarks": {
+    "classical_ecdsa_p256": {
+      "n_iters": 200,
+      "pq_active": false,
+      "sign_ops_per_sec": 31666.5,
+      "sign_us_per_op": 31.58,
+      "signature_mode": "CLASSICAL_ECDSA_P256_ONLY",
+      "verify_us_per_op": 72.95
+    },
+    "hybrid_ecdsa_mldsa65": {
+      "n_iters": 200,
+      "pq_active": true,
+      "sign_ops_per_sec": 5853.3,
+      "sign_us_per_op": 170.84,
+      "signature_mode": "HYBRID_ECDSA_P256_ML-DSA-65",
+      "verify_us_per_op": 131.78
+    }
+  },
+  "epistemic_register": "REGISTER_M",
+  "md2_queueing_envelope": {
+    "SS_1p08V_125C": {
+      "f_clk_mhz": 65.7,
+      "p_crit_cut_at_50k_per_chip": 0.1825,
+      "p_crit_saf_at_50k_per_chip": 0.1383,
+      "pair_cap_cut_tx_s": 657000.0,
+      "pair_cap_saf_tx_s": 497727.3,
+      "tau_cut_us": 3.044,
+      "tau_saf_us": 4.018
+    },
+    "TYP_1p20V_25C": {
+      "f_clk_mhz": 103.84,
+      "p_crit_cut_at_50k_per_chip": 0.2884,
+      "p_crit_saf_at_50k_per_chip": 0.2185,
+      "pair_cap_cut_tx_s": 1038400.0,
+      "pair_cap_saf_tx_s": 786666.7,
+      "tau_cut_us": 1.926,
+      "tau_saf_us": 2.542
+    }
+  },
+  "merkle_epoch_scaling": [
+    {
+      "batch_size_W": 1,
+      "effective_tx_per_sec": 5440.0,
+      "elapsed_s": 0.0046,
+      "signature_mode": "HYBRID_ECDSA_P256_ML-DSA-65",
+      "total_verdicts": 25
+    },
+    {
+      "batch_size_W": 8,
+      "effective_tx_per_sec": 35109.3,
+      "elapsed_s": 0.0057,
+      "signature_mode": "HYBRID_ECDSA_P256_ML-DSA-65",
+      "total_verdicts": 200
+    },
+    {
+      "batch_size_W": 32,
+      "effective_tx_per_sec": 107160.6,
+      "elapsed_s": 0.0075,
+      "signature_mode": "HYBRID_ECDSA_P256_ML-DSA-65",
+      "total_verdicts": 800
+    },
+    {
+      "batch_size_W": 64,
+      "effective_tx_per_sec": 147812.0,
+      "elapsed_s": 0.0108,
+      "signature_mode": "HYBRID_ECDSA_P256_ML-DSA-65",
+      "total_verdicts": 1600
+    }
+  ],
+  "spec_id": "PQMS-ODOS-MTSC-V-MAX-12-RTL-CORE-V4.3-COREWARE",
+  "sync_id": "SYNC-23",
+  "timestamp_utc": "2026-11-21T18:04:21Z"
+}

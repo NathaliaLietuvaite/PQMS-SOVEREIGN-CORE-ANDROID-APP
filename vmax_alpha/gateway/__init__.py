@@ -63,3 +63,15 @@ from vmax_alpha.gateway.rack_l2_manifold import (
     MirrorReadVerdict,
     SharedL2Manifold,
 )
+from vmax_alpha.gateway.dual_core_arbiter import (
+    ArbiterMode,
+    ArbiterOutcome,
+    CoreVerdictTuple,
+    DualCoreArbiter,
+)
+from vmax_alpha.gateway.merkle_batcher import (
+    MerkleEpochBatcher,
+    MerkleInclusionReceipt,
+    build_merkle_tree,
+    extract_merkle_proof,
+)

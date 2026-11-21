@@ -75,3 +75,20 @@ from vmax_alpha.gateway.merkle_batcher import (
     build_merkle_tree,
     extract_merkle_proof,
 )
+from vmax_alpha.gateway.electro_ramp import (
+    ElectroThermalRampController,
+    RampScheduleReport,
+)
+from vmax_alpha.gateway.thermal_gearbox import (
+    ClockGear,
+    CoreClockState,
+    HeterogeneousPairCapacity,
+    ThermalClockGearbox,
+    select_core_gear,
+)
+from vmax_alpha.gateway.thermo_governor import (
+    CduExergyCommand,
+    ThermoAdmissionResult,
+    ThermodynamicGovernor,
+    compute_hbm_alpha,
+)

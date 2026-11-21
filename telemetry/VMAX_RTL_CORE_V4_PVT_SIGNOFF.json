@@ -1,0 +1,43 @@
+{
+  "corners": {
+    "FF_1p32V_m40C": {
+      "sram_lib": "None",
+      "status": "MISSING_LIB",
+      "std_lib": "/home/nathalia/vmax_workspace/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/lib/sg13g2_stdcell_fast_1p32V_m40C.lib"
+    },
+    "SS_1p08V_125C": {
+      "critical_path_ns": 15.22,
+      "fmax_mhz": 65.7,
+      "hold_tns_ns": null,
+      "hold_wns_ns": 0.45,
+      "latency_200cyc_at_fmax_us": 3.044,
+      "setup_tns_ns": -781.14,
+      "setup_wns_ns": -5.22,
+      "signoff_clock_mhz": 100.0,
+      "sram_lib": "RM_IHPSG13_1P_64x64_c2_bm_bist_slow_1p08V_125C.lib",
+      "stdcell_lib": "sg13g2_stdcell_slow_1p08V_125C.lib",
+      "timing_clean_at_100mhz": false,
+      "vectorless_total_power_mw": 674.0
+    },
+    "TYP_1p20V_25C": {
+      "critical_path_ns": 9.63,
+      "fmax_mhz": 103.84,
+      "hold_tns_ns": null,
+      "hold_wns_ns": 0.23,
+      "latency_200cyc_at_fmax_us": 1.926,
+      "setup_tns_ns": 0.0,
+      "setup_wns_ns": 0.37,
+      "signoff_clock_mhz": 100.0,
+      "sram_lib": "RM_IHPSG13_1P_64x64_c2_bm_bist_typ_1p20V_25C.lib",
+      "stdcell_lib": "sg13g2_stdcell_typ_1p20V_25C.lib",
+      "timing_clean_at_100mhz": true,
+      "vectorless_total_power_mw": 859.0
+    }
+  },
+  "epistemic_register": "REGISTER_M",
+  "frozen_gds_sha256": "be61b9c763ff43befb42562cd26db29f9d567694b8d681c646f7b403aa1842ec",
+  "frozen_netlist": "rtl/asic_v4/build/odos_v4_routed.v",
+  "frozen_spef": "rtl/asic_v4/build/odos_v4_routed.spef",
+  "sync_id": "SYNC-21-PVT",
+  "timestamp_utc": "2026-11-21T16:03:35Z"
+}

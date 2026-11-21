@@ -8,7 +8,7 @@
     "THROTTLE": 72,
     "VETO": 72
   },
-  "elapsed_s": 0.4574,
+  "elapsed_s": 0.0671,
   "epistemic_register": "REGISTER_M",
   "failover": {
     "core0_p0_events": 72,
@@ -19,10 +19,10 @@
   },
   "provenance_chain": {
     "checked_entries": 217,
-    "pq_hybrid_active": false,
-    "signature_mode": "CLASSICAL_ECDSA_P256_ONLY",
+    "pq_hybrid_active": true,
+    "signature_mode": "HYBRID_ECDSA_P256_ML-DSA-65",
     "status": "VALID",
-    "tip_hash": "f1b5a07d23d150c8a8da9bfb014c30142fcb6bec61a8d7c0842907ac1687b9e4"
+    "tip_hash": "72e8b4836abf1304e4312d74183c66b0490dfbe150b3926fa5ee39330707442c"
   },
   "rack_topology": {
     "tier0_cores": 2,
@@ -31,7 +31,7 @@
   },
   "spec_id": "PQMS-ODOS-MTSC-V-MAX-12-RTL-CORE-V4.2-COREWARE",
   "sync_id": "SYNC-20",
-  "throughput_req_s": 1574.1,
-  "timestamp_utc": "2026-11-21T15:56:16Z",
+  "throughput_req_s": 10733.6,
+  "timestamp_utc": "2026-11-21T16:03:49Z",
   "total_requests": 720
 }

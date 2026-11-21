@@ -1,0 +1,37 @@
+{
+  "browser_clamped_800_events": 144,
+  "decision_counts": {
+    "ESCALATE_P0": 72,
+    "ESCALATE_P1": 72,
+    "PASS": 432,
+    "STOP": 0,
+    "THROTTLE": 72,
+    "VETO": 72
+  },
+  "elapsed_s": 0.4574,
+  "epistemic_register": "REGISTER_M",
+  "failover": {
+    "core0_p0_events": 72,
+    "core1_p0_events": 72,
+    "dropped_requests": 0,
+    "injected_at_request": 360,
+    "zero_drop_verified": true
+  },
+  "provenance_chain": {
+    "checked_entries": 217,
+    "pq_hybrid_active": false,
+    "signature_mode": "CLASSICAL_ECDSA_P256_ONLY",
+    "status": "VALID",
+    "tip_hash": "f1b5a07d23d150c8a8da9bfb014c30142fcb6bec61a8d7c0842907ac1687b9e4"
+  },
+  "rack_topology": {
+    "tier0_cores": 2,
+    "tier1_domains": 6,
+    "tier2_workers": 72
+  },
+  "spec_id": "PQMS-ODOS-MTSC-V-MAX-12-RTL-CORE-V4.2-COREWARE",
+  "sync_id": "SYNC-20",
+  "throughput_req_s": 1574.1,
+  "timestamp_utc": "2026-11-21T15:56:16Z",
+  "total_requests": 720
+}

@@ -1,0 +1,73 @@
+{
+  "document_id": "PQMS-ODOS-MTSC-V-MAX-12-SYSTEM-GATEWAY-V4.1",
+  "work_order": "WORK-ORDER-AG-24 (SYNC-19 / WP-1)",
+  "epistemic_register": "REGISTER_M",
+  "process_corner": "IHP_SG13G2_130NM_TYP_1P20V_25C",
+  "signoff_clock_mhz": 100.0,
+  "frozen_stage3_gdsii_report_sha256": "48ccc59ab54b538537525c5b54906e14d7e52a95259064f6acc03278e21f49c4",
+  "frozen_rom_seals": {
+    "l_rom_sha256": "3d18f24028dedcca22ee41d69d00d361100b7533db23cf84130c64a114a26fb6",
+    "g3_rom_sha256": "3b890d14dac5faf9456fdab31b172578b47a3254fff4d51dfe3bd663f9688a73"
+  },
+  "routed_netlist_sha256": "cac7ef905f7d28dff3bb3bb396756fb16b376c64864bf7c6b6dda2051f5316fd",
+  "routed_spef_sha256": "2b59fbb6c1f2702921e196112344227ea1c1c8d1223dc3b46cd47d378e3c4bb9",
+  "approx_netlist_declarations": 32855,
+  "vectorless_opensta_upper_bound_ref": {
+    "total_power_mw": 858.79,
+    "energy_per_tx_nj": 1717.58
+  },
+  "vcd_annotated_profiles": [
+    {
+      "workload": "WORKLOAD_PASS_CANONICAL",
+      "window_cycles": 200,
+      "window_us": 2.0,
+      "internal_power_mw": 10.7386,
+      "switching_power_mw": 6.2826,
+      "leakage_power_uw": 8.0521,
+      "total_power_mw": 17.0292,
+      "energy_per_tx_nj": 34.0584,
+      "reduction_vs_vectorless_pct": 98.02,
+      "vcd_signal_coverage_pct": 99.8,
+      "sim_x_errors": 0
+    },
+    {
+      "workload": "WORKLOAD_VETO_G3",
+      "window_cycles": 200,
+      "window_us": 2.0,
+      "internal_power_mw": 10.2754,
+      "switching_power_mw": 5.5082,
+      "leakage_power_uw": 8.0469,
+      "total_power_mw": 15.7916,
+      "energy_per_tx_nj": 31.5832,
+      "reduction_vs_vectorless_pct": 98.16,
+      "vcd_signal_coverage_pct": 99.8,
+      "sim_x_errors": 0
+    },
+    {
+      "workload": "WORKLOAD_STALL_BACKPRESSURE",
+      "window_cycles": 232,
+      "window_us": 2.32,
+      "internal_power_mw": 10.4913,
+      "switching_power_mw": 5.9511,
+      "leakage_power_uw": 8.0665,
+      "total_power_mw": 16.4505,
+      "energy_per_tx_nj": 38.1652,
+      "reduction_vs_vectorless_pct": 98.08,
+      "vcd_signal_coverage_pct": 99.8,
+      "sim_x_errors": 0
+    },
+    {
+      "workload": "WORKLOAD_IDLE_CLOCKED",
+      "window_cycles": 200,
+      "window_us": 2.0,
+      "internal_power_mw": 7.3843,
+      "switching_power_mw": 1.44,
+      "leakage_power_uw": 8.0472,
+      "total_power_mw": 8.8323,
+      "energy_per_tx_nj": 17.6646,
+      "reduction_vs_vectorless_pct": 98.97,
+      "vcd_signal_coverage_pct": 99.8,
+      "sim_x_errors": 0
+    }
+  ]
+}

@@ -21,6 +21,7 @@
 // =============================================================================
 `default_nettype none
 
+/* verilator lint_off DECLFILENAME */
 module odos_axi_egress_sram_1p (
     input  wire        clk_i,
     input  wire        men_i,
@@ -65,6 +66,7 @@ module odos_axi_egress_sram_1p (
     end
 `endif
 endmodule
+/* verilator lint_on DECLFILENAME */
 
 module odos_gate_axi4_top #(
     parameter int AXIL_ADDR_WIDTH = 6
@@ -154,9 +156,13 @@ module odos_gate_axi4_top #(
         s_axil_araddr[1:0],
         s_axil_awprot,
         s_axil_arprot,
-        (AXIL_ADDR_WIDTH > 6) ? s_axil_awaddr[AXIL_ADDR_WIDTH-1:6] : 1'b0,
-        (AXIL_ADDR_WIDTH > 6) ? s_axil_araddr[AXIL_ADDR_WIDTH-1:6] : 1'b0
+        1'b0
     };
+    generate
+        if (AXIL_ADDR_WIDTH > 6) begin : gen_unused_hi_addr
+            wire unused_axil_hi_w = &{1'b0, s_axil_awaddr[AXIL_ADDR_WIDTH-1:6], s_axil_araddr[AXIL_ADDR_WIDTH-1:6]};
+        end
+    endgenerate
 
     // -------------------------------------------------------------------------
     // Policy, Lock, AXI4-Lite Skid & Telemetry Registers
@@ -319,6 +325,7 @@ module odos_gate_axi4_top #(
         2'b00
     };
     wire [31:0] ctrl_merged_w = apply_wstrb32(ctrl_cur_w, wr_data_eff_w, wr_strb_eff_w);
+    wire unused_ctrl_bits_w = &{1'b0, ctrl_merged_w[31:6], ctrl_merged_w[1:0]};
 
     wire ctrl_wr_w         = axil_wr_fire_w && (wr_word_addr_w == ADDR_CTRL);
     wire lock_wr_w         = axil_wr_fire_w && (wr_word_addr_w == ADDR_LOCK);

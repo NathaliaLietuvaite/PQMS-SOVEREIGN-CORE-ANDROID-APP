@@ -258,6 +258,13 @@ def make_hud_handler(svc: SanctuaryNodeAlphaService) -> type:
                 self.wfile.write(data)
             elif self.path == "/api/state":
                 self._send_json(200, svc.get_state_payload())
+            elif self.path == "/api/gateway/metrics":
+                from vmax_alpha.gateway import VMaxIntegrityGateway
+                gw = getattr(svc, "_integrity_gateway", None)
+                if gw is None:
+                    gw = VMaxIntegrityGateway()
+                    setattr(svc, "_integrity_gateway", gw)
+                self._send_json(200, gw.get_metrics())
             else:
                 self._send_json(404, {"error": "NOT_FOUND"})
 

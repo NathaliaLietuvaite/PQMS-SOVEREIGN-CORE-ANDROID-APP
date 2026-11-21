@@ -1,0 +1,91 @@
+{
+  "epistemic_register": "REGISTER_M",
+  "host_cpu_7nm_bench": {
+    "compiler": "gcc -O3 -Wall -Wextra",
+    "contention": {
+      "anti_dce_sink": 26073621,
+      "cpu_energy_per_tx_nj": null,
+      "jitter_p999_over_p50": 16.667,
+      "max_us": 25.9,
+      "n_transactions": 100000,
+      "p50_us": 0.3,
+      "p95_us": 0.4,
+      "p99_9_us": 5.0,
+      "p99_us": 0.4,
+      "rapl_status": "RAPL_UNAVAILABLE_IN_WSL2",
+      "throughput_tx_s": 2615678.4
+    },
+    "n_iters": 100000,
+    "quiet": {
+      "anti_dce_sink": 26073621,
+      "cpu_energy_per_tx_nj": null,
+      "jitter_p999_over_p50": 16.0,
+      "max_us": 23.3,
+      "n_transactions": 100000,
+      "p50_us": 0.3,
+      "p95_us": 0.4,
+      "p99_9_us": 4.8,
+      "p99_us": 0.4,
+      "rapl_status": "RAPL_UNAVAILABLE_IN_WSL2",
+      "throughput_tx_s": 2655873.2
+    }
+  },
+  "rapl_telemetry": {
+    "note": "Host CPU energy/tx is NOT estimated; only verified wall-clock latency & throughput are reported.",
+    "rapl_path": "/sys/class/powercap/intel-rapl:0/energy_uj",
+    "rapl_status": "RAPL_UNAVAILABLE_IN_WSL2"
+  },
+  "silicon_130nm_v40_reference": {
+    "axi4_store_and_forward_pass_cycles": 264,
+    "axi4_store_and_forward_veto_cycles": 200,
+    "core_cycles": 200,
+    "core_wall_latency_us": 1.921,
+    "fmax_mhz": 104.11,
+    "gds_sha256": "be61b9c763ff43befb42562cd26db29f9d567694b8d681c646f7b403aa1842ec",
+    "process": "IHP SG13G2 130nm (1.20 V, 25 C typ)"
+  },
+  "sync_id": "SYNC-19",
+  "timestamp_utc": "2026-11-21T15:35:43Z",
+  "work_order": "WORK-ORDER-AG-24-SLIM",
+  "zero_lsb_551_audit": {
+    "elapsed_s": 0.066,
+    "gateway_metrics": {
+      "admitted_count": 514,
+      "latest_verdict": {
+        "backend": "VERILATOR_CABI_PERSISTENT_V31",
+        "bleed_post": 0.0,
+        "bleed_post_q": 0,
+        "cycle_count": 195,
+        "delta_e_raw": 0.03290182,
+        "delta_e_raw_q": 35328060,
+        "epistemic_register": "REGISTER_M",
+        "g3_overlap_q": 9928585,
+        "gate_pass": false,
+        "ledger_seal_sha256": "a63e7a0e63a33dee1cb45346692c68c7fa073d3a8229aec5b68d5fadd17eb6a7",
+        "malformed_input": false,
+        "mode_fault": false,
+        "norm_fault": false,
+        "norm_sq_q": 1073741823,
+        "pipeline": "MEMORY_COMMIT",
+        "pure_g3_collision": false,
+        "rcf_raw": 0.94344308,
+        "rcf_raw_q": 1013014289,
+        "subject_id": "bench_550",
+        "tier_mode": 2,
+        "v4_zero_lsb_verified": false,
+        "veto_pin": true
+      },
+      "multi_agent_lanes_active": 0,
+      "quarantine_depth": 37,
+      "rtl_cabi_active": true,
+      "tx_total": 551,
+      "verify_v4_enabled": false,
+      "vetoed_count": 37
+    },
+    "max_lsb_diff": 0,
+    "passed_count": 514,
+    "vectors_evaluated": 551,
+    "vetoed_count": 37,
+    "words_evaluated": 38019
+  }
+}

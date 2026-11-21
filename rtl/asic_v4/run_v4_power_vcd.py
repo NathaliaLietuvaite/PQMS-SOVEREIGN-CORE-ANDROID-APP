@@ -67,31 +67,7 @@ module tb_v4_power_vcd;
     integer k;
     integer x_err_cnt;
 
-    odos_gate_core_v4 u_dut (
-        .clk_i(clk_i),
-        .rst_ni(rst_ni),
-        .start_i(start_i),
-        .tier_mode_i(tier_mode_i),
-        .in_valid_i(in_valid_i),
-        .in_ready_o(in_ready_o),
-        .in_data_i(in_data_i),
-        .busy_o(busy_o),
-        .done_o(done_o),
-        .gate_pass_o(gate_pass_o),
-        .veto_pin_o(veto_pin_o),
-        .norm_fault_o(norm_fault_o),
-        .pure_g3_collision_o(pure_g3_collision_o),
-        .mode_fault_o(mode_fault_o),
-        .out_valid_o(out_valid_o),
-        .out_idx_o(out_idx_o),
-        .out_data_o(out_data_o),
-        .cycle_count_o(cycle_count_o),
-        .norm_sq_o(norm_sq_o),
-        .rcf_raw_o(rcf_raw_o),
-        .g3_overlap_o(g3_overlap_o),
-        .delta_e_raw_o(delta_e_raw_o),
-        .bleed_post_o(bleed_post_o)
-    );
+{dut_inst}
 
     initial begin
         clk_i = 1'b0;
@@ -152,7 +128,7 @@ module tb_v4_power_vcd;
             end
             in_valid_i = 1'b0;
             in_data_i = 32'sd0;
-            repeat (135) begin
+            repeat (136) begin
                 if (^veto_pin_o === 1'bx || ^out_data_o === 1'bx) x_err_cnt = x_err_cnt + 1;
                 @(negedge clk_i);
             end
@@ -240,7 +216,28 @@ def _first_match(patterns: Sequence[str]) -> Optional[str]:
     return None
 
 
+
+def _build_bitblasted_dut_inst() -> str:
+    scalar = [
+        "clk_i", "rst_ni", "start_i", "in_valid_i", "in_ready_o",
+        "out_valid_o", "busy_o", "done_o", "gate_pass_o", "veto_pin_o",
+        "norm_fault_o", "mode_fault_o",
+    ]
+    buses = [
+        ("tier_mode_i", 2), ("in_data_i", 32), ("out_idx_o", 6), ("out_data_o", 32),
+        ("cycle_count_o", 10), ("norm_sq_o", 32), ("rcf_raw_o", 32),
+        ("g3_overlap_o", 32), ("delta_e_raw_o", 32), ("bleed_post_o", 32),
+    ]
+    conns = [f"        .{s}({s})" for s in scalar]
+    for name, width in buses:
+        for bit in range(width):
+            conns.append(f"        .\\{name}[{bit}] ({name}[{bit}])")
+    return "    odos_gate_core_v4 u_dut (\n" + ",\n".join(conns) + "\n    );"
+
 def _discover_postroute_artifacts() -> Tuple[str, str]:
+    import pathlib as _pl; bdir = _pl.Path(__file__).resolve().parent / 'build'
+    if (bdir / 'odos_v4_routed.v').exists() and (bdir / 'odos_v4_routed.spef').exists():
+        return bdir / 'odos_v4_routed.v', bdir / 'odos_v4_routed.spef'
     env_net = os.environ.get("VMAX_V4_NETLIST", "")
     env_spef = os.environ.get("VMAX_V4_SPEF", "")
     if os.path.isfile(env_net) and os.path.isfile(env_spef):
@@ -335,6 +332,7 @@ def _run_iverilog_vcd(
     vvp_bin = os.path.join(WORK_TMP_DIR, f"sim_{spec.name.lower()}.vvp")
     target_hex = G3_ROM_PATH if spec.use_g3_vec else L_ROM_PATH
     tb_src = TB_SV_TEMPLATE.format(
+        dut_inst=_build_bitblasted_dut_inst(),
         warmup_hex=L_ROM_PATH,
         target_hex=target_hex,
         vcd_out=vcd_path,
@@ -350,7 +348,7 @@ def _run_iverilog_vcd(
         "iverilog", "-g2012", "-gno-specify", "-DFUNCTIONAL", "-DUNIT_DELAY=#0",
         "-y", std_dir, "-y", sram_dir,
         "-s", "tb_v4_power_vcd", "-o", vvp_bin,
-        *udp_files, pdk["stdcell_v"], pdk["sram_v"], netlist_path, tb_path,
+        *udp_files, pdk["stdcell_v"], "/home/nathalia/vmax_workspace/pdk/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_sram/verilog/RM_IHPSG13_1P_core_behavioral_bm_bist.v", pdk["sram_v"], netlist_path, tb_path,
     ]
     subprocess.run(cmd, check=True, capture_output=True, text=True, timeout=180)
     sim = subprocess.run(["vvp", vvp_bin], check=True, capture_output=True, text=True, timeout=300)

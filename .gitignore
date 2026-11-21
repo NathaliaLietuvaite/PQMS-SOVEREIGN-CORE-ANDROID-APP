@@ -30,3 +30,4 @@ rtl/sim_build/
 rtl/results.xml
 *.vcd
 /VMAX_RTL_GATE_EMULATOR_REPORT.json
+rtl/asic_v4/build/

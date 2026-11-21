@@ -41,6 +41,38 @@ HWINFO64_AB_REGIMES: Dict[str, Any] = {
 }
 
 
+
+V4_GDSII_REPORT_PATH: str = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "telemetry",
+    "VMAX_RTL_CORE_V4_GDSII_REPORT.json",
+)
+
+
+def _load_v4_gdsii_signoff(report_path: str = V4_GDSII_REPORT_PATH) -> Dict[str, Any]:
+    """Load sealed Stage 3 IHP SG13G2 130 nm GDSII signoff summary for Path B clients."""
+    if not os.path.isfile(report_path):
+        return {"available": False, "process": "IHP_SG13G2_130NM"}
+    with open(report_path, "r", encoding="utf-8") as fh:
+        rep = json.load(fh)
+    phys = rep.get("physical_signoff", {})
+    gds = rep.get("gdsii_stream", {})
+    return {
+        "available": True,
+        "sync_id": rep.get("sync_id", "SYNC-17"),
+        "revision": rep.get("revision", "V4.0-GDSII"),
+        "process": "IHP_SG13G2_130NM",
+        "fmax_mhz": phys.get("fmax_mhz"),
+        "signoff_clk_mhz": phys.get("signoff_clk_mhz"),
+        "wall_latency_us": phys.get("wall_latency_us"),
+        "total_power_mw": phys.get("total_power_mw"),
+        "energy_per_tx_nj": phys.get("energy_per_tx_nj"),
+        "core_area_mm2": phys.get("core_area_mm2"),
+        "gds_sha256": gds.get("gds_sha256"),
+        "dieshot_asset_uri": "assets/images/V-MAX-12-RTL-V4-SG13G2-DIESHOT.png",
+    }
+
+
 class SanctuaryNodeAlphaService:
     def __init__(
         self,
@@ -60,6 +92,7 @@ class SanctuaryNodeAlphaService:
         self._hb_thread: Optional[threading.Thread] = None
         self.rtl_bridge = OdosGateV3Bridge()
         self._last_rtl_hil: Dict[str, Any] = self._eval_rtl_hil(self.forager.little_vector)
+        self._v4_gdsii_signoff: Dict[str, Any] = _load_v4_gdsii_signoff()
         self._state_snapshot: Dict[str, Any] = self._build_state_snapshot_locked()
 
     def _build_state_snapshot_locked(self) -> Dict[str, Any]:
@@ -84,6 +117,7 @@ class SanctuaryNodeAlphaService:
             "ace_protocol_id": "ACE-PEER-CODESIGN-PROTOCOL-V1.2",
             "hwinfo64_ab_regimes": HWINFO64_AB_REGIMES,
             "rtl_v3_hil": self._last_rtl_hil,
+            "rtl_v4_gdsii_signoff": self._v4_gdsii_signoff,
             "thoughts": [asdict(e) for e in self.ledger.entries[-12:]],
             "_snapshot_ts": self.last_cycle_ts,
         }

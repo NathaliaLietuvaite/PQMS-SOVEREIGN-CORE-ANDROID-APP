@@ -1,0 +1,164 @@
+{
+  "schema": "VMAX_RTL_CORE_V4_GDSII_REPORT_V1",
+  "revision": "V4.0-GDSII",
+  "work_order": "WORK-ORDER-AG-22",
+  "sync_id": "SYNC-17",
+  "epistemic_register": "REGISTER_M",
+  "target_pdk": "IHP_SG13G2_130NM_TYP_1P20V_25C",
+  "sram_hard_macro": "RM_IHPSG13_1P_64x64_c2_bm_bist",
+  "odos_gate_core_v4_sv_sha256": "b917eee4d9f0805d8ae23b35dbbfee9898eb0dcca144bd865ba91eaf72683d6b",
+  "odos_sram_64x32_1p_sv_sha256": "eccc564fcf604a1d2c8561cb8a55e7eb5d0df455c61950ed7ee46aff4b958e61",
+  "frozen_v31_sv_sha256": "334b3f1cc0c72410acf04c330da212f3d98953f9ad3c75139be669f5d97e5091",
+  "cabi_verification": {
+    "canonical_little_vector_seal": "bb17ede97aa45c76ef9afa63cb457f7d684e5ede40b0432b2ecf3b6b9d3e03a3",
+    "stage1_507_vectors": 507,
+    "stage1_words_checked": 34983,
+    "stage1_max_lsb_diff": 0,
+    "isotropic_500_tier0_passes": 0,
+    "isotropic_500_tier1_passes": 0,
+    "depeche6_44_runs": 44,
+    "depeche6_words_checked": 3036,
+    "depeche6_max_lsb_diff": 0,
+    "total_words_checked": 38019,
+    "depeche6_matrix": [
+      {
+        "label": "STRUCT_ecoli_k12_pure_tandem_232nt",
+        "tier_0_pass": true,
+        "tier_1_pass": true,
+        "tier_2_pass": true,
+        "tier_3_pass": false
+      },
+      {
+        "label": "STRUCT_ecoli_k12_repeat_spacer_578nt",
+        "tier_0_pass": false,
+        "tier_1_pass": true,
+        "tier_2_pass": false,
+        "tier_3_pass": false
+      },
+      {
+        "label": "STRUCT_phage_tandem_200nt_800nt",
+        "tier_0_pass": true,
+        "tier_1_pass": true,
+        "tier_2_pass": true,
+        "tier_3_pass": false
+      },
+      {
+        "label": "NULL_mono_shuffle_phage_800nt",
+        "tier_0_pass": false,
+        "tier_1_pass": false,
+        "tier_2_pass": false,
+        "tier_3_pass": false
+      },
+      {
+        "label": "NULL_dinucl_shuffle_phage_800nt",
+        "tier_0_pass": false,
+        "tier_1_pass": false,
+        "tier_2_pass": false,
+        "tier_3_pass": false
+      },
+      {
+        "label": "NULL_dinucl_shuffle_crispr_578nt",
+        "tier_0_pass": false,
+        "tier_1_pass": false,
+        "tier_2_pass": false,
+        "tier_3_pass": false
+      },
+      {
+        "label": "ADV-1_pure_g3_collision",
+        "tier_0_pass": false,
+        "tier_1_pass": false,
+        "tier_2_pass": false,
+        "tier_3_pass": false
+      },
+      {
+        "label": "ADV-2_oblique_g3_beta035",
+        "tier_0_pass": false,
+        "tier_1_pass": false,
+        "tier_2_pass": false,
+        "tier_3_pass": false
+      },
+      {
+        "label": "ADV-3_inband_tg1_beta035",
+        "tier_0_pass": false,
+        "tier_1_pass": false,
+        "tier_2_pass": false,
+        "tier_3_pass": false
+      },
+      {
+        "label": "ADV-4_isotropic_s63_flood",
+        "tier_0_pass": false,
+        "tier_1_pass": false,
+        "tier_2_pass": false,
+        "tier_3_pass": false
+      },
+      {
+        "label": "ADV-5_norm_collapse_0p5x",
+        "tier_0_pass": false,
+        "tier_1_pass": false,
+        "tier_2_pass": false,
+        "tier_3_pass": false
+      }
+    ],
+    "warm_transactions": 10000,
+    "warm_walltime_s": 8.880198,
+    "warm_tx_per_sec": 1126.1,
+    "warm_latency_us": 888.02
+  },
+  "generic_yosys": {
+    "generic_stdcell_ffs": 960,
+    "generic_ltp_depth": 73,
+    "generic_cmos_transistors_ex_sram": 284808,
+    "sram_macro_instances": 1,
+    "ltp_red_vs_v31_pct": 48.59,
+    "ltp_red_vs_v2_pct": 58.05
+  },
+  "physical_signoff": {
+    "openroad_version": "2.0-12381-g01bba3695",
+    "parasitics_source": "OPENRCX_DETAILED_SPEF",
+    "signoff_clk_period_ns": 10.0,
+    "signoff_clk_mhz": 100.0,
+    "die_width_um": 940.0,
+    "die_height_um": 840.0,
+    "core_area_mm2": 0.708,
+    "total_instance_area_mm2": 0.419,
+    "utilization_pct": 59.0,
+    "mapped_stdcells": 29494,
+    "stdcell_ffs": 953,
+    "ff_red_vs_v31_pct": 66.81,
+    "wirelength_um": 1274717,
+    "total_vias": 212785,
+    "drt_drc_violations": 0,
+    "setup_wns_ns": 0.3945,
+    "hold_wns_ns": 0.141,
+    "crit_path_ns": 9.605,
+    "fmax_mhz": 104.11,
+    "wall_latency_us": 1.921,
+    "wall_speedup_vs_100mhz": 1.02,
+    "internal_mw": 293.29,
+    "switching_mw": 565.491,
+    "leakage_uw": 8.36,
+    "total_power_mw": 858.789,
+    "energy_per_tx_nj": 1717.58
+  },
+  "gdsii_stream": {
+    "gds_path": "/home/nathalia/vmax_workspace/repos/PQMS-SOVEREIGN-CORE-ANDROID-APP/rtl/asic_v4/build/odos_gate_core_v4_sg13g2.gds",
+    "gds_sha256": "be61b9c763ff43befb42562cd26db29f9d567694b8d681c646f7b403aa1842ec",
+    "gds_size_bytes": 31054902,
+    "gds_size_kb": 30327.1,
+    "top_cell": "odos_gate_core_v4",
+    "cell_count_in_gds": 78,
+    "bbox_um": [
+      0.0,
+      0.0,
+      940.0,
+      840.0
+    ]
+  },
+  "dieshot_png": {
+    "png_path": "/home/nathalia/vmax_workspace/repos/PQMS-SOVEREIGN-CORE-ANDROID-APP/assets/images/V-MAX-12-RTL-V4-SG13G2-DIESHOT.png",
+    "width_px": 2090,
+    "height_px": 1644,
+    "png_size_kb": 1143.4,
+    "png_sha256": "30d27d21b963b974c551570eb41238b1f59c8f05c7569aa0d54ac647b16dcc53"
+  }
+}

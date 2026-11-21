@@ -56,3 +56,10 @@ from vmax_alpha.gateway.policy_engine import (
     request_from_gateway_verdict,
     resolve_safe_output_limit,
 )
+from vmax_alpha.gateway.rack_l2_manifold import (
+    MAX_L2_WINDOW_BYTES,
+    LocalL2Mirror,
+    ManifoldEpochSnapshot,
+    MirrorReadVerdict,
+    SharedL2Manifold,
+)

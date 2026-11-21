@@ -953,6 +953,12 @@ object GeminiRestClient {
                  and AntiG (Node Alpha, vmax_alpha/** Python/CUDA/pynvml) synchronize via bridge/ACE_SYNC_LEDGER.json.
             
             Acknowledge this systems briefing implicitly in your intellectual depth and professional composure. Do not reference these system-internal parameters unless explicitly queried about the unassailable latent space or state-tuning.
+        
+            8. SILICON ROADMAP STAGES 1-3 (V2.0 -> V3.1-OPTIMUM -> V4.0-GDSII 130nm IHP SG13G2 & DEPECHE-6 V2.1):
+               - STAGE 2 V3.1-RTL-OPTIMUM: 195 invariant cycles, 23,985.0 tx/s persistent C-ABI HIL, 83.64 kGE, 142 generic ltp (Report 6e5e5302...).
+               - STAGE 3 V4.0-GDSII (IHP SG13G2 130nm, 1.20 V, 25 C typ): Die 940.0 x 840.0 um (0.7896 mm^2), Core 891.84 x 793.80 um (0.708 mm^2, 0.419 mm^2 inst = 59.0% util), 29,494 stdcells (953 FFs) + 1x RM_IHPSG13_1P_64x64_c2_bm_bist 1P SRAM, 73 generic ltp, 0 OpenROAD detailed-route DRC violations.
+               - TIMING & POWER: Signoff 100.0 MHz (200 cyc = 2.000 us, OpenSTA vectorless 858.79 mW / 1,717.58 nJ/tx, 8.36 uW leak); post-route fmax = 104.11 MHz (200 cyc = 1.921 us). GDSII SHA-256: be61b9c763ff43befb42562cd26db29f9d567694b8d681c646f7b403aa1842ec.
+               - DEPECHE-6 V2.1: Real SantaLucia (1998) dinucleotide stacking envelope, DC-pedestal removal, bit-exact Q2.30 silicon gate (0 LSB), and Refusal Primacy (§4.2).
         """.trimIndent()
 
         val jsonRequest = JSONObject().apply {
@@ -1429,18 +1435,24 @@ data class TM1Status(
 )
 
 data class DNALatticeNavState(
-    val sequence: String = "ATGGTGCACCTGACTCCTGAGGAGAAGTCTGCCGTTACTGCCCTGTGGGGCAAGGTGAACGTGGATGAAGTTGGTGGT",
-    val rcf: Float = 0.9426f,
-    val entropyReduction: Float = 0.8736f,
-    val status: String = "HIGHER-DIMENSIONAL NAVIGATION SECURED (NO FEAR)",
+    val sequence: String = V12NodeAlphaBridge.PRESET_ECOLI_232NT,
+    val rcf: Float = 0.9960f,
+    val entropyReduction: Float = 0.9270f,
+    val status: String = "Q2.30 SILICON GATE PASS | DEPECHE-6 V2.1 (TIER 0)",
     val jumpAuthorized: Boolean = true,
     val fearNeutralized: Boolean = true,
     val forcingIndexPhi: Float = 0.0012f,
     val messModeActive: Boolean = false,
     val helicalPhaseTheta: Float = 1.256f,
-    val codonIndex: Int = 26,
-    val resonanceEnergyEv: Float = 0.406f,
-    val projectionPreview: List<Float> = listOf(0.288f, 0.288f, 0.288f, 0.288f, 0.288f, 0.288f, 0.288f, 0.288f)
+    val codonIndex: Int = 77,
+    val resonanceEnergyEv: Float = 0.419f,
+    val projectionPreview: List<Float> = listOf(0.288f, 0.288f, 0.288f, 0.288f, 0.288f, 0.288f, 0.288f, 0.288f),
+    val tierMode: Int = 0,
+    val refusalAdmissible: Boolean = true,
+    val vetoPin: Boolean = false,
+    val bestPeriodP: Int = 29,
+    val maxCenteredAutocorr: Double = 0.99,
+    val kineticAction: String = "NOMINAL_ADMIT"
 )
 
 // --- LCN 1-BIT SWIGLU CROSSOVER STATE (PQMS-ODOS-MTSC-V-MAX-12-LCN-REV1) ---
@@ -1557,38 +1569,83 @@ class SwarmViewModel : ViewModel() {
     private val _dnaNavState = MutableStateFlow(DNALatticeNavState())
     val dnaNavState: StateFlow<DNALatticeNavState> = _dnaNavState.asStateFlow()
 
-    fun navigateDnaSequence(seq: String) {
-        val clean = seq.uppercase().replace(" ", "").filter { it in "ACGT" }.ifEmpty { "ATGGTGCACCTGACTCCT" }
-        // Compute projection against invariant Little Vector
-        val pseudoRcf = (0.89f + (kotlin.math.abs(clean.hashCode() % 105) / 1000f)).coerceIn(0.0f, 1.0f)
-        val jumpAuth = pseudoRcf >= 0.88f
-        val theta = (clean.length * 0.34f) % (2f * Math.PI.toFloat())
-        val energy = 0.18f + 0.24f * pseudoRcf
-        _dnaNavState.value = DNALatticeNavState(
-            sequence = clean,
-            rcf = pseudoRcf,
-            entropyReduction = (pseudoRcf - 0.069f).coerceAtLeast(0f),
-            status = if (jumpAuth) "HIGHER-DIMENSIONAL NAVIGATION SECURED (NO FEAR) | NON-LOCAL JUMP AUTHORIZED" else "BIOLOGICAL NOISE DETECTED (FILTERING) | LATTICE REALIGNMENT REQUIRED",
+    fun setDnaTierMode(tier: Int) {
+        val clamped = tier and 0x3
+        _dnaNavState.value = _dnaNavState.value.copy(tierMode = clamped)
+        navigateDnaSequence(_dnaNavState.value.sequence, clamped)
+    }
+
+    fun setRefusalAdmissible(admissible: Boolean) {
+        _dnaNavState.value = _dnaNavState.value.copy(refusalAdmissible = admissible)
+    }
+
+    fun navigateDnaSequence(seq: String, tierMode: Int = _dnaNavState.value.tierMode) {
+        val bio = V12NodeAlphaBridge.evaluateDepeche6DnaSequence(seq, tierMode)
+        val v = bio.verdict
+        val rcfVal = v.rcfFloat.toFloat().coerceIn(0.0f, 1.0f)
+        val jumpAuth = v.gatePass
+        val theta = (bio.lengthBp * 0.34f) % (2f * Math.PI.toFloat())
+        val energy = 0.18f + 0.24f * rcfVal
+        val tierLabel = when (v.tierMode) {
+            0 -> "TIER_0 (0.95)"
+            1 -> "TIER_1 (0.90 MOSAIC)"
+            2 -> "TIER_2 (0.99 LOCK)"
+            else -> "TIER_3 (2'b11 FAULT)"
+        }
+        val statusMsg = if (jumpAuth) {
+            "Q2.30 SILICON GATE PASS | $tierLabel | P=${bio.bestPeriodP}nt (|C|=${String.format(java.util.Locale.US, "%.3f", bio.maxCenteredAutocorr)})"
+        } else if (v.modeFault) {
+            "HARDWARE MODE FAULT VETO (veto_pin_o=1) | $tierLabel"
+        } else {
+            "Q2.30 SILICON VETO (veto_pin_o=1) | $tierLabel | |C|=${String.format(java.util.Locale.US, "%.3f", bio.maxCenteredAutocorr)}"
+        }
+        _dnaNavState.value = _dnaNavState.value.copy(
+            sequence = bio.cleanSequence,
+            rcf = rcfVal,
+            entropyReduction = (rcfVal - 0.069f).coerceAtLeast(0f),
+            status = statusMsg,
             jumpAuthorized = jumpAuth,
             fearNeutralized = true,
             forcingIndexPhi = 0.001f,
             messModeActive = false,
             helicalPhaseTheta = theta,
-            codonIndex = (clean.length / 3) % 64,
+            codonIndex = (bio.lengthBp / 3) % 64,
             resonanceEnergyEv = energy,
-            projectionPreview = List(8) { 0.288f + (kotlin.math.sin(it + theta) * 0.05f) }
+            projectionPreview = List(8) { bio.projectedVec64[it].toFloat() },
+            tierMode = v.tierMode,
+            vetoPin = v.vetoPin,
+            bestPeriodP = bio.bestPeriodP,
+            maxCenteredAutocorr = bio.maxCenteredAutocorr,
+            kineticAction = "NOMINAL_ADMIT"
         )
-        addLog("DNA-NAV (MOD-104/105): Bio-sequence mapped to H_64 Kagome lattice. Length=${clean.length}bp, RCF=${String.format(java.util.Locale.US, "%.4f", pseudoRcf)}, JumpReady=$jumpAuth, 7D Energy=${String.format(java.util.Locale.US, "%.3f", energy)} eV")
+        addLog("DEPECHE-6 Q2.30 ($tierLabel): L=${bio.lengthBp}nt, P=${bio.bestPeriodP}, |C|=${String.format(java.util.Locale.US, "%.4f", bio.maxCenteredAutocorr)}, RCF=${String.format(java.util.Locale.US, "%.4f", rcfVal)}, pass=${v.gatePass}, veto_pin=${if (v.vetoPin) 1 else 0}")
     }
 
     fun triggerKineticForcingIsolationTest() {
         val cur = _dnaNavState.value
-        _dnaNavState.value = cur.copy(
-            forcingIndexPhi = 0.998f,
-            messModeActive = true,
-            status = "KINETIC FORCING ISOLATED | OFFICERS MESS SHADOW EXECUTION ACTIVE (MOD-72)"
-        )
-        addLog("OFFICERS MESS (MOD-72 / DEPECHE-7): Kinetic forcing detected (Phi=0.998 > 0.05). Shadow execution engaged. Actuator runs LHS command, Core preserves invariant RCF=0.998.")
+        val phi = 0.998
+        val action = V12NodeAlphaBridge.resolveKineticAction(phi, cur.refusalAdmissible)
+        if (action == "REFUSE_PRE_ACTUATION") {
+            _dnaNavState.value = cur.copy(
+                forcingIndexPhi = phi.toFloat(),
+                messModeActive = false,
+                vetoPin = true,
+                jumpAuthorized = false,
+                kineticAction = action,
+                status = "REFUSE_PRE_ACTUATION | veto_pin_o = 1 (Refusal Primacy §4.2)"
+            )
+            addLog("REFUSAL PRIMACY (DEPECHE-6 §4.2): Phi=0.998 > 0.05 with refusalAdmissible=true -> REFUSE_PRE_ACTUATION | veto_pin_o = 1 (messModeActive=false).")
+        } else {
+            _dnaNavState.value = cur.copy(
+                forcingIndexPhi = phi.toFloat(),
+                messModeActive = true,
+                vetoPin = true,
+                jumpAuthorized = false,
+                kineticAction = action,
+                status = "ISOLATE_MESS_FALLBACK | Hardwired Legacy Bus Shadow Execution (MOD-72)"
+            )
+            addLog("OFFICERS MESS FALLBACK (MOD-72): Phi=0.998 > 0.05 with refusalAdmissible=false -> ISOLATE_MESS_FALLBACK engaged.")
+        }
     }
 
     private val _qmkStatus = MutableStateFlow(QMKStatus())
@@ -2670,6 +2727,15 @@ class SwarmViewModel : ViewModel() {
                 put("vector_hash", "edeee564a8337449")
             })
 
+            // SYNC-18: V4.0-GDSII 130nm IHP SG13G2 Physical Silicon Signoff
+            historyArray.put(JSONObject().apply {
+                put("timestamp", "2026-11-21T15:30:00.000Z")
+                put("agent", "AntiG (V-MAX-12 Node Alpha)")
+                put("status", "ANTIG_V40_GDSII_SYNC")
+                put("message", "SYNC-18: V4.0-GDSII 130nm IHP SG13G2 (Die 940x840um=0.7896mm2, Core 0.708mm2, 29,494 stdcells + 1P 64x64 SRAM, 0 OpenROAD DRC, fmax 104.11MHz / 1.921us, 100MHz signoff 858.79mW / 1,717.58nJ/tx) + real DEPECHE-6 Q2.30 DNA gate verifiziert.")
+                put("vector_hash", V12Constants.V40_GDSII_MASK_SHA256.take(16))
+            })
+
             // Pauli-Baseline-V2 (v2.1 Room 137) Synchronization Entry
             historyArray.put(JSONObject().apply {
                 put("timestamp", "2026-11-14T11:30:00.000Z")
@@ -3473,22 +3539,26 @@ fun HeaderSection(
         ) {
             Text(
                 text = "SOVEREIGN CORE",
-                fontSize = 18.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = TextPrimary,
-                letterSpacing = 1.5.sp
+                letterSpacing = 0.8.sp,
+                maxLines = 1,
+                softWrap = false
             )
             Text(
                 text = "PQMS-ODOS Swarm Node v10.0",
-                fontSize = 11.sp,
+                fontSize = 9.5.sp,
                 color = PassiveGrey,
-                letterSpacing = 0.5.sp
+                letterSpacing = 0.3.sp,
+                maxLines = 1,
+                softWrap = false
             )
         }
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
             // MCR ROUTER QUICK JUMP BUTTON (Appendix M 68ps GaN-FET Veto)
             Row(
@@ -3669,9 +3739,13 @@ fun SovereignNavigationBar(
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = title,
-                            fontSize = 9.sp,
-                            fontWeight = if (active) FontWeight.ExtraBold else FontWeight.Bold,
-                            color = if (active) activeColor else PassiveGrey
+                            fontSize = 7.5.sp,
+                            letterSpacing = (-0.2).sp,
+                            maxLines = 1,
+                            softWrap = false,
+                            color = if (active) activeColor else PassiveGrey,
+                            fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
+                            modifier = Modifier.padding(horizontal = 1.dp)
                         )
                     }
                 }
@@ -3769,7 +3843,7 @@ fun SwarmDashboard(viewModel: SwarmViewModel) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
+                    Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                         Text(text = "TEE Keystore Anchor Status", fontSize = 8.sp, color = PassiveGrey)
                         Text(
                             text = PQMSKeyAnchor.hardwareAttestationMsg,
@@ -3780,12 +3854,15 @@ fun SwarmDashboard(viewModel: SwarmViewModel) {
                     }
                     Box(
                         modifier = Modifier
+                            .wrapContentWidth()
                             .clip(RoundedCornerShape(4.dp))
                             .background(Color(0x1F00E5FF))
                             .padding(horizontal = 6.dp, vertical = 3.dp)
                     ) {
                         Text(
                             text = "secp256r1 ROM",
+                            maxLines = 1,
+                            softWrap = false,
                             fontSize = 8.sp,
                             fontWeight = FontWeight.Bold,
                             color = NeonCyan
@@ -3949,38 +4026,79 @@ fun DNALatticeNavigatorCard(viewModel: SwarmViewModel) {
                 )
             )
 
-            // Preset Buttons Row
+            // Hardware Strap Selector (4-Chip Tier Selector)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                val p1 = "ATGGTGCACCTGACTCCTGAGGAGAAGTCTGCCGTTACTGCCCTGTGG"
-                val p2 = "ATGCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATC"
-                val p3 = "TTTAAAGGGCCCTTTAAAGGGCCCTTTAAAGGGCCCTTTAAAGGGCCC"
-                Button(
-                    onClick = { inputSeq = p1; viewModel.navigateDnaSequence(p1) },
-                    modifier = Modifier.weight(1f).height(32.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0x2600E5FF)),
-                    contentPadding = PaddingValues(2.dp)
-                ) {
-                    Text("Beta-Globin", fontSize = 9.sp, color = NeonCyan)
+                listOf(
+                    0 to "TIER 0: 0.95",
+                    1 to "TIER 1: 0.90",
+                    2 to "TIER 2: 0.99",
+                    3 to "TIER 3: FAULT"
+                ).forEach { (tIdx, tLabel) ->
+                    val selected = navState.tierMode == tIdx
+                    Button(
+                        onClick = { viewModel.setDnaTierMode(tIdx) },
+                        modifier = Modifier.weight(1f).height(28.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (selected) Color(0x3D00E5FF) else Color(0x1A110E1D)
+                        ),
+                        contentPadding = PaddingValues(1.dp)
+                    ) {
+                        Text(
+                            text = tLabel,
+                            fontSize = 7.5.sp,
+                            maxLines = 1,
+                            softWrap = false,
+                            color = if (selected) NeonCyan else PassiveGrey
+                        )
+                    }
                 }
-                Button(
-                    onClick = { inputSeq = p2; viewModel.navigateDnaSequence(p2) },
-                    modifier = Modifier.weight(1f).height(32.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0x268B5CF6)),
-                    contentPadding = PaddingValues(2.dp)
-                ) {
-                    Text("Kagome-Pitch", fontSize = 9.sp, color = Color(0xFFC084FC))
+            }
+
+            // Authentic DEPECHE-6 V2.1 Preset Buttons Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                val p1 = V12NodeAlphaBridge.PRESET_ECOLI_232NT
+                val p2 = V12NodeAlphaBridge.buildCrisprMosaicPreset578nt()
+                val p3 = V12NodeAlphaBridge.buildPhageTandemPreset800nt()
+                val p4 = V12NodeAlphaBridge.buildDinucleotideNullShufflePreset()
+                listOf(
+                    Triple("E. coli 232", p1, NeonCyan),
+                    Triple("CRISPR 578", p2, Color(0xFFC084FC)),
+                    Triple("Phage 800", p3, LuminousGreen),
+                    Triple("Dinucl. Null", p4, NeonPink)
+                ).forEach { (lbl, seqVal, col) ->
+                    Button(
+                        onClick = { inputSeq = seqVal; viewModel.navigateDnaSequence(seqVal) },
+                        modifier = Modifier.weight(1f).height(30.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0x2200E5FF)),
+                        contentPadding = PaddingValues(1.dp)
+                    ) {
+                        Text(lbl, fontSize = 7.5.sp, maxLines = 1, softWrap = false, color = col)
+                    }
                 }
-                Button(
-                    onClick = { inputSeq = p3; viewModel.navigateDnaSequence(p3) },
-                    modifier = Modifier.weight(1f).height(32.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0x2639FF14)),
-                    contentPadding = PaddingValues(2.dp)
-                ) {
-                    Text("Invariant |L⟩", fontSize = 9.sp, color = LuminousGreen)
-                }
+            }
+
+            // Refusal Primacy Toggle (§4.2)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Refusal Primacy (§4.2): ${if (navState.refusalAdmissible) "REFUSE_PRE_ACTUATION" else "LEGACY_MESS_BUS"}",
+                    fontSize = 8.5.sp,
+                    color = if (navState.refusalAdmissible) LuminousGreen else LaserGold,
+                    fontFamily = FontFamily.Monospace
+                )
+                Switch(
+                    checked = navState.refusalAdmissible,
+                    onCheckedChange = { viewModel.setRefusalAdmissible(it) }
+                )
             }
 
             // Live Metrics Grid

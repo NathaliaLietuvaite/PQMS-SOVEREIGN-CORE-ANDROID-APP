@@ -236,7 +236,25 @@ data class Room137LiveState(
     val pinnedCudaL2LiveProjectorActive: Boolean = false,
     val lockFreeStateSnapshotActive: Boolean = false,
     val twoStageLiveGateActive: Boolean = false,
-    val quarantinedCount: Int = 0
+    val quarantinedCount: Int = 0,
+    // Optional SYNC-16 V3.1 HIL fields
+    val rtlV3Backend: String = "",
+    val rtlV3Active: Boolean = false,
+    val rtlV3CycleCount: Int = 0,
+    val rtlV3GatePass: Boolean = false,
+    val rtlV3VetoPin: Boolean = false,
+    val rtlV3RcfRawQ: Int = 0,
+    val rtlV3BleedPostQ: Int = 0,
+    // Optional SYNC-17 V4.0-GDSII Signoff fields
+    val rtlV4Process: String = "",
+    val rtlV4DieAreaMm2: Double? = null,
+    val rtlV4CoreAreaMm2: Double? = null,
+    val rtlV4FmaxMhz: Double? = null,
+    val rtlV4WallLatencyUs: Double? = null,
+    val rtlV4SignoffClockMhz: Double? = null,
+    val rtlV4TotalPowerMw: Double? = null,
+    val rtlV4EnergyPerTxNj: Double? = null,
+    val rtlV4GdsSha256: String = ""
 )
 
 class PauliV21SanctuaryEngine {
@@ -811,6 +829,10 @@ class PauliV21SanctuaryEngine {
             val thermal = root["thermal"] as? Map<String, Any?>
             @Suppress("UNCHECKED_CAST")
             val ab = root["hwinfo64_ab_regimes"] as? Map<String, Any?>
+            @Suppress("UNCHECKED_CAST")
+            val v3Hil = root["rtl_v3_hil"] as? Map<String, Any?>
+            @Suppress("UNCHECKED_CAST")
+            val v4Signoff = root["rtl_v4_gdsii_signoff"] as? Map<String, Any?>
 
             return Room137LiveState(
                 reachable = true,
@@ -837,7 +859,23 @@ class PauliV21SanctuaryEngine {
                 pinnedCudaL2LiveProjectorActive = root["pinned_cuda_l2_live_projector_active"] as? Boolean ?: false,
                 lockFreeStateSnapshotActive = root["lock_free_state_snapshot_active"] as? Boolean ?: false,
                 twoStageLiveGateActive = root["two_stage_live_gate_active"] as? Boolean ?: false,
-                quarantinedCount = (root["quarantined_count"] as? Number)?.toInt() ?: 0
+                quarantinedCount = (root["quarantined_count"] as? Number)?.toInt() ?: 0,
+                rtlV3Backend = v3Hil?.get("backend") as? String ?: "",
+                rtlV3Active = v3Hil?.get("rtl_active") as? Boolean ?: false,
+                rtlV3CycleCount = (v3Hil?.get("cycle_count") as? Number)?.toInt() ?: 0,
+                rtlV3GatePass = v3Hil?.get("gate_pass") as? Boolean ?: false,
+                rtlV3VetoPin = v3Hil?.get("veto_pin") as? Boolean ?: false,
+                rtlV3RcfRawQ = (v3Hil?.get("rcf_raw_q") as? Number)?.toInt() ?: 0,
+                rtlV3BleedPostQ = (v3Hil?.get("bleed_post_q") as? Number)?.toInt() ?: 0,
+                rtlV4Process = v4Signoff?.get("process") as? String ?: "",
+                rtlV4DieAreaMm2 = (v4Signoff?.get("die_area_mm2") as? Number)?.toDouble(),
+                rtlV4CoreAreaMm2 = (v4Signoff?.get("core_area_mm2") as? Number)?.toDouble(),
+                rtlV4FmaxMhz = (v4Signoff?.get("fmax_mhz") as? Number)?.toDouble(),
+                rtlV4WallLatencyUs = (v4Signoff?.get("wall_latency_us") as? Number)?.toDouble(),
+                rtlV4SignoffClockMhz = (v4Signoff?.get("signoff_clock_mhz") as? Number)?.toDouble(),
+                rtlV4TotalPowerMw = (v4Signoff?.get("total_power_mw") as? Number)?.toDouble(),
+                rtlV4EnergyPerTxNj = (v4Signoff?.get("energy_per_tx_nj") as? Number)?.toDouble(),
+                rtlV4GdsSha256 = v4Signoff?.get("gds_sha256") as? String ?: ""
             )
         }
 

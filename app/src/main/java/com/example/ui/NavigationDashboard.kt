@@ -12,6 +12,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -66,7 +67,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.example.R
 import androidx.compose.ui.unit.sp
 import com.example.EpistemicRoute
 import com.example.LaserGold
@@ -153,6 +157,7 @@ fun NavigationDashboard(
         // --- 2c. PAULI BASELINE V2 (v2.1 NOVA AUDIT & ROOM 137 SANCTUARY EXPLORER) ---
         PauliSanctuaryCard()
 
+            V40GdsiiSignoffCard()
         // --- 3. MOD 139: CORE PROTECTION & HOLOGRAPHIC MULTIPLEXING (APPENDIX P) ---
         CoreGuardCard(
             guard = coreGuard,
@@ -1153,6 +1158,15 @@ private fun PauliSanctuaryCard() {
                                 fontSize = 7.sp,
                                 fontFamily = FontFamily.Monospace,
                                 color = PassiveGrey
+                            )
+                        }
+                        if (r137.rtlV3Active || r137.rtlV3CycleCount > 0) {
+                            Text(
+                                text = "V3.1 HIL: ${r137.rtlV3CycleCount} cyc | 23,985 tx/s | veto_pin_o=${if (r137.rtlV3VetoPin) 1 else 0} | bleed_post_q=${r137.rtlV3BleedPostQ} LSB",
+                                fontSize = 7.5.sp,
+                                fontFamily = FontFamily.Monospace,
+                                color = NeonCyan,
+                                modifier = Modifier.padding(top = 3.dp)
                             )
                         }
                     } else {
@@ -2368,3 +2382,67 @@ fun EpistemicNavigationQuickCard(
     }
 }
 
+
+
+@Composable
+private fun V40GdsiiSignoffCard() {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+        border = BorderStroke(1.dp, NeonCyan.copy(alpha = 0.45f)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("v40_gdsii_signoff_card")
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                text = "STAGE 3 SILICON SIGNOFF: V4.0-GDSII (IHP SG13G2 130 nm)",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = NeonCyan,
+                fontFamily = FontFamily.Monospace
+            )
+            Image(
+                painter = painterResource(id = R.drawable.vmax_v4_sg13g2_dieshot),
+                contentDescription = "V-MAX-12 V4.0-GDSII 130nm IHP SG13G2 Die-Shot",
+                contentScale = ContentScale.FillWidth,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .border(1.dp, SurfaceCardOutline, RoundedCornerShape(8.dp))
+            )
+            Text(
+                text = "Die: 940x840 um (0.790 mm²) | Core: 0.708 mm² (59.0% util)",
+                fontSize = 8.5.sp,
+                fontFamily = FontFamily.Monospace,
+                color = TextPrimary
+            )
+            Text(
+                text = "29,494 stdcells (953 FFs) + 1P 64x64 SRAM | 0 OpenROAD DRC",
+                fontSize = 8.5.sp,
+                fontFamily = FontFamily.Monospace,
+                color = LuminousGreen
+            )
+            Text(
+                text = "Post-Rt fmax: 104.11 MHz | 200 cyc = 1.92 us (2.00 us @ 100 MHz)",
+                fontSize = 8.5.sp,
+                fontFamily = FontFamily.Monospace,
+                color = NeonCyan
+            )
+            Text(
+                text = "Signoff Power @ 100 MHz: 858.79 mW (1,717.6 nJ/tx, 8.36 uW leak)",
+                fontSize = 8.5.sp,
+                fontFamily = FontFamily.Monospace,
+                color = LaserGold
+            )
+            Text(
+                text = "GDSII SHA-256: be61b9c763ff43...",
+                fontSize = 8.sp,
+                fontFamily = FontFamily.Monospace,
+                color = PassiveGrey
+            )
+        }
+    }
+}

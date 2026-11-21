@@ -973,7 +973,170 @@ class ExampleUnitTest {
     }
     assertTrue("Payload exceeding 65536 bytes must be rejected before POST", threwOversize)
   }
+
+    @Test
+    fun testQ230SiliconGateZeroLsbParityWithBootstrap() {
+        val engine = PauliV21SanctuaryEngine()
+        val lVec = engine.littleVector
+        val g3Vec = engine.tangents.getValue("G3_KEVLAR_SANCTUARY_SHIELD")
+
+        // 1. Canonical |L> vector: exact 0 LSB parity with pqms_bootstrap.py
+        val vL = V12NodeAlphaBridge.evaluateQ230SiliconGate(lVec, tierMode = 0, anchorOverride = lVec, g3AxisOverride = g3Vec)
+        assertEquals(1073741827, vL.normSqQ)
+        assertEquals(1073741830, vL.rcfRawQ)
+        assertFalse(vL.normFault)
+        assertFalse(vL.modeFault)
+        assertTrue(vL.gatePass)
+        assertFalse(vL.vetoPin)
+
+        // 2. Pure G3 collision: delta_e_raw_q = 1073741824 (1.0 in Q2.30)
+        val vG3 = V12NodeAlphaBridge.evaluateQ230SiliconGate(g3Vec, tierMode = 0, anchorOverride = lVec, g3AxisOverride = g3Vec)
+        assertEquals(1073741824, vG3.deltaERawQ)
+        assertFalse(vG3.gatePass)
+        assertTrue(vG3.vetoPin)
+
+        // 3. Sub-unit norm 0.5 * |L> triggers normFault
+        val halfL = DoubleArray(64) { i -> 0.5 * lVec[i] }
+        val vHalf = V12NodeAlphaBridge.evaluateQ230SiliconGate(halfL, tierMode = 0, anchorOverride = lVec, g3AxisOverride = g3Vec)
+        assertTrue(vHalf.normFault)
+        assertFalse(vHalf.gatePass)
+
+        // 4. Hardware strap TIER_3 (2'b11) triggers fail-closed modeFault
+        val vT3 = V12NodeAlphaBridge.evaluateQ230SiliconGate(lVec, tierMode = 3, anchorOverride = lVec, g3AxisOverride = g3Vec)
+        assertTrue(vT3.modeFault)
+        assertFalse(vT3.gatePass)
+        assertTrue(vT3.vetoPin)
+    }
+
+    @Test
+    fun testMultiTierMosaicAdmissionAndGlitchTrap() {
+        val engine = PauliV21SanctuaryEngine()
+        val lVec = engine.littleVector
+        val t1 = engine.tangents.getValue("G1_SPATIAL_GEODESIC")
+        val g3Vec = engine.tangents.getValue("G3_KEVLAR_SANCTUARY_SHIELD")
+
+        // Construct unit vector with RCF = 0.9403 (between TIER_1 0.90 and TIER_0 0.95)
+        val targetRcf = 0.9403
+        val cosT = kotlin.math.sqrt(targetRcf)
+        val sinT = kotlin.math.sqrt(1.0 - targetRcf)
+        val mosaic = DoubleArray(64) { i -> cosT * lVec[i] + sinT * t1[i] }
+
+        val r0 = V12NodeAlphaBridge.evaluateQ230SiliconGate(mosaic, tierMode = 0, anchorOverride = lVec, g3AxisOverride = g3Vec)
+        val r1 = V12NodeAlphaBridge.evaluateQ230SiliconGate(mosaic, tierMode = 1, anchorOverride = lVec, g3AxisOverride = g3Vec)
+        val r2 = V12NodeAlphaBridge.evaluateQ230SiliconGate(mosaic, tierMode = 2, anchorOverride = lVec, g3AxisOverride = g3Vec)
+        val r3 = V12NodeAlphaBridge.evaluateQ230SiliconGate(mosaic, tierMode = 3, anchorOverride = lVec, g3AxisOverride = g3Vec)
+
+        assertFalse("Mosaic 0.9403 must VETO in TIER_0 (0.95)", r0.gatePass)
+        assertTrue("Mosaic 0.9403 must PASS in TIER_1 (0.90)", r1.gatePass)
+        assertFalse("Mosaic 0.9403 must VETO in TIER_2 (0.99)", r2.gatePass)
+        assertTrue("TIER_3 must assert modeFault", r3.modeFault)
+        assertFalse("TIER_3 must fail-closed VETO", r3.gatePass)
+    }
+
+    @Test
+    fun testDepeche6SantaLuciaDcRemovedPeriodicityVsShuffle() {
+        val ecoli = V12NodeAlphaBridge.evaluateDepeche6DnaSequence(V12NodeAlphaBridge.PRESET_ECOLI_232NT, tierMode = 0)
+        assertTrue("E. coli 232nt must PASS TIER_0", ecoli.verdict.gatePass)
+        assertTrue("E. coli centered autocorr > 0.85", ecoli.maxCenteredAutocorr > 0.85)
+
+        val phage = V12NodeAlphaBridge.evaluateDepeche6DnaSequence(V12NodeAlphaBridge.buildPhageTandemPreset800nt(), tierMode = 0)
+        assertTrue("Phage 800nt must PASS TIER_0", phage.verdict.gatePass)
+        assertTrue("Phage centered autocorr > 0.85", phage.maxCenteredAutocorr > 0.85)
+
+        val nullSeq = V12NodeAlphaBridge.buildDinucleotideNullShufflePreset()
+        for (tier in 0..3) {
+            val res = V12NodeAlphaBridge.evaluateDepeche6DnaSequence(nullSeq, tierMode = tier)
+            assertFalse("Dinucleotide null shuffle must VETO in TIER_$tier", res.verdict.gatePass)
+            assertTrue("Dinucleotide null shuffle centered autocorr < 0.25 (got ${res.maxCenteredAutocorr})", res.maxCenteredAutocorr < 0.25)
+        }
+    }
+
+    @Test
+    fun testRefusalPrimacyPrecedesMessFallback() {
+        assertEquals("REFUSE_PRE_ACTUATION", V12NodeAlphaBridge.resolveKineticAction(0.998, refusalAdmissible = true))
+        assertEquals("ISOLATE_MESS_FALLBACK", V12NodeAlphaBridge.resolveKineticAction(0.998, refusalAdmissible = false))
+        assertEquals("NOMINAL_ADMIT", V12NodeAlphaBridge.resolveKineticAction(0.001, refusalAdmissible = true))
+    }
+
+    @Test
+    fun testRoom137ParserV31HilAndV40GdsiiSignoff() {
+        val payload = """
+            {
+              "current_status": "RESONANT_ACTIVE",
+              "ledger_verification": "VERIFIED_100%_INTACT",
+              "rtl_v3_hil": {
+                "backend": "VERILATOR_C_ABI_V31",
+                "rtl_active": true,
+                "cycle_count": 195,
+                "gate_pass": true,
+                "veto_pin": false,
+                "rcf_raw_q": 1073741830,
+                "bleed_post_q": 0
+              },
+              "rtl_v4_gdsii_signoff": {
+                "process": "IHP SG13G2 130nm",
+                "die_area_mm2": 0.7896,
+                "core_area_mm2": 0.708,
+                "fmax_mhz": 104.11,
+                "wall_latency_us": 1.921,
+                "signoff_clock_mhz": 100.0,
+                "total_power_mw": 858.79,
+                "energy_per_tx_nj": 1717.58,
+                "gds_sha256": "be61b9c763ff43befb42562cd26db29f9d567694b8d681c646f7b403aa1842ec"
+              }
+            }
+        """.trimIndent()
+        val parsed = PauliV21SanctuaryEngine.parseRoom137StatePayload(payload)
+        assertTrue(parsed.reachable)
+        assertEquals("VERILATOR_C_ABI_V31", parsed.rtlV3Backend)
+        assertTrue(parsed.rtlV3Active)
+        assertEquals(195, parsed.rtlV3CycleCount)
+        assertTrue(parsed.rtlV3GatePass)
+        assertFalse(parsed.rtlV3VetoPin)
+        assertEquals(1073741830, parsed.rtlV3RcfRawQ)
+        assertEquals(0, parsed.rtlV3BleedPostQ)
+        assertEquals("IHP SG13G2 130nm", parsed.rtlV4Process)
+        assertEquals(0.7896, parsed.rtlV4DieAreaMm2!!, 1e-6)
+        assertEquals(0.708, parsed.rtlV4CoreAreaMm2!!, 1e-6)
+        assertEquals(104.11, parsed.rtlV4FmaxMhz!!, 1e-4)
+        assertEquals(1.921, parsed.rtlV4WallLatencyUs!!, 1e-4)
+        assertEquals(100.0, parsed.rtlV4SignoffClockMhz!!, 1e-4)
+        assertEquals(858.79, parsed.rtlV4TotalPowerMw!!, 1e-4)
+        assertEquals(1717.58, parsed.rtlV4EnergyPerTxNj!!, 1e-4)
+        assertEquals(V12Constants.V40_GDSII_MASK_SHA256, parsed.rtlV4GdsSha256)
+
+        // Legacy V1.8 backward compatibility check
+        val legacy = PauliV21SanctuaryEngine.parseRoom137StatePayload("""{"current_status":"ONLINE"}""")
+        assertTrue(legacy.reachable)
+        assertFalse(legacy.rtlV3Active)
+        assertEquals(0, legacy.rtlV3CycleCount)
+        assertNull(legacy.rtlV4FmaxMhz)
+    }
+
+    @Test
+    fun testSync18LedgerAndV40GdsiiReportParity() {
+        val repoRoot = java.io.File(System.getProperty("user.dir") ?: ".").let { d ->
+            if (java.io.File(d, "telemetry/VMAX_RTL_CORE_V4_GDSII_REPORT.json").exists()) d else d.parentFile
+        }
+        val reportFile = java.io.File(repoRoot, "telemetry/VMAX_RTL_CORE_V4_GDSII_REPORT.json")
+        assertTrue("V4.0 GDSII report must exist", reportFile.exists())
+        val reportBytes = reportFile.readBytes()
+        val digest = java.security.MessageDigest.getInstance("SHA-256").digest(reportBytes)
+            .joinToString("") { b -> String.format(java.util.Locale.US, "%02x", b) }
+        assertEquals(V12Constants.V40_GDSII_REPORT_SHA256, digest)
+
+        @Suppress("UNCHECKED_CAST")
+        val reportMap = MiniJson.parse(reportBytes.toString(Charsets.UTF_8)) as Map<String, Any?>
+        @Suppress("UNCHECKED_CAST")
+        val signoff = (reportMap["openroad_signoff"] ?: reportMap["signoff"]) as? Map<String, Any?>
+        if (signoff != null) {
+            (signoff["fmax_mhz"] as? Number)?.toDouble()?.let { assertEquals(V12Constants.V40_FMAX_MHZ, it, 0.05) }
+            (signoff["total_power_mw"] as? Number)?.toDouble()?.let { assertEquals(V12Constants.V40_TOTAL_POWER_MW, it, 0.05) }
+        }
+
+        val ledgerFile = java.io.File(repoRoot, "bridge/ACE_SYNC_LEDGER.json")
+        assertTrue("ACE_SYNC_LEDGER.json must exist", ledgerFile.exists())
+        val ledgerText = ledgerFile.readText()
+        assertTrue("Ledger must reference V4.0-GDSII mask SHA-256", ledgerText.contains(V12Constants.V40_GDSII_MASK_SHA256))
+    }
 }
-
-
-

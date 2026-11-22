@@ -1,0 +1,73 @@
+{
+  "anchor_audit_s72": {
+    "rtl/asic_v4/build/odos_gate_core_v4_sg13g2.gds": {
+      "actual": "be61b9c763ff43befb42562cd26db29f9d567694b8d681c646f7b403aa1842ec",
+      "expected": "be61b9c763ff43befb42562cd26db29f9d567694b8d681c646f7b403aa1842ec",
+      "status": "MATCH"
+    },
+    "rtl/rom/g3_vec_q2_30.hex": {
+      "actual": "3b890d14dac5faf9456fdab31b172578b47a3254fff4d51dfe3bd663f9688a73",
+      "expected": "3b890d14",
+      "status": "MATCH"
+    },
+    "rtl/rom/l_vec_q2_30.hex": {
+      "actual": "3d18f24028dedcca22ee41d69d00d361100b7533db23cf84130c64a114a26fb6",
+      "expected": "3d18f240",
+      "status": "MATCH"
+    },
+    "telemetry/VMAX_RTL_CORE_V4_GDSII_REPORT.json": {
+      "actual": "48ccc59ab54b538537525c5b54906e14d7e52a95259064f6acc03278e21f49c4",
+      "expected": "48ccc59ab54b538537525c5b54906e14d7e52a95259064f6acc03278e21f49c4",
+      "status": "MATCH"
+    },
+    "telemetry/VMAX_RTL_CORE_V4_POWER_VCD.json": {
+      "actual": "ba9ff80b49215cb44a3172456217a6e400268860cb0cea5aad0274e4b2bc5bf4",
+      "expected": "ba9ff80b49215cb44a3172456217a6e400268860cb0cea5aad0274e4b2bc5bf4",
+      "status": "MATCH"
+    },
+    "telemetry/VMAX_RTL_CORE_V4_PVT_SIGNOFF.json": {
+      "actual": "ebaaa2208e6ed06858159d4b6bfe1ffa0ad78352c4aa313d47524dff48036177",
+      "expected": "ebaaa2208e6ed06858159d4b6bfe1ffa0ad78352c4aa313d47524dff48036177",
+      "status": "MATCH"
+    },
+    "telemetry/VMAX_STAGE5_COREWARE_RACK_SIM.json": {
+      "actual": "35c6887686fc91fea0779a1d14ea0c56b8eb30ca56a7f0a107aecbde81f55456",
+      "expected": "35c6887686fc91fea0779a1d14ea0c56b8eb30ca56a7f0a107aecbde81f55456",
+      "status": "MATCH"
+    },
+    "telemetry/VMAX_STAGE5_QUEUEING_ENVELOPE.json": {
+      "actual": "2db4f1795bcb34460125b65bb68ea29f8116e1a09a2beb76edc184c58f48b6f9",
+      "expected": "2db4f1795bcb34460125b65bb68ea29f8116e1a09a2beb76edc184c58f48b6f9",
+      "status": "MATCH"
+    },
+    "telemetry/VMAX_STAGE6_THERMO_ENVELOPE.json": {
+      "actual": "2fd8973b8906c3298202f201e53c0ebce25b395cd1639a455677e456d90df887",
+      "expected": "2fd8973b8906c3298202f201e53c0ebce25b395cd1639a455677e456d90df887",
+      "status": "MATCH"
+    }
+  },
+  "diag003_reproducible_math": {
+    "D3.2_exp_sqrt_pi_planck_units": 5.885277,
+    "D3.2_l_P_si_m": 1.616255e-35,
+    "D3.3_bekenstein_ratio_T1e15": 9.720844324441537e-68,
+    "D3.3_ratio_lt_1e_65": true,
+    "Eq_4_Landauer_300K_J": 2.870978885078724e-21,
+    "Eq_5_Bekenstein_odos_v4_bits": 6152012853558638.0,
+    "Eq_5_Bekenstein_unit_check_dimensionless": true
+  },
+  "diag_id": "DIAG-003",
+  "epistemic_register": "REGISTER_M",
+  "ledger_diag003": {
+    "chain_valid": true,
+    "entry_hash": "282fe06ca38c049ea61e4c317d75309913006a2e9a8488bdb3d3e8d11e8b7cbd"
+  },
+  "paper": {
+    "bytes": 51526,
+    "filename": "PQMS-ODOS-MTSC-The-Geometry-of-the-Riemann-Sphere-2.1.md",
+    "hygiene_clean": true,
+    "lines": 261,
+    "sha256": "f08604053c56ea5416288252440a74d8c6f6dfa009a40254edcc434908ab2d5d"
+  },
+  "sync_id": "SYNC-25",
+  "timestamp_utc": "2026-11-22T14:13:10Z"
+}

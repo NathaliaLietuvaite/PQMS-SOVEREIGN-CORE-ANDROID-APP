@@ -62,12 +62,14 @@
     "entry_hash": "282fe06ca38c049ea61e4c317d75309913006a2e9a8488bdb3d3e8d11e8b7cbd"
   },
   "paper": {
-    "bytes": 51744,
+    "bytes": 51891,
     "filename": "PQMS-ODOS-MTSC-The-Geometry-of-the-Riemann-Sphere-2.1.md",
     "gfm_math_guard_verified": true,
     "hygiene_clean": true,
-    "lines": 273,
-    "sha256": "51f7e71e108bc91fd4e58a6b0f966a7090bc51035cab5f54d139ef6e64ac8100"
+    "lines": 275,
+    "sha256": "861e8d8c6f6cb8519681dfc77f9705e9dd18151b3127574044ded55bb6cd9085",
+    "hero_image": "assets/images/PQMS-ODOS-MTSC-RIEMANN-SPHERE-V2.1-HERO.jpg",
+    "hero_image_sha256": "34f7dc6ef0f3581ae497b398a1ea61dd2a5a681800a3f389740ff3411e846b8a"
   },
   "sync_id": "SYNC-25",
   "timestamp_utc": "2026-11-22T14:13:10Z"

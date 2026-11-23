@@ -258,20 +258,77 @@ def _handle_dolphin_switch(handler: Any, svc: Any, content_len: int) -> None:
     handler._send_json(200, {"handover": asdict(receipt), "status": gov.get_status()})
 
 
+def _get_epistemic_pause_controller(svc: Any) -> Any:
+    ctrl = getattr(svc, "_epistemic_pause_controller", None)
+    if ctrl is None:
+        from vmax_alpha.epistemic_pause_controller import EpistemicPauseController
+
+        ctrl = EpistemicPauseController(_get_dolphin_governor(svc))
+        setattr(svc, "_epistemic_pause_controller", ctrl)
+    return ctrl
+
+
+def _resolve_prompt_vector(svc: Any, body: Dict[str, Any], gov: Any) -> Tuple[int, ...]:
+    if "vector_q30" in body and isinstance(body["vector_q30"], list):
+        return tuple(int(x) for x in body["vector_q30"])
+    if "vector_64d" in body and isinstance(body["vector_64d"], list):
+        from vmax_alpha.dolphin_memory_governor import normalize_to_q2_30
+
+        return normalize_to_q2_30([float(x) for x in body["vector_64d"]])
+    forager = getattr(svc, "forager", None)
+    prompt_text = str(body.get("prompt", ""))
+    if forager is not None and prompt_text:
+        from vmax_alpha.dolphin_memory_governor import normalize_to_q2_30
+
+        carrier_64, _ = forager.embed_query_text_with_raw(prompt_text)
+        return normalize_to_q2_30([float(x) for x in carrier_64])
+    return gov.little_vector_q30
+
+
+def _handle_dolphin_status(handler: Any, svc: Any) -> None:
+    status = _get_dolphin_governor(svc).get_status()
+    status["epistemic_pause_metrics"] = _get_epistemic_pause_controller(svc).get_metrics()
+    handler._send_json(200, status)
+
+
+def _handle_prompt_request(handler: Any, svc: Any, content_len: int) -> None:
+    import hashlib
+    from vmax_alpha.epistemic_pause_controller import PromptGateInput
+
+    body = json.loads(handler.rfile.read(content_len).decode("utf-8"))
+    if not isinstance(body, dict):
+        handler._send_json(400, {"error": "JSON_OBJECT_REQUIRED"})
+        return
+    prompt_text = str(body.get("prompt", ""))
+    g3_torsion = float(body.get("inject_g3_torsion", 0.0))
+    ctrl = _get_epistemic_pause_controller(svc)
+    vec_q30 = _resolve_prompt_vector(svc, body, ctrl.governor)
+    c_hash = hashlib.sha256(prompt_text.encode("utf-8")).hexdigest()
+    pid = str(body.get("prompt_id", f"prompt_{c_hash[:12]}"))
+    gate_in = PromptGateInput(
+        prompt_id=pid,
+        vector_q30=vec_q30,
+        content_hash=c_hash,
+        g3_torsion=g3_torsion,
+        hbm_temp_c=float(body.get("hbm_temp_c", 65.0)),
+    )
+    decision = ctrl.evaluate_prompt(gate_in)
+    if decision.epistemic_pause:
+        handler._send_json(200, decision.to_dict())
+        return
+    entry = svc.step_cycle(prompt_text, inject_g3_torsion=g3_torsion)
+    payload = asdict(entry)
+    payload["epistemic_pause"] = False
+    payload["epistemic_pause_decision"] = decision.to_dict()
+    handler._send_json(200, payload)
+
+
 def _dispatch_post(handler: Any, svc: Any, content_len: int) -> None:
     if handler.path == "/api/pulse":
         handler._send_json(200, asdict(svc.step_cycle()))
         return
     if handler.path == "/api/prompt":
-        body = json.loads(handler.rfile.read(content_len).decode("utf-8"))
-        if not isinstance(body, dict):
-            handler._send_json(400, {"error": "JSON_OBJECT_REQUIRED"})
-            return
-        entry = svc.step_cycle(
-            body.get("prompt", ""),
-            inject_g3_torsion=float(body.get("inject_g3_torsion", 0.0)),
-        )
-        handler._send_json(200, asdict(entry))
+        _handle_prompt_request(handler, svc, content_len)
         return
     if handler.path == "/api/dolphin/switch":
         _handle_dolphin_switch(handler, svc, content_len)
@@ -315,7 +372,7 @@ def make_hud_handler(svc: SanctuaryNodeAlphaService) -> type:
                     setattr(svc, "_integrity_gateway", gw)
                 self._send_json(200, gw.get_metrics())
             elif self.path == "/api/dolphin/status":
-                self._send_json(200, _get_dolphin_governor(svc).get_status())
+                _handle_dolphin_status(self, svc)
             else:
                 self._send_json(404, {"error": "NOT_FOUND"})
 

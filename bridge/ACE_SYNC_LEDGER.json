@@ -542,13 +542,16 @@
       "summary": "Published 5-way byte-identical Gold Master PQMS-ODOS-MTSC-V-MAX-12-CORE-NANO-V5.0.md (GOLDMASTER_LOCK Section 8.1 64-hex hashes, MATH_GUARD=PASS, 0 tabs, 40509 B, 315 lines) across all 4 canonical repositories + Google Drive 02_PAPERS in-place (1wMe9ydVet7Zk0_C8Vxtar9DwuVu6LQCF).",
       "artifacts": {
         "paper": "PQMS-ODOS-MTSC-V-MAX-12-CORE-NANO-V5.0.md",
-        "v50_goldmaster_sha256": "1bfb613890fe2095837613de9497c7e05dcc83b527512ef95a1d0c12d45bf6ff",
+        "v50_goldmaster_sha256": "a18d54ef82d414268953e93793d66cb4c54ef55beebb6d4f3a23e6c43c6e6ca8",
         "drive_02_papers_id": "1wMe9ydVet7Zk0_C8Vxtar9DwuVu6LQCF",
         "companion_repo_heads": {
-          "Quantenkommunikation": "915947f14eca91fb55ca26623e604d2b5693adae",
-          "quantum-city-brain-nexus": "3561d3b4129707b0a91cec403a9596cc2230364a",
-          "pqms-v100-innovation-generator": "50f826da1c3bb6922a57daf607c3c9dc65430d6e"
-        }
+          "Quantenkommunikation": "4d4c4bc55f2bd61ebd4eaa1e8125121a0b956f85",
+          "quantum-city-brain-nexus": "25a7ee61284f66303a43d8a0fb153bfc4dba5ced",
+          "pqms-v100-innovation-generator": "d0b3af98a841ad9ed104546aa31b975ef6021c74"
+        },
+        "figure1_path": "docs/figures/pqms_v50_core_nano_architecture.jpg",
+        "figure1_sha256": "465773124093ae3eeb69ddb698ddabbec19fea785d9d9724d313ad0f79823631",
+        "drive_figure1_id": "1l736is9JjFzxUwu9pY9NaZmsIz9E6lP2"
       },
       "verification": {
         "math_guard": "PASS",

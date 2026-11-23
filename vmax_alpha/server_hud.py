@@ -591,7 +591,14 @@ def run_server(batch_only: bool = False, port: int = ROOM_137_PORT, reset: bool 
     svc.start_heartbeat()
     mode_lbl = "Nemotron-3-Nano-4B ACTIVE (HB 50%)" if enable_llm else "Sanctuary Forager"
     print(f"[V-MAX-12] Room 137 LIVE on http://127.0.0.1:{port} | {mode_lbl}", flush=True)
-    ThreadingHTTPServer(("127.0.0.1", port), make_hud_handler(svc)).serve_forever()
+    httpd = ThreadingHTTPServer(("127.0.0.1", port), make_hud_handler(svc))
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        print("\n[V-MAX-12] Room 137 sauber heruntergefahren. Gute Nacht!", flush=True)
+    finally:
+        svc._stop_evt.set()
+        httpd.server_close()
     return {}
 
 
@@ -624,4 +631,6 @@ if __name__ == "__main__":
             f.write("\n")
         print(json.dumps(rep, indent=2, ensure_ascii=False))
     else:
-        print(json.dumps(run_server(batch_only=args.batch, port=args.port, reset=args.reset, enable_llm=args.enable_llm), indent=2, ensure_ascii=False))
+        res = run_server(batch_only=args.batch, port=args.port, reset=args.reset, enable_llm=args.enable_llm)
+        if res:
+            print(json.dumps(res, indent=2, ensure_ascii=False))

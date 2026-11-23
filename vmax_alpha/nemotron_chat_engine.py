@@ -156,6 +156,9 @@ class NemotronChatEngine:
             import transformers.utils.import_utils as tf_imports
             from transformers import AutoModelForCausalLM, AutoTokenizer
 
+            from transformers.utils import logging as tf_logging
+
+            tf_logging.set_verbosity_error()
             tf_imports.is_causal_conv1d_available = lambda: False
             t0 = time.perf_counter()
             self._tokenizer = AutoTokenizer.from_pretrained(
@@ -170,6 +173,8 @@ class NemotronChatEngine:
                 device_map=device_map,
                 trust_remote_code=False,
             ).eval()
+            if hasattr(self._model, "generation_config"):
+                self._model.generation_config.top_p = None
             self.load_seconds = round(time.perf_counter() - t0, 2)
             self.loaded = True
 
@@ -257,6 +262,9 @@ class NemotronChatEngine:
             dt_s = max(time.perf_counter() - t0, 1e-6)
             gen_ids = out[0][inputs["input_ids"].shape[1] :]
             raw_reply = tok.decode(gen_ids, skip_special_tokens=True)
+            del inputs, out
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
         cleaned = clean_nemotron_output(raw_reply)
         n_tok = int(len(gen_ids))
         return ChatReply(

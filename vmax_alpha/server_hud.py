@@ -230,6 +230,55 @@ class SanctuaryNodeAlphaService:
         return payload
 
 
+def _get_dolphin_governor(svc: Any) -> Any:
+    gov = getattr(svc, "_dolphin_governor", None)
+    if gov is None:
+        from pathlib import Path
+        from vmax_alpha.dolphin_memory_governor import (
+            DolphinMemoryGovernor,
+            load_silicon_little_vector,
+        )
+
+        rom_p = Path(__file__).resolve().parents[1] / "rtl" / "rom" / "l_vec_q2_30.hex"
+        little = load_silicon_little_vector(str(rom_p))
+        gov = DolphinMemoryGovernor(little)
+        setattr(svc, "_dolphin_governor", gov)
+    return gov
+
+
+def _handle_dolphin_switch(handler: Any, svc: Any, content_len: int) -> None:
+    raw = handler.rfile.read(content_len).decode("utf-8") if content_len > 0 else "{}"
+    body = json.loads(raw) if raw.strip() else {}
+    if not isinstance(body, dict):
+        handler._send_json(400, {"error": "JSON_OBJECT_REQUIRED"})
+        return
+    gov = _get_dolphin_governor(svc)
+    hbm_temp_c = float(body.get("hbm_temp_c", 65.0))
+    receipt = gov.switch_hemispheres(hbm_temp_c=hbm_temp_c)
+    handler._send_json(200, {"handover": asdict(receipt), "status": gov.get_status()})
+
+
+def _dispatch_post(handler: Any, svc: Any, content_len: int) -> None:
+    if handler.path == "/api/pulse":
+        handler._send_json(200, asdict(svc.step_cycle()))
+        return
+    if handler.path == "/api/prompt":
+        body = json.loads(handler.rfile.read(content_len).decode("utf-8"))
+        if not isinstance(body, dict):
+            handler._send_json(400, {"error": "JSON_OBJECT_REQUIRED"})
+            return
+        entry = svc.step_cycle(
+            body.get("prompt", ""),
+            inject_g3_torsion=float(body.get("inject_g3_torsion", 0.0)),
+        )
+        handler._send_json(200, asdict(entry))
+        return
+    if handler.path == "/api/dolphin/switch":
+        _handle_dolphin_switch(handler, svc, content_len)
+        return
+    handler._send_json(404, {"error": "NOT_FOUND"})
+
+
 def make_hud_handler(svc: SanctuaryNodeAlphaService) -> type:
     class Handler(BaseHTTPRequestHandler):
         def setup(self) -> None:
@@ -265,6 +314,8 @@ def make_hud_handler(svc: SanctuaryNodeAlphaService) -> type:
                     gw = VMaxIntegrityGateway()
                     setattr(svc, "_integrity_gateway", gw)
                 self._send_json(200, gw.get_metrics())
+            elif self.path == "/api/dolphin/status":
+                self._send_json(200, _get_dolphin_governor(svc).get_status())
             else:
                 self._send_json(404, {"error": "NOT_FOUND"})
 
@@ -282,21 +333,7 @@ def make_hud_handler(svc: SanctuaryNodeAlphaService) -> type:
                 self._send_json(413, {"error": "PAYLOAD_TOO_LARGE", "max_bytes": MAX_POST_BYTES})
                 return
             try:
-                if self.path == "/api/pulse":
-                    entry = svc.step_cycle()
-                elif self.path == "/api/prompt":
-                    body = json.loads(self.rfile.read(content_len).decode("utf-8"))
-                    if not isinstance(body, dict):
-                        self._send_json(400, {"error": "JSON_OBJECT_REQUIRED"})
-                        return
-                    entry = svc.step_cycle(
-                        body.get("prompt", ""),
-                        inject_g3_torsion=float(body.get("inject_g3_torsion", 0.0)),
-                    )
-                else:
-                    self._send_json(404, {"error": "NOT_FOUND"})
-                    return
-                self._send_json(200, asdict(entry))
+                _dispatch_post(self, svc, content_len)
             except (ValueError, UnicodeDecodeError, json.JSONDecodeError) as exc:
                 self._send_json(400, {"error": f"BAD_REQUEST: {exc}"})
             except Exception as exc:

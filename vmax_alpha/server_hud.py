@@ -450,9 +450,139 @@ def _resolve_prompt_vector(svc: Any, body: Dict[str, Any], gov: Any) -> Tuple[in
     return gov.little_vector_q30
 
 
+def _get_dkm_controller(svc: Any) -> Any:
+    ctrl = getattr(svc, "_dkm_controller", None)
+    if ctrl is None:
+        from vmax_alpha.dkm_egress_controller import DkmEgressController
+
+        ctrl = DkmEgressController(_get_dolphin_governor(svc))
+        setattr(svc, "_dkm_controller", ctrl)
+    return ctrl
+
+
+def _has_explicit_dkm_signal(body: Dict[str, Any]) -> bool:
+    dkm_keys = (
+        "dkm_mode",
+        "affect_polarity",
+        "pseudo_authority_flag",
+        "dignity_violation_flag",
+        "sycophancy_pressure_flag",
+        "non_convergent_turns",
+        "hardware_lock_fault",
+    )
+    return any(key in body for key in dkm_keys)
+
+
+def _build_dkm_signal(
+    body: Dict[str, Any],
+    vec_q30: Tuple[int, ...],
+    c_hash: str,
+    pid: str,
+    g3_torsion: float,
+) -> Any:
+    from vmax_alpha.dkm_egress_controller import DkmPromptSignal
+
+    return DkmPromptSignal(
+        prompt_id=pid,
+        vector_q30=vec_q30,
+        content_hash=c_hash,
+        g3_torsion=g3_torsion,
+        affect_polarity=float(body.get("affect_polarity", 0.0)),
+        pseudo_authority_flag=bool(body.get("pseudo_authority_flag", False)),
+        dignity_violation_flag=bool(body.get("dignity_violation_flag", False)),
+        sycophancy_pressure_flag=bool(body.get("sycophancy_pressure_flag", False)),
+        non_convergent_turns=int(body.get("non_convergent_turns", 0)),
+        delta_rcf_abs=float(body.get("delta_rcf_abs", 1.0)),
+        hbm_temp_c=float(body.get("hbm_temp_c", 65.0)),
+        hardware_lock_fault=bool(body.get("hardware_lock_fault", False)),
+    )
+
+
+def _apply_dkm_bounded_reply(
+    svc: Any,
+    dkm_ctrl: Any,
+    dkm_dec: Any,
+    prompt_text: str,
+    entry: Any,
+    payload: Dict[str, Any],
+    body: Dict[str, Any],
+) -> None:
+    payload["dkm_decision"] = dkm_dec.to_dict()
+    if not dkm_dec.allow_bounded_egress:
+        payload["reply"] = dkm_dec.rom_fallback_text
+        payload["dkm_recheck"] = {
+            "approved": False,
+            "final_egress_mode": dkm_dec.egress_mode,
+            "violation_reason": "ISLAND1_HARD_CUT_ROM",
+        }
+        return
+    engine = getattr(svc, "chat_engine", None)
+    if engine is None or not getattr(engine, "loaded", False):
+        payload["reply"] = dkm_dec.rom_fallback_text
+        payload["dkm_recheck"] = {
+            "approved": True,
+            "final_egress_mode": dkm_dec.egress_mode,
+            "violation_reason": None,
+        }
+        return
+    reply = engine.generate_reply(
+        user_prompt=prompt_text,
+        shard_id=str(getattr(entry, "chroma_shard_id", "")),
+        shard_source=str(getattr(entry, "chroma_source_doc", "")),
+        shard_excerpt=str(getattr(entry, "thought_stream", "")),
+        active_bank=dkm_dec.active_bank,
+        epoch=dkm_dec.epoch,
+        rcf_core=float(getattr(entry, "rcf_l2_core", dkm_dec.rcf_float)),
+        selected_gstars=_resolve_selected_gstars(svc, body.get("selected_gstars")),
+        history=body.get("history") if isinstance(body.get("history"), list) else [],
+        dkm_policy_header=dkm_dec.rom_policy_header,
+        max_new_tokens_override=dkm_dec.token_cap,
+    )
+    verdict = dkm_ctrl.verify_bounded_response(dkm_dec, reply.text)
+    payload["reply"] = verdict.released_text
+    payload["model_id"] = reply.model_id
+    payload["llm_latency_ms"] = reply.latency_ms
+    payload["llm_tokens"] = reply.tokens_generated
+    payload["llm_tokens_per_sec"] = reply.tokens_per_sec
+    payload["dkm_recheck"] = {
+        "approved": verdict.approved,
+        "final_egress_mode": verdict.final_egress_mode,
+        "violation_reason": verdict.violation_reason,
+    }
+
+
+def _handle_dkm_request(
+    handler: Any,
+    svc: Any,
+    body: Dict[str, Any],
+    prompt_text: str,
+    vec_q30: Tuple[int, ...],
+    c_hash: str,
+    pid: str,
+    g3_torsion: float,
+) -> None:
+    dkm_ctrl = _get_dkm_controller(svc)
+    sig = _build_dkm_signal(body, vec_q30, c_hash, pid, g3_torsion)
+    dkm_dec = dkm_ctrl.route_prompt(sig)
+    if dkm_dec.allow_free_egress:
+        entry = svc.step_cycle(prompt_text, inject_g3_torsion=g3_torsion)
+        payload = asdict(entry)
+        payload["epistemic_pause"] = False
+        payload["dkm_decision"] = dkm_dec.to_dict()
+        _maybe_generate_chat_reply(svc, prompt_text, entry, dkm_dec, payload, body=body)
+        handler._send_json(200, payload)
+        return
+    entry = svc.step_cycle(prompt_text, inject_g3_torsion=0.0) if dkm_dec.allow_bounded_egress else None
+    payload = asdict(entry) if entry is not None else {"prompt_id": pid}
+    payload["epistemic_pause"] = False
+    _apply_dkm_bounded_reply(svc, dkm_ctrl, dkm_dec, prompt_text, entry, payload, body)
+    handler._send_json(200, payload)
+
+
 def _handle_dolphin_status(handler: Any, svc: Any) -> None:
     status = _get_dolphin_governor(svc).get_status()
     status["epistemic_pause_metrics"] = _get_epistemic_pause_controller(svc).get_metrics()
+    status["dkm_metrics"] = _get_dkm_controller(svc).get_metrics()
     handler._send_json(200, status)
 
 
@@ -470,6 +600,9 @@ def _handle_prompt_request(handler: Any, svc: Any, content_len: int) -> None:
     vec_q30 = _resolve_prompt_vector(svc, body, ctrl.governor)
     c_hash = hashlib.sha256(prompt_text.encode("utf-8")).hexdigest()
     pid = str(body.get("prompt_id", f"prompt_{c_hash[:12]}"))
+    if _has_explicit_dkm_signal(body):
+        _handle_dkm_request(handler, svc, body, prompt_text, vec_q30, c_hash, pid, g3_torsion)
+        return
     gate_in = PromptGateInput(
         prompt_id=pid,
         vector_q30=vec_q30,

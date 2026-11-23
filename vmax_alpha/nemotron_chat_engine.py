@@ -79,6 +79,7 @@ def build_sanctuary_messages(
     rcf_core: float,
     selected_gstars: Optional[List[Dict[str, str]]] = None,
     history: Optional[List[Dict[str, str]]] = None,
+    dkm_policy_header: str = "",
 ) -> List[Dict[str, str]]:
     """Construct ODOS/Dolphin-grounded multi-turn messages."""
     ctx_block = _format_gstar_context(
@@ -102,6 +103,13 @@ def build_sanctuary_messages(
         "Antworte klar, warm, praezise und kompakt in der Sprache der Frage, "
         "ohne Messwerte oder Fakten zu erfinden."
     )
+    if dkm_policy_header:
+        sys_prompt = (
+            f"{dkm_policy_header} "
+            "Antworte knapp (unter 90 Woerter), respektvoll, sachlich in der Sprache der Frage, "
+            "ohne Beleidigungen und ohne Phrasen wie 'Als KI-Sprachmodell'. "
+            + sys_prompt
+        )
     msgs: List[Dict[str, str]] = [{"role": "system", "content": sys_prompt}]
     for turn in (history or [])[-6:]:
         role = str(turn.get("role", ""))
@@ -178,16 +186,21 @@ class NemotronChatEngine:
             self.load_seconds = round(time.perf_counter() - t0, 2)
             self.loaded = True
 
-    def _generate_external(self, msgs: List[Dict[str, str]]) -> ChatReply:
+    def _generate_external(
+        self,
+        msgs: List[Dict[str, str]],
+        max_tokens: Optional[int] = None,
+    ) -> ChatReply:
         """Call a pluggable OpenAI-compatible endpoint (Ollama, vLLM, etc.)."""
         headers = {"Content-Type": "application/json"}
         if self.external_api_key:
             headers["Authorization"] = f"Bearer {self.external_api_key}"
+        tok_cap = max_tokens if max_tokens is not None else self.max_new_tokens
         body = json.dumps(
             {
                 "model": self.model_id,
                 "messages": msgs,
-                "max_tokens": self.max_new_tokens,
+                "max_tokens": tok_cap,
                 "temperature": self.temperature,
             }
         ).encode("utf-8")
@@ -207,6 +220,26 @@ class NemotronChatEngine:
             model_id=self.model_id,
         )
 
+    def _build_generate_kwargs(
+        self,
+        tok: object,
+        max_new_tokens_override: Optional[int],
+        do_sample_override: Optional[bool],
+    ) -> Dict[str, object]:
+        """Build warning-free transformers generate() kwargs."""
+        tok_cap = max_new_tokens_override if max_new_tokens_override is not None else self.max_new_tokens
+        do_sample = do_sample_override if do_sample_override is not None else True
+        kwargs: Dict[str, object] = {
+            "max_new_tokens": tok_cap,
+            "do_sample": do_sample,
+            "repetition_penalty": 1.08,
+            "eos_token_id": getattr(tok, "eos_token_id", None),
+            "pad_token_id": getattr(tok, "eos_token_id", None),
+        }
+        if do_sample:
+            kwargs["temperature"] = self.temperature
+        return kwargs
+
     def generate_reply(
         self,
         user_prompt: str,
@@ -218,6 +251,9 @@ class NemotronChatEngine:
         rcf_core: float,
         selected_gstars: Optional[List[Dict[str, str]]] = None,
         history: Optional[List[Dict[str, str]]] = None,
+        dkm_policy_header: str = "",
+        max_new_tokens_override: Optional[int] = None,
+        do_sample_override: Optional[bool] = None,
     ) -> ChatReply:
         """Generate a concise grounded reply under GPU serialization lock."""
         if not self.loaded:
@@ -232,9 +268,10 @@ class NemotronChatEngine:
             rcf_core,
             selected_gstars=selected_gstars,
             history=history,
+            dkm_policy_header=dkm_policy_header,
         )
         if self.external_url:
-            return self._generate_external(msgs)
+            return self._generate_external(msgs, max_tokens=max_new_tokens_override)
         import torch
 
         with self._lock:
@@ -248,17 +285,14 @@ class NemotronChatEngine:
             )
             dev = next(mdl.parameters()).device
             inputs = tok(prompt_str, return_tensors="pt").to(dev)
+            gen_kwargs = self._build_generate_kwargs(
+                tok,
+                max_new_tokens_override,
+                do_sample_override,
+            )
             t0 = time.perf_counter()
             with torch.no_grad():
-                out = mdl.generate(
-                    **inputs,
-                    max_new_tokens=self.max_new_tokens,
-                    do_sample=True,
-                    temperature=self.temperature,
-                    repetition_penalty=1.08,
-                    eos_token_id=tok.eos_token_id,
-                    pad_token_id=tok.eos_token_id,
-                )
+                out = mdl.generate(**inputs, **gen_kwargs)
             dt_s = max(time.perf_counter() - t0, 1e-6)
             gen_ids = out[0][inputs["input_ids"].shape[1] :]
             raw_reply = tok.decode(gen_ids, skip_special_tokens=True)

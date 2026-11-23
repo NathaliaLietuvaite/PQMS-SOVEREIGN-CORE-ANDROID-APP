@@ -452,6 +452,24 @@
       "fridu_operators": "10/10 PASS (semi=0)",
       "immutable_silicon_guard": "EMPTY_DIFF",
       "entry_hash": "be8b7cd4f922ae1d737b0fb32e19c9315aecd86b9f1377fdcc489c47d4333e03"
+    },
+    {
+      "sync_id": "SYNC-28b",
+      "spec_id": "PQMS-V4.5-DOLPHIN-V4.6-PAUSE-HUD-COLAB",
+      "release_version": "V4.6.1-PAUSE-HUD",
+      "tag": "v4.6.1-pause-hud",
+      "timestamp_utc": "2026-11-23T12:29:10Z",
+      "agent": "AntiG (V-MAX-12 Node Alpha)",
+      "summary": "V4.6.1-PAUSE-HUD: Paper Section 4.6 (GFM-MathJax PASS), Android Phase-2B EpistemicPauseHudCard + PauliBaselineEngine /api/dolphin/* & /api/prompt parser (36/36 Kotlin JUnit PASS, app-debug.apk 12.85 MB), Colab Cell 6 V4.6-PAUSE verifier live-tested, 134/134 Python/RTL PASS, IMMUTABLE_SILICON_GUARD=EMPTY_DIFF",
+      "paper_sha256": "70b284946a847aa500ab886bc841deb5bc1f277aa5755c7e203baee8875eaa26",
+      "colab_sha256": "1b6215d23f056503f0e2a0303f1f360291d6294b55a7bf6b230f0b6452201f3b",
+      "apk_sha256": "6c7bd59ccca2d6d1256b0c511c39b48bbf1a42435c55b490210a504f22c50874",
+      "apk_size_mb": 12.85,
+      "kotlin_junit": "36/36 PASS",
+      "python_rtl_tests": "Ran 134 tests in 26.411s | OK",
+      "fridu_operators": "10/10 PASS (semi=0)",
+      "immutable_silicon_guard": "EMPTY_DIFF",
+      "entry_hash": "8b1c98e7e57843d70425b7a6b991f298b0fb2469a175a7d8738a1e857a65ece1"
     }
   ]
 }

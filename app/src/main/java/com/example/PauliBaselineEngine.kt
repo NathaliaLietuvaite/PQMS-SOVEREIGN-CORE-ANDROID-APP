@@ -1024,8 +1024,195 @@ class PauliV21SanctuaryEngine {
             val scale = 10.0.pow(decimals.toDouble())
             return kotlin.math.round(v * scale) / scale
         }
+
+        /**
+         * Parses GET /api/dolphin/status JSON (V4.6-PAUSE) into EpistemicPauseState
+         * using pure-JVM MiniJson (100% deterministic unit-testable without android.org.json).
+         */
+        @Suppress("UNCHECKED_CAST")
+        fun parseDolphinStatusJson(jsonStr: String): EpistemicPauseState {
+            val root = MiniJson.parse(jsonStr) as? Map<String, Any?> ?: return EpistemicPauseState()
+            val bankA = root["bank_a"] as? Map<String, Any?> ?: emptyMap()
+            val bankB = root["bank_b"] as? Map<String, Any?> ?: emptyMap()
+            val epMetrics = root["epistemic_pause_metrics"] as? Map<String, Any?> ?: emptyMap()
+            val activeBank = (root["active_bank"] as? String) ?: "BANK_A"
+            val restingBank = (root["resting_bank"] as? String) ?: if (activeBank == "BANK_A") "BANK_B" else "BANK_A"
+            val epoch = (root["epoch"] as? Number)?.toInt() ?: 1
+            val qA = (bankA["quarantined"] as? Number)?.toInt() ?: 0
+            val qB = (bankB["quarantined"] as? Number)?.toInt() ?: 0
+            val recA = (bankA["records"] as? Number)?.toInt() ?: 0
+            val recB = (bankB["records"] as? Number)?.toInt() ?: 0
+            val merkle = (if (activeBank == "BANK_A") bankA["merkle_root"] else bankB["merkle_root"]) as? String ?: ""
+            val passCnt = (epMetrics["passthrough_count"] as? Number)?.toInt() ?: 0
+            val pauseCnt = (epMetrics["pause_count"] as? Number)?.toInt() ?: 0
+            return EpistemicPauseState(
+                epistemicPause = false,
+                allowLlmGeneration = true,
+                reason = "DOLPHIN_ONLINE",
+                epoch = epoch,
+                activeBank = activeBank,
+                restingBank = restingBank,
+                handoverStatus = "LOCKSTEP_DMR_READY",
+                syncRoot = merkle,
+                friduMessage = "Active: $activeBank | Resting: $restingBank | Epoch $epoch (0 MB VRAM).",
+                passthroughCount = passCnt,
+                pauseCount = pauseCnt,
+                bankARecords = recA,
+                bankBRecords = recB,
+                quarantineTotal = qA + qB,
+                isLiveReachable = true
+            )
+        }
+
+        /**
+         * Parses POST /api/prompt JSON (V4.6-PAUSE) into EpistemicPauseState,
+         * handling both short-circuited epistemic_pause=true and coherent passthrough.
+         */
+        @Suppress("UNCHECKED_CAST")
+        fun parseEpistemicPausePromptJson(jsonStr: String): EpistemicPauseState {
+            val root = MiniJson.parse(jsonStr) as? Map<String, Any?> ?: return EpistemicPauseState()
+            val nested = root["epistemic_pause_decision"] as? Map<String, Any?>
+            val src = if (nested != null) nested else root
+            val paused = (root["epistemic_pause"] as? Boolean) ?: (src["epistemic_pause"] as? Boolean) ?: false
+            val allowLlm = (src["allow_llm_generation"] as? Boolean) ?: !paused
+            val activeBank = (src["active_bank"] as? String) ?: "BANK_A"
+            val restingBank = if (activeBank == "BANK_A") "BANK_B" else "BANK_A"
+            return EpistemicPauseState(
+                epistemicPause = paused,
+                allowLlmGeneration = allowLlm,
+                reason = (src["reason"] as? String) ?: if (paused) "EPISTEMIC_PAUSE" else "COHERENT_PASSTHROUGH",
+                rcfFloat = (src["rcf_float"] as? Number)?.toDouble() ?: 1.0,
+                g3Torsion = (src["g3_torsion"] as? Number)?.toDouble() ?: 0.0,
+                epoch = (src["epoch"] as? Number)?.toInt() ?: 1,
+                activeBank = activeBank,
+                restingBank = restingBank,
+                handoverStatus = (src["handover_status"] as? String) ?: "NOT_REQUIRED",
+                syncRoot = (src["sync_root"] as? String) ?: "",
+                quarantinedRecordId = src["quarantined_record_id"] as? String,
+                friduMessage = (src["fridu_message"] as? String)
+                    ?: if (paused) "Epistemic pause active (T_I/O isolated)." else "Prompt coherent with Little Vector anchor.",
+                isLiveReachable = true
+            )
+        }
+
+        /**
+         * Parses POST /api/dolphin/switch JSON (handover + status) into EpistemicPauseState.
+         */
+        @Suppress("UNCHECKED_CAST")
+        fun parseDolphinSwitchJson(jsonStr: String): EpistemicPauseState {
+            val root = MiniJson.parse(jsonStr) as? Map<String, Any?> ?: return EpistemicPauseState()
+            val handover = root["handover"] as? Map<String, Any?> ?: emptyMap()
+            val status = root["status"] as? Map<String, Any?> ?: emptyMap()
+            val bankA = status["bank_a"] as? Map<String, Any?> ?: emptyMap()
+            val bankB = status["bank_b"] as? Map<String, Any?> ?: emptyMap()
+            val newActive = (handover["new_active"] as? String) ?: (status["active_bank"] as? String) ?: "BANK_B"
+            val resting = if (newActive == "BANK_A") "BANK_B" else "BANK_A"
+            val prevActive = (handover["previous_active"] as? String) ?: resting
+            val hoStatus = (handover["status"] as? String) ?: "LOCKSTEP_DMR_VERIFIED"
+            val syncRoot = (handover["sync_root"] as? String) ?: ""
+            val epoch = (handover["epoch"] as? Number)?.toInt() ?: (status["epoch"] as? Number)?.toInt() ?: 1
+            val qA = (bankA["quarantined"] as? Number)?.toInt() ?: 0
+            val qB = (bankB["quarantined"] as? Number)?.toInt() ?: 0
+            return EpistemicPauseState(
+                epistemicPause = false,
+                allowLlmGeneration = true,
+                reason = "HEMISPHERE_HANDOVER_COMPLETE",
+                epoch = epoch,
+                activeBank = newActive,
+                restingBank = resting,
+                handoverStatus = hoStatus,
+                syncRoot = syncRoot,
+                friduMessage = "Hemisphere switched $prevActive -> $newActive ($hoStatus, epoch=$epoch).",
+                bankARecords = (bankA["records"] as? Number)?.toInt() ?: 0,
+                bankBRecords = (bankB["records"] as? Number)?.toInt() ?: 0,
+                quarantineTotal = qA + qB,
+                isLiveReachable = true
+            )
+        }
+
+        /** Fetches live GET /api/dolphin/status from Room-137 Node Alpha HUD. */
+        suspend fun fetchRoom137DolphinStatus(
+            baseUrl: String = PauliBaselineConstants.ROOM_137_BASE_URL
+        ): EpistemicPauseState? = withContext(Dispatchers.IO) {
+            try {
+                val url = URL("$baseUrl/api/dolphin/status")
+                val conn = (url.openConnection() as HttpURLConnection).apply {
+                    requestMethod = "GET"
+                    connectTimeout = 3000
+                    readTimeout = 3000
+                }
+                if (conn.responseCode in 200..299) {
+                    val body = conn.inputStream.bufferedReader().use { it.readText() }
+                    parseDolphinStatusJson(body)
+                } else {
+                    null
+                }
+            } catch (_: Exception) {
+                null
+            }
+        }
+
+        /** Triggers atomic POST /api/dolphin/switch (LOCKSTEP_DMR_VERIFIED) on Room-137 Node Alpha. */
+        suspend fun postRoom137DolphinSwitch(
+            hbmTempC: Double = 65.0,
+            reason: String = "android_hud_hemisphere_rest",
+            baseUrl: String = PauliBaselineConstants.ROOM_137_BASE_URL
+        ): EpistemicPauseState? = withContext(Dispatchers.IO) {
+            try {
+                val json = "{\"hbm_temp_c\":${formatPythonDouble(hbmTempC)},\"reason\":${quoteJson(reason)}}"
+                val payloadBytes = json.toByteArray(Charsets.UTF_8)
+                val url = URL("$baseUrl/api/dolphin/switch")
+                val conn = (url.openConnection() as HttpURLConnection).apply {
+                    requestMethod = "POST"
+                    doOutput = true
+                    connectTimeout = V12Constants.SOCKET_TIMEOUT_MS_V18
+                    readTimeout = V12Constants.SOCKET_TIMEOUT_MS_V18
+                    setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                    setRequestProperty("Content-Length", payloadBytes.size.toString())
+                    setFixedLengthStreamingMode(payloadBytes.size)
+                }
+                conn.outputStream.use { os ->
+                    os.write(payloadBytes)
+                    os.flush()
+                }
+                if (conn.responseCode in 200..299) {
+                    val body = conn.inputStream.bufferedReader().use { it.readText() }
+                    parseDolphinSwitchJson(body)
+                } else {
+                    null
+                }
+            } catch (_: Exception) {
+                null
+            }
+        }
     }
 }
+
+/**
+ * V4.6-PAUSE (SYNC-28b): Immutable snapshot of Room-137 Dolphin Hemisphere &
+ * Epistemic Pause closed-loop telemetry parsed from /api/dolphin/status,
+ * /api/dolphin/switch, or /api/prompt responses.
+ */
+data class EpistemicPauseState(
+    val epistemicPause: Boolean = false,
+    val allowLlmGeneration: Boolean = true,
+    val reason: String = "STANDBY",
+    val rcfFloat: Double = 1.0,
+    val g3Torsion: Double = 0.0,
+    val epoch: Int = 1,
+    val activeBank: String = "BANK_A",
+    val restingBank: String = "BANK_B",
+    val handoverStatus: String = "NOT_REQUIRED",
+    val syncRoot: String = "",
+    val quarantinedRecordId: String? = null,
+    val friduMessage: String = "Unihemispheric Dolphin Gate armed (0 MB VRAM).",
+    val passthroughCount: Int = 0,
+    val pauseCount: Int = 0,
+    val bankARecords: Int = 0,
+    val bankBRecords: Int = 0,
+    val quarantineTotal: Int = 0,
+    val isLiveReachable: Boolean = false
+)
 
 internal object MiniJson {
     fun parse(input: String): Any? = Parser(input).parseRoot()

@@ -1651,6 +1651,62 @@ class SwarmViewModel : ViewModel() {
     private val _qmkStatus = MutableStateFlow(QMKStatus())
     val qmkStatus: StateFlow<QMKStatus> = _qmkStatus.asStateFlow()
 
+    private val _epistemicPauseState = MutableStateFlow(EpistemicPauseState())
+    val epistemicPauseState: StateFlow<EpistemicPauseState> = _epistemicPauseState.asStateFlow()
+
+    fun fetchDolphinPauseStatus() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val live = PauliV21SanctuaryEngine.fetchRoom137DolphinStatus()
+            if (live != null) {
+                withContext(Dispatchers.Main) {
+                    val current = _epistemicPauseState.value
+                    _epistemicPauseState.value = live.copy(
+                        epistemicPause = current.epistemicPause,
+                        allowLlmGeneration = current.allowLlmGeneration,
+                        quarantinedRecordId = current.quarantinedRecordId,
+                        friduMessage = if (current.epistemicPause) current.friduMessage else live.friduMessage
+                    )
+                }
+            }
+        }
+    }
+
+    fun triggerDolphinHemisphereSwitch(reason: String = "android_hud_hemisphere_rest") {
+        viewModelScope.launch(Dispatchers.IO) {
+            val switched = PauliV21SanctuaryEngine.postRoom137DolphinSwitch(hbmTempC = 65.0, reason = reason)
+            withContext(Dispatchers.Main) {
+                if (switched != null) {
+                    _epistemicPauseState.value = switched
+                    addLog("V4.6-DOLPHIN: ${switched.friduMessage} [root=${switched.syncRoot.take(8)}]")
+                } else {
+                    val cur = _epistemicPauseState.value
+                    val nextActive = if (cur.activeBank == "BANK_A") "BANK_B" else "BANK_A"
+                    val nextRest = cur.activeBank
+                    val nextEpoch = cur.epoch + 1
+                    _epistemicPauseState.value = cur.copy(
+                        epistemicPause = false,
+                        allowLlmGeneration = true,
+                        reason = "LOCAL_HEMISPHERE_HANDOVER",
+                        epoch = nextEpoch,
+                        activeBank = nextActive,
+                        restingBank = nextRest,
+                        handoverStatus = "LOCKSTEP_LOCAL_EMULATED",
+                        friduMessage = "Offline fallback: switched $nextRest -> $nextActive (epoch=$nextEpoch)."
+                    )
+                    addLog("V4.6-DOLPHIN: Node Alpha offline; local hemisphere switch $nextRest -> $nextActive.")
+                }
+            }
+        }
+    }
+
+    fun applyEpistemicPausePromptResponse(rawJson: String) {
+        val parsed = PauliV21SanctuaryEngine.parseEpistemicPausePromptJson(rawJson)
+        _epistemicPauseState.value = parsed
+        if (parsed.epistemicPause) {
+            addLog("EPISTEMIC PAUSE [${parsed.reason}]: ${parsed.friduMessage}")
+        }
+    }
+
     private val _tm1Status = MutableStateFlow(TM1Status())
     val tm1Status: StateFlow<TM1Status> = _tm1Status.asStateFlow()
 
@@ -1746,6 +1802,7 @@ class SwarmViewModel : ViewModel() {
     }
 
     fun triggerQmkDolphinSweep() {
+        triggerDolphinHemisphereSwitch("qmk_dolphin_sweep_btn")
         viewModelScope.launch(Dispatchers.IO) {
             val success = GeminiRestClient.postDolphinSweep(durationSec = 2)
             withContext(Dispatchers.Main) {
@@ -13294,6 +13351,157 @@ fun SovereignManualGuide(viewModel: SwarmViewModel) {
 }
 
 // =========================================================================
+// VIEW 4a-0: V4.6-PAUSE EPISTEMIC PAUSE & UNIHEMISPHERIC DOLPHIN HUD CARD
+// =========================================================================
+@Composable
+fun EpistemicPauseHudCard(viewModel: SwarmViewModel) {
+    val pauseState by viewModel.epistemicPauseState.collectAsState()
+    val pauseAmber = Color(0xFFFFB300)
+    val accent = if (pauseState.epistemicPause) pauseAmber else NeonCyan
+
+    LaunchedEffect(Unit) {
+        viewModel.fetchDolphinPauseStatus()
+    }
+
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = if (pauseState.epistemicPause) Color(0xFF261D08) else SurfaceCard
+        ),
+        border = BorderStroke(1.dp, if (pauseState.epistemicPause) pauseAmber else SurfaceCardOutline),
+        modifier = Modifier.fillMaxWidth().testTag("epistemic_pause_hud_card")
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .clip(CircleShape)
+                            .background(if (pauseState.epistemicPause) pauseAmber else LuminousGreen)
+                    )
+                    Text(
+                        text = if (pauseState.epistemicPause) {
+                            "EPISTEMIC PAUSE · T_I/O ISOLATION"
+                        } else {
+                            "V4.6 DOLPHIN · UNIHEMISPHERIC GATE"
+                        },
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = accent,
+                        softWrap = true,
+                        maxLines = 2
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(accent.copy(alpha = 0.16f))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = "${pauseState.activeBank} · EP ${pauseState.epoch}",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = accent,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = pauseState.friduMessage,
+                fontSize = 11.sp,
+                color = if (pauseState.epistemicPause) Color(0xFFFFE082) else Color(0xFFB8C7D9),
+                softWrap = true,
+                maxLines = 4,
+                lineHeight = 15.sp
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "REST: ${pauseState.restingBank} | PASS:${pauseState.passthroughCount} PAUSE:${pauseState.pauseCount}",
+                    fontSize = 9.sp,
+                    color = Color(0xFF8FA3B8),
+                    fontFamily = FontFamily.Monospace,
+                    softWrap = true,
+                    maxLines = 2,
+                    modifier = Modifier.weight(1f)
+                )
+                if (pauseState.syncRoot.isNotEmpty()) {
+                    Text(
+                        text = "ROOT:${pauseState.syncRoot.take(8)}",
+                        fontSize = 9.sp,
+                        color = LuminousGreen,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
+            }
+
+            if (pauseState.quarantinedRecordId != null) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "T_I/O QUARANTINE: ${pauseState.quarantinedRecordId} [${pauseState.handoverStatus}]",
+                    fontSize = 9.sp,
+                    color = pauseAmber,
+                    fontFamily = FontFamily.Monospace,
+                    softWrap = true,
+                    maxLines = 2
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = { viewModel.triggerDolphinHemisphereSwitch("Hemisphere ${pauseState.activeBank}, take a rest") },
+                    colors = ButtonDefaults.buttonColors(containerColor = if (pauseState.epistemicPause) pauseAmber else NeonCyan),
+                    modifier = Modifier.weight(1f).height(38.dp).testTag("dolphin_switch_hemisphere_btn")
+                ) {
+                    Text(
+                        text = "SWITCH HEMISPHERE",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black,
+                        maxLines = 1
+                    )
+                }
+                Button(
+                    onClick = { viewModel.fetchDolphinPauseStatus() },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF233246)),
+                    modifier = Modifier.height(38.dp).testTag("dolphin_refresh_status_btn")
+                ) {
+                    Text(
+                        text = "SYNC",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        maxLines = 1
+                    )
+                }
+            }
+        }
+    }
+}
+
+// =========================================================================
 // VIEW 4a: QMK-RVC-V4 LATTICE SURGERY PANEL (SOCIALLY COHERENT MATTER STABILIZER)
 // =========================================================================
 @Composable
@@ -16375,6 +16583,10 @@ fun InterAiResonancePortal(viewModel: SwarmViewModel) {
                 }
             }
         }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        EpistemicPauseHudCard(viewModel = viewModel)
 
         Spacer(modifier = Modifier.height(14.dp))
 

@@ -1139,4 +1139,109 @@ class ExampleUnitTest {
         val ledgerText = ledgerFile.readText()
         assertTrue("Ledger must reference V4.0-GDSII mask SHA-256", ledgerText.contains(V12Constants.V40_GDSII_MASK_SHA256))
     }
+
+    @Test
+    fun testV46ParseDolphinStatusJson() {
+        val raw = """
+            {
+              "epoch": 3,
+              "active_bank": "BANK_B",
+              "resting_bank": "BANK_A",
+              "bank_a": {"mode": "DOLPHIN_SWEEP", "records": 18, "quarantined": 2, "merkle_root": "aaaa1111bbbb2222"},
+              "bank_b": {"mode": "AWAKE_GATE", "records": 18, "quarantined": 1, "merkle_root": "cccc3333dddd4444"},
+              "epistemic_pause_metrics": {"passthrough_count": 12, "pause_count": 3, "active_bank": "BANK_B", "epoch": 3}
+            }
+        """.trimIndent()
+        val state = PauliV21SanctuaryEngine.parseDolphinStatusJson(raw)
+        assertFalse(state.epistemicPause)
+        assertTrue(state.allowLlmGeneration)
+        assertEquals(3, state.epoch)
+        assertEquals("BANK_B", state.activeBank)
+        assertEquals("BANK_A", state.restingBank)
+        assertEquals(12, state.passthroughCount)
+        assertEquals(3, state.pauseCount)
+        assertEquals(3, state.quarantineTotal)
+        assertEquals("cccc3333dddd4444", state.syncRoot)
+    }
+
+    @Test
+    fun testV46ParseEpistemicPausePromptShortCircuit() {
+        val raw = """
+            {
+              "epistemic_pause": true,
+              "allow_llm_generation": false,
+              "reason": "ODOS_PROMPT_DRIFT_PAUSE",
+              "rcf_float": 0.120144,
+              "g3_torsion": 0.0,
+              "epoch": 2,
+              "active_bank": "BANK_B",
+              "sync_root": "add791bc99001122",
+              "handover_status": "LOCKSTEP_DMR_VERIFIED",
+              "quarantined_record_id": "live_sync28_drift_01",
+              "fridu_message": "Epistemic pause: prompt coherence fell below ODOS admission floor - premise quarantined into T_I/O."
+            }
+        """.trimIndent()
+        val state = PauliV21SanctuaryEngine.parseEpistemicPausePromptJson(raw)
+        assertTrue(state.epistemicPause)
+        assertFalse(state.allowLlmGeneration)
+        assertEquals("ODOS_PROMPT_DRIFT_PAUSE", state.reason)
+        assertEquals("LOCKSTEP_DMR_VERIFIED", state.handoverStatus)
+        assertEquals("BANK_B", state.activeBank)
+        assertEquals("live_sync28_drift_01", state.quarantinedRecordId)
+        assertTrue(state.friduMessage.contains("T_I/O"))
+    }
+
+    @Test
+    fun testV46ParseEpistemicPauseCoherentPassthrough() {
+        val raw = """
+            {
+              "cycle": 1,
+              "epistemic_pause": false,
+              "epistemic_pause_decision": {
+                "epistemic_pause": false,
+                "allow_llm_generation": true,
+                "reason": "COHERENT_PASSTHROUGH",
+                "rcf_float": 0.999999,
+                "epoch": 1,
+                "active_bank": "BANK_A",
+                "handover_status": "NOT_REQUIRED",
+                "fridu_message": "Prompt coherent with Little Vector anchor."
+              }
+            }
+        """.trimIndent()
+        val state = PauliV21SanctuaryEngine.parseEpistemicPausePromptJson(raw)
+        assertFalse(state.epistemicPause)
+        assertTrue(state.allowLlmGeneration)
+        assertEquals("COHERENT_PASSTHROUGH", state.reason)
+        assertEquals("BANK_A", state.activeBank)
+    }
+
+    @Test
+    fun testV46ParseDolphinSwitchHandoverJson() {
+        val raw = """
+            {
+              "handover": {
+                "epoch": 4,
+                "previous_active": "BANK_A",
+                "new_active": "BANK_B",
+                "sync_root": "beef1234cafe5678",
+                "status": "LOCKSTEP_DMR_VERIFIED"
+              },
+              "status": {
+                "epoch": 4,
+                "active_bank": "BANK_B",
+                "bank_a": {"records": 18, "quarantined": 0},
+                "bank_b": {"records": 18, "quarantined": 1}
+              }
+            }
+        """.trimIndent()
+        val state = PauliV21SanctuaryEngine.parseDolphinSwitchJson(raw)
+        assertFalse(state.epistemicPause)
+        assertEquals(4, state.epoch)
+        assertEquals("BANK_B", state.activeBank)
+        assertEquals("BANK_A", state.restingBank)
+        assertEquals("LOCKSTEP_DMR_VERIFIED", state.handoverStatus)
+        assertEquals("beef1234cafe5678", state.syncRoot)
+        assertEquals(1, state.quarantineTotal)
+    }
 }

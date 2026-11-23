@@ -69,6 +69,23 @@ def _format_gstar_context(
     return f"[{shard_id} / {shard_source}]: {shard_excerpt[:360]}"
 
 
+def _format_dkm_bounded_prefix(dkm_policy_header: str, lang: str) -> str:
+    """Build concise language-matched bounded instruction prefix."""
+    if not dkm_policy_header:
+        return ""
+    if lang == "en":
+        return (
+            f"{dkm_policy_header} "
+            "Reply strictly in English, under 85 words, calmly and factually, "
+            "with zero insults and zero AI boilerplate. "
+        )
+    return (
+        f"{dkm_policy_header} "
+        "Antworte zwingend auf Deutsch, unter 85 Woerter, ruhig und sachlich, "
+        "ohne Beleidigungen und ohne KI-Floskeln. "
+    )
+
+
 def build_sanctuary_messages(
     user_prompt: str,
     shard_id: str,
@@ -80,36 +97,30 @@ def build_sanctuary_messages(
     selected_gstars: Optional[List[Dict[str, str]]] = None,
     history: Optional[List[Dict[str, str]]] = None,
     dkm_policy_header: str = "",
+    prompt_lang: Optional[str] = None,
 ) -> List[Dict[str, str]]:
-    """Construct ODOS/Dolphin-grounded multi-turn messages."""
+    """Construct language-matched ODOS/Dolphin-grounded multi-turn messages."""
+    from vmax_alpha.dkm_output_gate import select_system_wrapper
+
+    lang, base_wrapper = select_system_wrapper(user_prompt, explicit_lang=prompt_lang)
     ctx_block = _format_gstar_context(
         shard_id,
         shard_source,
         shard_excerpt,
         selected_gstars=selected_gstars,
     )
-    mode_desc = (
-        f"Spezialisten-Synthese ({len(selected_gstars)} aktive G-Sterne)"
-        if selected_gstars
-        else "Generalist (Verwalter aller G-Sterne im V-MAX-12-System)"
-    )
-    sys_prompt = (
-        "Du bist V-MAX-12 Node Alpha (PQMS / ODOS / V4.6-DOLPHIN), ein lokaler "
-        "souveraener KI-Kern unter der architektonischen Hoheit von Nathalia Lietuvaite. "
-        f"Rolle: {mode_desc}. Aktive Hemisphaere: {active_bank} (Epoch {epoch}, "
-        f"RCF={rcf_core:.4f}). Du verwaltest dein G-Stern-Wissen verantwortungsvoll "
-        "und kannst bei Fachthemen auf passende G-Stern-Spezialisten verweisen. "
-        f"Aktiver Wissens-Kontext: {ctx_block}. "
-        "Antworte klar, warm, praezise und kompakt in der Sprache der Frage, "
-        "ohne Messwerte oder Fakten zu erfinden."
-    )
-    if dkm_policy_header:
-        sys_prompt = (
-            f"{dkm_policy_header} "
-            "Antworte knapp (unter 90 Woerter), respektvoll, sachlich in der Sprache der Frage, "
-            "ohne Beleidigungen und ohne Phrasen wie 'Als KI-Sprachmodell'. "
-            + sys_prompt
+    if lang == "en":
+        state_tail = (
+            f" Active bank: {active_bank} (Epoch {epoch}, RCF={rcf_core:.4f}). "
+            f"Context: {ctx_block}. Never fabricate measurements or facts."
         )
+    else:
+        state_tail = (
+            f" Aktive Hemisphaere: {active_bank} (Epoch {epoch}, RCF={rcf_core:.4f}). "
+            f"Kontext: {ctx_block}. Erfinde niemals Messwerte oder Fakten."
+        )
+    prefix = _format_dkm_bounded_prefix(dkm_policy_header, lang)
+    sys_prompt = f"{prefix}{base_wrapper}{state_tail}"
     msgs: List[Dict[str, str]] = [{"role": "system", "content": sys_prompt}]
     for turn in (history or [])[-6:]:
         role = str(turn.get("role", ""))
@@ -160,21 +171,32 @@ class NemotronChatEngine:
                 self.loaded = True
                 self.load_seconds = 0.0
                 return
+            from vmax_alpha.gpu_vram_guard import (
+                VramBudgetSpec,
+                apply_torch_vram_hard_cap,
+                configure_allocator_env,
+            )
+
+            configure_allocator_env()
             import torch
             import transformers.utils.import_utils as tf_imports
             from transformers import AutoModelForCausalLM, AutoTokenizer
-
             from transformers.utils import logging as tf_logging
 
+            self.vram_cap_status = apply_torch_vram_hard_cap(VramBudgetSpec())
             tf_logging.set_verbosity_error()
+            from vmax_alpha.mamba2_einsum_patch import install_mamba2_einsum_patch
+
+            install_mamba2_einsum_patch()
             tf_imports.is_causal_conv1d_available = lambda: False
             t0 = time.perf_counter()
             self._tokenizer = AutoTokenizer.from_pretrained(
                 self.model_path,
                 trust_remote_code=False,
             )
-            device_map = "cuda:0" if torch.cuda.is_available() else "cpu"
-            dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
+            has_cuda = torch.cuda.is_available()
+            device_map = {"": 0} if has_cuda else "cpu"
+            dtype = torch.bfloat16 if has_cuda else torch.float32
             self._model = AutoModelForCausalLM.from_pretrained(
                 self.model_path,
                 dtype=dtype,
@@ -254,6 +276,7 @@ class NemotronChatEngine:
         dkm_policy_header: str = "",
         max_new_tokens_override: Optional[int] = None,
         do_sample_override: Optional[bool] = None,
+        prompt_lang: Optional[str] = None,
     ) -> ChatReply:
         """Generate a concise grounded reply under GPU serialization lock."""
         if not self.loaded:
@@ -269,6 +292,7 @@ class NemotronChatEngine:
             selected_gstars=selected_gstars,
             history=history,
             dkm_policy_header=dkm_policy_header,
+            prompt_lang=prompt_lang,
         )
         if self.external_url:
             return self._generate_external(msgs, max_tokens=max_new_tokens_override)
@@ -290,15 +314,16 @@ class NemotronChatEngine:
                 max_new_tokens_override,
                 do_sample_override,
             )
+            from vmax_alpha.gpu_vram_guard import release_turn_vram
+
             t0 = time.perf_counter()
-            with torch.no_grad():
+            with torch.inference_mode():
                 out = mdl.generate(**inputs, **gen_kwargs)
             dt_s = max(time.perf_counter() - t0, 1e-6)
             gen_ids = out[0][inputs["input_ids"].shape[1] :]
             raw_reply = tok.decode(gen_ids, skip_special_tokens=True)
             del inputs, out
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
+            release_turn_vram()
         cleaned = clean_nemotron_output(raw_reply)
         n_tok = int(len(gen_ids))
         return ChatReply(

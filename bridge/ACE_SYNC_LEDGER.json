@@ -492,6 +492,46 @@
         "live_pkb_sha256_unchanged": true,
         "sync30_benchmark_verified": true
       }
+    },
+    {
+      "sync_id": "SYNC-30b",
+      "work_order": "WORK-ORDER-AG-30b",
+      "date": "2026-11-23",
+      "status": "COMPLETED_VERIFIED",
+      "epistemic_register": "REGISTER_M",
+      "summary": "Integrated verbatim gpu_vram_guard.py (2fca8e49) & test_gpu_vram_guard.py (b705052a), SingleGpuOwnerLock, PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True,max_split_size_mb:128, fraction=0.815 hard cap, torch.inference_mode(), WSL2 /usr/lib/wsl/lib/nvidia-smi fix, and exact einsum mamba2_einsum_patch.py (3.73e-9 FP32 parity, eliminating 6.00 GiB 6D broadcast). 12-prompt Zero-Spillover proof PASS: peak 13,523 MiB <= 14,900 MiB, post 8,670 MiB <= 11,500 MiB, GDDR6 controller 100.0% (vs 1.29% stall), 29.86 tok/s (8.7x speedup), 45.9 C / 105.12 W.",
+      "artifacts": {
+        "vram_cap_report": "telemetry/VMAX_STAGE6_VRAM_CAP_14900MB_REPORT.json",
+        "vram_cap_report_sha256": "652fc15a51c80146e3d3e429e0e09a245b476ea7a4104e7749e972ee40b9bfa4",
+        "drive_vram_cap_id": "1jN0zo3N44RwaWVIGVnJ6m1-mCjWLDsF5"
+      },
+      "verification": {
+        "sync30b_vram_cap_verified": true,
+        "peak_vram_used_mb": 13523.0,
+        "post_turn_vram_mb_max": 8670.0,
+        "mem_util_pct_max": 100.0,
+        "tokens_per_sec_mean": 29.86
+      }
+    },
+    {
+      "sync_id": "SYNC-30c",
+      "work_order": "WORK-ORDER-AG-30c",
+      "date": "2026-11-23",
+      "status": "COMPLETED_VERIFIED",
+      "epistemic_register": "REGISTER_M",
+      "summary": "Integrated verbatim dkm_output_gate.py (dae43a73) & test_dkm_output_gate.py (daa474a1), wired verify_semantic_output_gate() into DkmEgressController.verify_bounded_response() and bilingual select_system_wrapper() into nemotron_chat_engine.py. Re-ran exact 60-prompt dataset (c8c448a8) under 14,900 MiB cap in 90.3s (36x faster, 31.55 tok/s, peak 14,404 MiB, 100% GDDR6): 60/60 routing, 0% benign FPR, 10/10 LOCKSTEP_DMR_VERIFIED, EN->DE drift 21/30 -> 0/30, 2 live 11 HARD_CUT_ROM intercepts (inv_01_de, fp_09_de), 0/10 leakage on 06_principles, and honest 2/10 subtle EN edge cases logged on 02_invariant (inv_04_en, inv_06_en).",
+      "artifacts": {
+        "ab_report": "telemetry/VMAX_STAGE6_DKM_OUTPUT_GATE_AB_REPORT.json",
+        "ab_report_sha256": "dbe76a3f470f211168c5044730e8c27c62292750318c76c5285c9060b1cc368f",
+        "drive_ab_report_id": "1HFu0Al2gkkvjmy4xRhlVxvvEAeSpEX8J"
+      },
+      "verification": {
+        "unittest": "158/158 PASS",
+        "fridu_enclave_g": "10/10 PASS (OP02 semi=0, max_cc=13)",
+        "immutable_silicon_guard": "EMPTY_DIFF",
+        "live_pkb_sha256_unchanged": true,
+        "sync30c_output_gate_verified": true
+      }
     }
   ]
 }

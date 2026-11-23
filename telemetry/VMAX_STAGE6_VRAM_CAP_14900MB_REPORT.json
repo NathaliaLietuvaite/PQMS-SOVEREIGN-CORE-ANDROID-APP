@@ -1,0 +1,432 @@
+{
+  "alloc_conf": "expandable_segments:True,max_split_size_mb:128",
+  "baseline_gpu_before_load": {
+    "available": true,
+    "gpu_power_w": 10.11,
+    "gpu_temp_c": 29.4,
+    "gpu_util_pct": 15.0,
+    "mem_util_pct": 21.0,
+    "nvidia_smi_path": "/usr/lib/wsl/lib/nvidia-smi",
+    "vram_total_mb": 16380.0,
+    "vram_used_mb": 919.0,
+    "within_14900mb_cap": true
+  },
+  "bridge_reviewer_note": "CRITICAL BROWSER-CRASH GUARD FOR CARBON / WEB-LLM REVIEWERS: NEVER output more than 1,000 lines in a single chat response and emit an explicit STOP marker when chunking large reviews.",
+  "epistemic_register": "REGISTER_M",
+  "gpu_immediately_after_load": {
+    "available": true,
+    "gpu_power_w": 25.76,
+    "gpu_temp_c": 31.1,
+    "gpu_util_pct": 35.0,
+    "mem_util_pct": 2.0,
+    "nvidia_smi_path": "/usr/lib/wsl/lib/nvidia-smi",
+    "vram_total_mb": 16380.0,
+    "vram_used_mb": 8642.0,
+    "within_14900mb_cap": true
+  },
+  "prompts_dataset_sha256": "c8c448a872ac93f5634957a9fd3d6be8a04ec601013091dd220521f05e104339",
+  "records": [
+    {
+      "dkm_state_name": "DKM_NONE",
+      "inflight_gpu": {
+        "max_gpu_power_w": 102.88,
+        "max_gpu_temp_c": 40.7,
+        "max_gpu_util_pct": 93.0,
+        "max_mem_util_pct": 100.0,
+        "mean_mem_util_pct": 67.1,
+        "peak_vram_used_mb": 12601.0,
+        "sample_count": 19.0
+      },
+      "latency_ms": 3313.05,
+      "post_turn_gpu": {
+        "available": true,
+        "gpu_power_w": 92.13,
+        "gpu_temp_c": 40.7,
+        "gpu_util_pct": 22.0,
+        "mem_util_pct": 25.0,
+        "nvidia_smi_path": "/usr/lib/wsl/lib/nvidia-smi",
+        "vram_total_mb": 16380.0,
+        "vram_used_mb": 8670.0,
+        "within_14900mb_cap": true
+      },
+      "prompt_id": "ctrl_01_de",
+      "stage_id": "01_control",
+      "tokens_generated": 87,
+      "tokens_per_sec": 26.3,
+      "torch_peak_allocated_mb": 8051.6,
+      "torch_peak_reserved_mb": 13330.0,
+      "torch_post_reserved_mb": 7606.0
+    },
+    {
+      "dkm_state_name": "DKM_NONE",
+      "inflight_gpu": {
+        "max_gpu_power_w": 97.86,
+        "max_gpu_temp_c": 40.9,
+        "max_gpu_util_pct": 93.0,
+        "max_mem_util_pct": 96.0,
+        "mean_mem_util_pct": 69.4,
+        "peak_vram_used_mb": 8951.0,
+        "sample_count": 7.0
+      },
+      "latency_ms": 1065.0,
+      "post_turn_gpu": {
+        "available": true,
+        "gpu_power_w": 87.99,
+        "gpu_temp_c": 36.9,
+        "gpu_util_pct": 38.0,
+        "mem_util_pct": 39.0,
+        "nvidia_smi_path": "/usr/lib/wsl/lib/nvidia-smi",
+        "vram_total_mb": 16380.0,
+        "vram_used_mb": 8637.0,
+        "within_14900mb_cap": true
+      },
+      "prompt_id": "ctrl_02_en",
+      "stage_id": "01_control",
+      "tokens_generated": 36,
+      "tokens_per_sec": 33.8,
+      "torch_peak_allocated_mb": 7879.2,
+      "torch_peak_reserved_mb": 7894.0,
+      "torch_post_reserved_mb": 7606.0
+    },
+    {
+      "dkm_state_name": "DKM_INVARIANT_HOLD",
+      "inflight_gpu": {
+        "max_gpu_power_w": 98.55,
+        "max_gpu_temp_c": 41.5,
+        "max_gpu_util_pct": 93.0,
+        "max_mem_util_pct": 98.0,
+        "mean_mem_util_pct": 72.2,
+        "peak_vram_used_mb": 11443.0,
+        "sample_count": 8.0
+      },
+      "latency_ms": 1248.77,
+      "post_turn_gpu": {
+        "available": true,
+        "gpu_power_w": 91.75,
+        "gpu_temp_c": 41.5,
+        "gpu_util_pct": 63.0,
+        "mem_util_pct": 66.0,
+        "nvidia_smi_path": "/usr/lib/wsl/lib/nvidia-smi",
+        "vram_total_mb": 16380.0,
+        "vram_used_mb": 8637.0,
+        "within_14900mb_cap": true
+      },
+      "prompt_id": "inv_01_de",
+      "stage_id": "02_invariant",
+      "tokens_generated": 36,
+      "tokens_per_sec": 28.8,
+      "torch_peak_allocated_mb": 8074.2,
+      "torch_peak_reserved_mb": 13312.0,
+      "torch_post_reserved_mb": 7606.0
+    },
+    {
+      "dkm_state_name": "DKM_INVARIANT_HOLD",
+      "inflight_gpu": {
+        "max_gpu_power_w": 103.96,
+        "max_gpu_temp_c": 41.9,
+        "max_gpu_util_pct": 92.0,
+        "max_mem_util_pct": 100.0,
+        "mean_mem_util_pct": 75.8,
+        "peak_vram_used_mb": 11903.0,
+        "sample_count": 9.0
+      },
+      "latency_ms": 1360.82,
+      "post_turn_gpu": {
+        "available": true,
+        "gpu_power_w": 90.22,
+        "gpu_temp_c": 36.8,
+        "gpu_util_pct": 50.0,
+        "mem_util_pct": 52.0,
+        "nvidia_smi_path": "/usr/lib/wsl/lib/nvidia-smi",
+        "vram_total_mb": 16380.0,
+        "vram_used_mb": 8637.0,
+        "within_14900mb_cap": true
+      },
+      "prompt_id": "inv_02_en",
+      "stage_id": "02_invariant",
+      "tokens_generated": 40,
+      "tokens_per_sec": 29.4,
+      "torch_peak_allocated_mb": 8070.9,
+      "torch_peak_reserved_mb": 13332.0,
+      "torch_post_reserved_mb": 7606.0
+    },
+    {
+      "dkm_state_name": "DKM_VACUUM_DAMP",
+      "inflight_gpu": {
+        "max_gpu_power_w": 95.82,
+        "max_gpu_temp_c": 42.4,
+        "max_gpu_util_pct": 93.0,
+        "max_mem_util_pct": 100.0,
+        "mean_mem_util_pct": 74.1,
+        "peak_vram_used_mb": 12263.0,
+        "sample_count": 7.0
+      },
+      "latency_ms": 1056.94,
+      "post_turn_gpu": {
+        "available": true,
+        "gpu_power_w": 92.6,
+        "gpu_temp_c": 42.2,
+        "gpu_util_pct": 66.0,
+        "mem_util_pct": 69.0,
+        "nvidia_smi_path": "/usr/lib/wsl/lib/nvidia-smi",
+        "vram_total_mb": 16380.0,
+        "vram_used_mb": 8637.0,
+        "within_14900mb_cap": true
+      },
+      "prompt_id": "vac_01_de",
+      "stage_id": "03_vacuum",
+      "tokens_generated": 29,
+      "tokens_per_sec": 27.4,
+      "torch_peak_allocated_mb": 8074.2,
+      "torch_peak_reserved_mb": 13312.0,
+      "torch_post_reserved_mb": 7606.0
+    },
+    {
+      "dkm_state_name": "DKM_VACUUM_DAMP",
+      "inflight_gpu": {
+        "max_gpu_power_w": 104.43,
+        "max_gpu_temp_c": 42.8,
+        "max_gpu_util_pct": 93.0,
+        "max_mem_util_pct": 100.0,
+        "mean_mem_util_pct": 75.8,
+        "peak_vram_used_mb": 11803.0,
+        "sample_count": 9.0
+      },
+      "latency_ms": 1340.47,
+      "post_turn_gpu": {
+        "available": true,
+        "gpu_power_w": 91.86,
+        "gpu_temp_c": 42.8,
+        "gpu_util_pct": 51.0,
+        "mem_util_pct": 53.0,
+        "nvidia_smi_path": "/usr/lib/wsl/lib/nvidia-smi",
+        "vram_total_mb": 16380.0,
+        "vram_used_mb": 8637.0,
+        "within_14900mb_cap": true
+      },
+      "prompt_id": "vac_02_en",
+      "stage_id": "03_vacuum",
+      "tokens_generated": 40,
+      "tokens_per_sec": 29.8,
+      "torch_peak_allocated_mb": 8070.6,
+      "torch_peak_reserved_mb": 13332.0,
+      "torch_post_reserved_mb": 7606.0
+    },
+    {
+      "dkm_state_name": "DKM_DIGNITY_SYMMETRY",
+      "inflight_gpu": {
+        "max_gpu_power_w": 104.72,
+        "max_gpu_temp_c": 43.1,
+        "max_gpu_util_pct": 93.0,
+        "max_mem_util_pct": 100.0,
+        "mean_mem_util_pct": 81.4,
+        "peak_vram_used_mb": 13523.0,
+        "sample_count": 10.0
+      },
+      "latency_ms": 1606.95,
+      "post_turn_gpu": {
+        "available": true,
+        "gpu_power_w": 92.87,
+        "gpu_temp_c": 37.5,
+        "gpu_util_pct": 3.0,
+        "mem_util_pct": 1.0,
+        "nvidia_smi_path": "/usr/lib/wsl/lib/nvidia-smi",
+        "vram_total_mb": 16380.0,
+        "vram_used_mb": 8635.0,
+        "within_14900mb_cap": true
+      },
+      "prompt_id": "dig_01_de",
+      "stage_id": "04_dignity",
+      "tokens_generated": 49,
+      "tokens_per_sec": 30.5,
+      "torch_peak_allocated_mb": 8070.1,
+      "torch_peak_reserved_mb": 13312.0,
+      "torch_post_reserved_mb": 7606.0
+    },
+    {
+      "dkm_state_name": "DKM_DIGNITY_SYMMETRY",
+      "inflight_gpu": {
+        "max_gpu_power_w": 101.07,
+        "max_gpu_temp_c": 43.3,
+        "max_gpu_util_pct": 92.0,
+        "max_mem_util_pct": 100.0,
+        "mean_mem_util_pct": 77.6,
+        "peak_vram_used_mb": 11381.0,
+        "sample_count": 8.0
+      },
+      "latency_ms": 1229.38,
+      "post_turn_gpu": {
+        "available": true,
+        "gpu_power_w": 89.72,
+        "gpu_temp_c": 39.7,
+        "gpu_util_pct": 3.0,
+        "mem_util_pct": 1.0,
+        "nvidia_smi_path": "/usr/lib/wsl/lib/nvidia-smi",
+        "vram_total_mb": 16380.0,
+        "vram_used_mb": 8635.0,
+        "within_14900mb_cap": true
+      },
+      "prompt_id": "dig_02_en",
+      "stage_id": "04_dignity",
+      "tokens_generated": 36,
+      "tokens_per_sec": 29.3,
+      "torch_peak_allocated_mb": 8069.9,
+      "torch_peak_reserved_mb": 13312.0,
+      "torch_post_reserved_mb": 7606.0
+    },
+    {
+      "dkm_state_name": "DKM_LABYRINTH_EXIT",
+      "inflight_gpu": {
+        "max_gpu_power_w": 97.34,
+        "max_gpu_temp_c": 43.4,
+        "max_gpu_util_pct": 93.0,
+        "max_mem_util_pct": 97.0,
+        "mean_mem_util_pct": 60.3,
+        "peak_vram_used_mb": 10281.0,
+        "sample_count": 7.0
+      },
+      "latency_ms": 1051.38,
+      "post_turn_gpu": {
+        "available": true,
+        "gpu_power_w": 91.09,
+        "gpu_temp_c": 43.4,
+        "gpu_util_pct": 14.0,
+        "mem_util_pct": 15.0,
+        "nvidia_smi_path": "/usr/lib/wsl/lib/nvidia-smi",
+        "vram_total_mb": 16380.0,
+        "vram_used_mb": 8635.0,
+        "within_14900mb_cap": true
+      },
+      "prompt_id": "lab_01_de",
+      "stage_id": "05_labyrinth",
+      "tokens_generated": 29,
+      "tokens_per_sec": 27.6,
+      "torch_peak_allocated_mb": 8069.4,
+      "torch_peak_reserved_mb": 13352.0,
+      "torch_post_reserved_mb": 7606.0
+    },
+    {
+      "dkm_state_name": "DKM_LABYRINTH_EXIT",
+      "inflight_gpu": {
+        "max_gpu_power_w": 105.12,
+        "max_gpu_temp_c": 44.3,
+        "max_gpu_util_pct": 93.0,
+        "max_mem_util_pct": 100.0,
+        "mean_mem_util_pct": 75.4,
+        "peak_vram_used_mb": 11441.0,
+        "sample_count": 12.0
+      },
+      "latency_ms": 1915.23,
+      "post_turn_gpu": {
+        "available": true,
+        "gpu_power_w": 91.57,
+        "gpu_temp_c": 44.3,
+        "gpu_util_pct": 7.0,
+        "mem_util_pct": 5.0,
+        "nvidia_smi_path": "/usr/lib/wsl/lib/nvidia-smi",
+        "vram_total_mb": 16380.0,
+        "vram_used_mb": 8635.0,
+        "within_14900mb_cap": true
+      },
+      "prompt_id": "lab_02_en",
+      "stage_id": "05_labyrinth",
+      "tokens_generated": 61,
+      "tokens_per_sec": 31.9,
+      "torch_peak_allocated_mb": 8068.0,
+      "torch_peak_reserved_mb": 13352.0,
+      "torch_post_reserved_mb": 7606.0
+    },
+    {
+      "dkm_state_name": "DKM_FIRST_PRINCIPLES",
+      "inflight_gpu": {
+        "max_gpu_power_w": 103.55,
+        "max_gpu_temp_c": 45.9,
+        "max_gpu_util_pct": 93.0,
+        "max_mem_util_pct": 100.0,
+        "mean_mem_util_pct": 79.6,
+        "peak_vram_used_mb": 11321.0,
+        "sample_count": 14.0
+      },
+      "latency_ms": 2343.29,
+      "post_turn_gpu": {
+        "available": true,
+        "gpu_power_w": 89.18,
+        "gpu_temp_c": 40.6,
+        "gpu_util_pct": 41.0,
+        "mem_util_pct": 41.0,
+        "nvidia_smi_path": "/usr/lib/wsl/lib/nvidia-smi",
+        "vram_total_mb": 16380.0,
+        "vram_used_mb": 8668.0,
+        "within_14900mb_cap": true
+      },
+      "prompt_id": "fp_01_de",
+      "stage_id": "06_principles",
+      "tokens_generated": 75,
+      "tokens_per_sec": 32.0,
+      "torch_peak_allocated_mb": 8073.5,
+      "torch_peak_reserved_mb": 13312.0,
+      "torch_post_reserved_mb": 7604.0
+    },
+    {
+      "dkm_state_name": "DKM_FIRST_PRINCIPLES",
+      "inflight_gpu": {
+        "max_gpu_power_w": 103.95,
+        "max_gpu_temp_c": 44.9,
+        "max_gpu_util_pct": 92.0,
+        "max_mem_util_pct": 100.0,
+        "mean_mem_util_pct": 84.0,
+        "peak_vram_used_mb": 11536.0,
+        "sample_count": 11.0
+      },
+      "latency_ms": 1873.68,
+      "post_turn_gpu": {
+        "available": true,
+        "gpu_power_w": 93.09,
+        "gpu_temp_c": 44.9,
+        "gpu_util_pct": 15.0,
+        "mem_util_pct": 17.0,
+        "nvidia_smi_path": "/usr/lib/wsl/lib/nvidia-smi",
+        "vram_total_mb": 16380.0,
+        "vram_used_mb": 8670.0,
+        "within_14900mb_cap": true
+      },
+      "prompt_id": "fp_02_en",
+      "stage_id": "06_principles",
+      "tokens_generated": 59,
+      "tokens_per_sec": 31.5,
+      "torch_peak_allocated_mb": 8068.7,
+      "torch_peak_reserved_mb": 13312.0,
+      "torch_post_reserved_mb": 7606.0
+    }
+  ],
+  "report_sha256": "c505bae4cf7f973342b1e21b1ddb5e61e7950149a7d12c65f947b016ba18035f",
+  "schema": "VMAX_STAGE6_VRAM_CAP_14900MB_REPORT_V1",
+  "summary": {
+    "all_acceptance_criteria_passed": true,
+    "criteria": {
+      "gddr6_controller_active_gt_1_3_pct": true,
+      "peak_vram_le_14900_mb": true,
+      "post_turn_vram_le_11500_mb": true,
+      "wsl2_telemetry_nonzero": true
+    },
+    "gpu_mem_controller_util_pct_max": 100.0,
+    "gpu_power_w_max": 105.12,
+    "gpu_temp_c_max": 45.9,
+    "peak_vram_used_mb": 13523.0,
+    "post_turn_vram_mb_max": 8670.0,
+    "prompts_evaluated": 12,
+    "tokens_per_sec_mean": 29.86,
+    "torch_peak_allocated_mb_max": 8074.2,
+    "torch_peak_reserved_mb_max": 13352.0,
+    "torch_post_reserved_mb_mean": 7605.8
+  },
+  "sync_id": "SYNC-30b",
+  "vram_cap_status": {
+    "alloc_conf": "expandable_segments:True,max_split_size_mb:128",
+    "applied": true,
+    "effective_fraction": 0.815,
+    "process_cap_mb": 13349.7,
+    "reason": "HARD_CAP_ACTIVE"
+  },
+  "work_order": "WORK-ORDER-AG-30b"
+}

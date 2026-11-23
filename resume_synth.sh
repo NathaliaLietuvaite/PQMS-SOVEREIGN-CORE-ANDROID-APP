@@ -8,9 +8,10 @@ if [ "$#" -gt 0 ]; then
   exec "$@"
 fi
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-export PATH="/home/nathalia/vmax_310/bin:${PATH}"
+export PATH="/home/nathalia/vmax_310/bin:/usr/lib/wsl/lib:${PATH}"
 export LD_LIBRARY_PATH="/home/nathalia/.local/liboqs/lib:${LD_LIBRARY_PATH:-}"
 export OQS_INSTALL_PATH="/home/nathalia/.local/liboqs"
+export PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,max_split_size_mb:128"
 cd "${REPO_DIR}"
 if [ -f "${REPO_DIR}/vmax_alpha/dkm_benchmark_runner.py" ]; then
   exec python3 -m vmax_alpha.dkm_benchmark_runner

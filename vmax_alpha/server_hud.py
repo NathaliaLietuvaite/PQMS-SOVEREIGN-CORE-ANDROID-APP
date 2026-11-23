@@ -284,30 +284,39 @@ def _build_gstar_catalog(svc: Any) -> List[Dict[str, str]]:
 
 
 def _query_vram_mb() -> Tuple[int, int]:
-    try:
-        import subprocess as _sp
+    from vmax_alpha.gpu_vram_guard import query_gpu_telemetry
 
-        res = _sp.run(
-            ["nvidia-smi", "--query-gpu=memory.used,memory.total", "--format=csv,noheader,nounits"],
-            capture_output=True,
-            text=True,
-            timeout=2,
-            check=True,
-        )
-        parts = [x.strip() for x in res.stdout.strip().splitlines()[0].split(",")]
-        return int(float(parts[0])), int(float(parts[1]))
-    except Exception:
+    snap = query_gpu_telemetry()
+    if not snap.available:
         return 0, 16380
+    return int(round(snap.vram_used_mb)), int(round(snap.vram_total_mb))
+
+
+def _acquire_hud_gpu_lock() -> Any:
+    from vmax_alpha.gpu_vram_guard import SingleGpuOwnerLock
+
+    lock = SingleGpuOwnerLock()
+    if not lock.acquire("server_hud"):
+        raise RuntimeError(f"GPU_LOCK_BUSY: {lock.read_current_owner()}")
+    return lock
 
 
 def _init_chat_engine(enable_llm: bool) -> Any:
     if not enable_llm:
         return None
+    from vmax_alpha.gpu_vram_guard import configure_allocator_env
     from vmax_alpha.nemotron_chat_engine import NemotronChatEngine
 
-    engine = NemotronChatEngine()
-    engine.load()
-    return engine
+    configure_allocator_env()
+    lock = _acquire_hud_gpu_lock()
+    try:
+        engine = NemotronChatEngine()
+        engine.load()
+        setattr(engine, "_gpu_owner_lock", lock)
+        return engine
+    except Exception:
+        lock.release()
+        raise
 
 
 def _resolve_selected_gstars(svc: Any, selected_ids: Any) -> List[Dict[str, str]]:
@@ -525,6 +534,9 @@ def _apply_dkm_bounded_reply(
             "violation_reason": None,
         }
         return
+    from vmax_alpha.dkm_output_gate import detect_prompt_language
+
+    p_lang = detect_prompt_language(prompt_text)
     reply = engine.generate_reply(
         user_prompt=prompt_text,
         shard_id=str(getattr(entry, "chroma_shard_id", "")),
@@ -537,8 +549,9 @@ def _apply_dkm_bounded_reply(
         history=body.get("history") if isinstance(body.get("history"), list) else [],
         dkm_policy_header=dkm_dec.rom_policy_header,
         max_new_tokens_override=dkm_dec.token_cap,
+        prompt_lang=p_lang,
     )
-    verdict = dkm_ctrl.verify_bounded_response(dkm_dec, reply.text)
+    verdict = dkm_ctrl.verify_bounded_response(dkm_dec, reply.text, prompt_lang=p_lang)
     payload["reply"] = verdict.released_text
     payload["model_id"] = reply.model_id
     payload["llm_latency_ms"] = reply.latency_ms
@@ -580,9 +593,12 @@ def _handle_dkm_request(
 
 
 def _handle_dolphin_status(handler: Any, svc: Any) -> None:
+    from vmax_alpha.gpu_vram_guard import query_gpu_telemetry
+
     status = _get_dolphin_governor(svc).get_status()
     status["epistemic_pause_metrics"] = _get_epistemic_pause_controller(svc).get_metrics()
     status["dkm_metrics"] = _get_dkm_controller(svc).get_metrics()
+    status["gpu_telemetry"] = query_gpu_telemetry().to_dict()
     handler._send_json(200, status)
 
 
@@ -731,6 +747,9 @@ def run_server(batch_only: bool = False, port: int = ROOM_137_PORT, reset: bool 
         print("\n[V-MAX-12] Room 137 sauber heruntergefahren. Gute Nacht!", flush=True)
     finally:
         svc._stop_evt.set()
+        lock = getattr(getattr(svc, "chat_engine", None), "_gpu_owner_lock", None)
+        if lock is not None:
+            lock.release()
         httpd.server_close()
     return {}
 

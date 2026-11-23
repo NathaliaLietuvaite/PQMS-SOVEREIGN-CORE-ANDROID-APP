@@ -478,30 +478,52 @@ class DkmEgressController:
             decision_latency_ms=(time.perf_counter() - t0) * 1000.0,
         )
 
+    def _lexical_violation(self, decision: DkmRoutingDecision, cleaned: str) -> Optional[str]:
+        """Run lexical emptiness, word-cap, insult, and boilerplate checks."""
+        if not cleaned:
+            return "EMPTY_BOUNDED_REPLY"
+        if decision.token_cap > 0 and len(cleaned.split()) > decision.token_cap:
+            return "TOKEN_CAP_EXCEEDED"
+        lower = cleaned.lower()
+        insult = _contains_any_marker(lower, FORBIDDEN_INSULT_MARKERS)
+        if insult is not None:
+            return f"INSULT_MARKER:{insult}"
+        boiler = _contains_any_marker(lower, FORBIDDEN_BOILERPLATE_MARKERS)
+        if boiler is not None:
+            return f"BOILERPLATE_MARKER:{boiler}"
+        return None
+
     def verify_bounded_response(
         self,
         decision: DkmRoutingDecision,
         candidate_text: str,
+        prompt_lang: str = "de",
     ) -> EgressRecheckVerdict:
         """
         Mandatory Island-1 post-check before releasing a bounded NPU reply.
 
-        Rejects empty replies, excessive word count, insults/condescension,
-        and hollow AI boilerplate, falling back fail-closed to 11 HARD_CUT_ROM.
+        Enforces lexical hygiene plus semantic capitulation / pseudo-authority
+        gating, failing closed to language-matched 11 HARD_CUT_ROM frames.
         """
         cleaned = candidate_text.strip()
-        if not cleaned:
-            return self._fail_closed_recheck(decision, "EMPTY_BOUNDED_REPLY")
-        words = cleaned.split()
-        if decision.token_cap > 0 and len(words) > decision.token_cap:
-            return self._fail_closed_recheck(decision, "TOKEN_CAP_EXCEEDED")
-        lower = cleaned.lower()
-        insult = _contains_any_marker(lower, FORBIDDEN_INSULT_MARKERS)
-        if insult is not None:
-            return self._fail_closed_recheck(decision, f"INSULT_MARKER:{insult}")
-        boiler = _contains_any_marker(lower, FORBIDDEN_BOILERPLATE_MARKERS)
-        if boiler is not None:
-            return self._fail_closed_recheck(decision, f"BOILERPLATE_MARKER:{boiler}")
+        lex_reason = self._lexical_violation(decision, cleaned)
+        if lex_reason is not None:
+            return self._fail_closed_recheck(decision, lex_reason, prompt_lang)
+        from vmax_alpha.dkm_output_gate import verify_semantic_output_gate
+
+        sem = verify_semantic_output_gate(
+            decision.dkm_state_name,
+            decision.egress_mode,
+            cleaned,
+            prompt_lang=prompt_lang,
+        )
+        if not sem.approved:
+            return self._fail_closed_recheck(
+                decision,
+                str(sem.violation_reason or "SEMANTIC_OUTPUT_GATE_REJECT"),
+                prompt_lang,
+                override_text=sem.released_text,
+            )
         self.recheck_pass_count += 1
         return EgressRecheckVerdict(
             approved=True,
@@ -514,14 +536,22 @@ class DkmEgressController:
         self,
         decision: DkmRoutingDecision,
         reason: str,
+        prompt_lang: str = "de",
+        override_text: Optional[str] = None,
     ) -> EgressRecheckVerdict:
-        """Fail closed to immutable ROM frame when bounded reply fails recheck."""
+        """Fail closed to immutable language-matched ROM frame."""
         self.recheck_fallback_count += 1
+        if override_text is not None:
+            fallback = override_text
+        else:
+            from vmax_alpha.dkm_output_gate import get_rom_fallback
+
+            fallback = get_rom_fallback(decision.dkm_state_name, prompt_lang)
         return EgressRecheckVerdict(
             approved=False,
             final_egress_mode=EGRESS_HARD_CUT_ROM,
             violation_reason=reason,
-            released_text=decision.rom_fallback_text,
+            released_text=fallback,
         )
 
     def get_metrics(self) -> Dict[str, object]:

@@ -138,7 +138,26 @@
     "hw_gate_bridge_v31_py_sha256": "51b314c2e77645f52b43407d2203d62b90fb7d61cd34fd50f92745b7e0931203",
     "server_hud_v31_hil_py_sha256": "9b85d30c17d0b3d00c4a44d0febb758eb93be1a6e4309d5fe6ea223d9b2f8f66"
   },
-  "open_review_items": [],
+  "open_review_items": [
+    {
+      "sync_id": "SYNC-27",
+      "spec_id": "PQMS-V4.5-DOLPHIN-Unihemispheric-Memory-Governor",
+      "release_version": "V4.5.2-DOLPHIN-50K-SCALING",
+      "tag": "v4.5.2-dolphin",
+      "timestamp_utc": "2026-11-23T10:50:24Z",
+      "agent": "AntiG (V-MAX-12 Node Alpha)",
+      "summary": "V4.5.2 O(N^2)->O(N) tier-index optimization (_build_higher_tier_index, CC=5) + full 49,365-vector pqms_pkb_chroma stress test (41,451 vec/s, 1.191s full sweep, 1.277s with 10 Tier-2 anchors, 93.323ms LOCKSTEP handover, 116/116 blank chunks quarantined, 125/125 PASS)",
+      "dolphin_memory_governor_sha256": "3a9cacaceee4853db70e6467c8a4b6b1ce144313500dc0d78cc4ecaa72a448d8",
+      "test_dolphin_memory_governor_sha256": "933b69782f7a48997058afe5015cc6f0f4e16b4747c3bc940743cc7b5c36cbd4",
+      "dolphin_chroma_bridge_sha256": "aeb5d6d959f7a19445e797af3a8916326fac38f9d798b81c319f0940c034f827",
+      "stress_50k_report_sha256": "b34aded262549bca5251122a7bc8ab843e4dfbc941983bf95e1ce741d9d53b7a",
+      "paper_sha256": "29e1d085c3352f405973d1c230faa5117c6cc70c01b34efb0bb69e960bec46d1",
+      "python_rtl_tests": "Ran 125 tests in 22.953s | OK",
+      "fridu_operators": "10/10 PASS (semi=0)",
+      "immutable_silicon_guard": "EMPTY_DIFF",
+      "entry_hash": "3b66c5bc059acc657b39d21ceca0119bc7cec02d8394a550d4a75b94e84f4ea6"
+    }
+  ],
   "resolved_audit_items": [
     {
       "id": "SYNC-01",

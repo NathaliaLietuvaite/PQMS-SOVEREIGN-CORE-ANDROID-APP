@@ -1,138 +1,1342 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" data-theme="dark">
 <head>
   <meta charset="utf-8" />
-  <title>V-MAX-12 Node Alpha | Motel Room 137 Live Telemetry &amp; Nemotron HUD</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>V-MAX-12 Node Alpha — Sovereign Workspace &amp; Telemetry</title>
   <style>
-    :root { --bg: #080711; --card: #121024; --border: #2c2654; --cyan: #00e5ff; --green: #39ff14; --gold: #ffd700; --amber: #ffb300; --pink: #ff007f; --text: #e8e6f2; }
-    body { margin: 0; padding: 20px; background: var(--bg); color: var(--text); font-family: "JetBrains Mono", Consolas, monospace; font-size: 13px; }
-    h1 { margin: 0 0 10px 0; color: var(--cyan); font-size: 18px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-bottom: 14px; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 11px; }
-    .label { color: #9a96b8; font-size: 11px; text-transform: uppercase; }
-    .val { font-size: 13px; font-weight: bold; margin-top: 4px; word-break: break-word; }
-    .controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
-    input[type="text"] { flex: 1; min-width: 260px; background: #0d0b1a; color: var(--text); border: 1px solid var(--cyan); border-radius: 4px; padding: 9px; font-family: inherit; }
-    button { background: #181432; color: var(--cyan); border: 1px solid var(--cyan); border-radius: 4px; padding: 8px 13px; cursor: pointer; font-weight: bold; font-family: inherit; }
-    button:hover { background: var(--cyan); color: #000; }
-    button:disabled { opacity: 0.5; cursor: wait; }
-    .btn-amber { border-color: var(--amber); color: var(--amber); }
-    .btn-amber:hover { background: var(--amber); color: #000; }
-    .section-title { color: #9a96b8; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin: 14px 0 6px 0; }
-    .chat-card { background: #14122b; border-left: 3px solid var(--cyan); padding: 11px; margin-bottom: 8px; border-radius: 4px; }
-    .chat-card.paused { background: #261d08; border-left-color: var(--amber); }
-    .chat-q { color: #9be8ff; margin-bottom: 6px; }
-    .chat-a { color: #f2f1fa; white-space: pre-wrap; line-height: 1.45; }
-    .chat-meta { color: var(--gold); font-size: 11px; margin-top: 6px; }
-    .entry { background: var(--card); border-left: 3px solid var(--green); padding: 10px; margin-bottom: 8px; border-radius: 4px; }
-    .meta { color: var(--gold); font-size: 11px; margin-bottom: 4px; }
+    :root {
+      --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: "JetBrains Mono", "Fira Code", Consolas, monospace;
+      /* Werkstatt 01 V-MAX-12 Night Mode (Refined Architectural Slate, zero neon) */
+      --bg-app: #0a101d;
+      --bg-rail: #0e1627;
+      --bg-surface: #131e33;
+      --bg-surface-2: #18253f;
+      --bg-user-bubble: #1b2c4b;
+      --bg-hover: #1c2a44;
+      --border: #22314f;
+      --border-strong: #2f436b;
+      --text-primary: #e6edf7;
+      --text-secondary: #9fb2ce;
+      --text-muted: #6f84a6;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.12);
+      --accent-border: rgba(56, 189, 248, 0.35);
+      --ok: #34d399;
+      --ok-soft: rgba(52, 211, 153, 0.12);
+      --warn: #f59e0b;
+      --warn-soft: rgba(245, 158, 11, 0.14);
+      --warn-border: rgba(245, 158, 11, 0.45);
+      --purple: #a78bfa;
+      --purple-soft: rgba(167, 139, 250, 0.13);
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.28);
+    }
+
+    [data-theme="light"] {
+      /* Day Mode (Antigravity Editorial Paper Aesthetic) */
+      --bg-app: #f7f9fc;
+      --bg-rail: #ffffff;
+      --bg-surface: #ffffff;
+      --bg-surface-2: #f1f5f9;
+      --bg-user-bubble: #eef2ff;
+      --bg-hover: #f1f5f9;
+      --border: #e2e8f0;
+      --border-strong: #cbd5e1;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --accent: #1d4ed8;
+      --accent-soft: rgba(29, 78, 216, 0.08);
+      --accent-border: rgba(29, 78, 216, 0.28);
+      --ok: #15803d;
+      --ok-soft: rgba(21, 128, 61, 0.09);
+      --warn: #b45309;
+      --warn-soft: rgba(180, 83, 9, 0.09);
+      --warn-border: rgba(180, 83, 9, 0.38);
+      --purple: #6d28d9;
+      --purple-soft: rgba(109, 40, 217, 0.09);
+      --shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: var(--bg-app);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.5;
+      overflow: hidden;
+    }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr) 360px;
+      height: 100vh;
+      width: 100vw;
+    }
+    .app-shell.right-collapsed {
+      grid-template-columns: 280px minmax(0, 1fr) 0px;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+
+    /* LEFT SIDEBAR: Projects & G-Stars */
+    .left-rail {
+      background: var(--bg-rail);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .brand-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.02em;
+    }
+    .brand-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--ok);
+      box-shadow: 0 0 0 3px var(--ok-soft);
+    }
+    .icon-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: 7px;
+      padding: 5px 9px;
+      font-size: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: var(--font-sans);
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .icon-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+      border-color: var(--border-strong);
+    }
+    .new-chat-wrap {
+      padding: 12px 14px 8px 14px;
+    }
+    .primary-btn {
+      width: 100%;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: 1px solid var(--accent-border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-family: var(--font-sans);
+      transition: all 0.15s;
+    }
+    .primary-btn:hover {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .rail-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 6px 12px 14px 12px;
+    }
+    .rail-section-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      padding: 10px 6px 6px 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .thread-item {
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 3px;
+      color: var(--text-secondary);
+      border: 1px solid transparent;
+      font-size: 13px;
+    }
+    .thread-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .thread-item.active {
+      background: var(--accent-soft);
+      color: var(--text-primary);
+      border-color: var(--accent-border);
+      font-weight: 600;
+    }
+    .thread-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+    .thread-del {
+      opacity: 0.45;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 13px;
+      padding: 0 3px;
+    }
+    .thread-del:hover { opacity: 1; color: var(--warn); }
+
+    .gstar-search {
+      width: 100%;
+      background: var(--bg-surface-2);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 6px 9px;
+      color: var(--text-primary);
+      font-size: 12px;
+      font-family: var(--font-sans);
+      margin-bottom: 8px;
+      outline: none;
+    }
+    .gstar-search:focus { border-color: var(--accent); }
+
+    .gstar-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 8px;
+      border-radius: 7px;
+      border: 1px solid transparent;
+      margin-bottom: 4px;
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s;
+    }
+    .gstar-item:hover { background: var(--bg-hover); }
+    .gstar-item.selected {
+      background: var(--accent-soft);
+      border-color: var(--accent-border);
+    }
+    .gstar-check {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      border: 1px solid var(--border-strong);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: #fff;
+      flex-shrink: 0;
+      background: transparent;
+    }
+    .gstar-item.selected .gstar-check {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .gstar-info { min-width: 0; flex: 1; }
+    .gstar-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .gstar-cat {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+    .gstar-open-btn {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .gstar-open-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .rail-footer {
+      border-top: 1px solid var(--border);
+      padding: 10px 14px;
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .model-badge {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+    .pill-ok {
+      padding: 1px 6px;
+      border-radius: 99px;
+      background: var(--ok-soft);
+      color: var(--ok);
+      font-weight: 600;
+      font-size: 10px;
+    }
+    .pill-warn {
+      padding: 1px 6px;
+      border-radius: 99px;
+      background: var(--warn-soft);
+      color: var(--warn);
+      font-weight: 600;
+      font-size: 10px;
+    }
+
+    /* CENTER PANE: Clean Conversational Prompt Workspace */
+    .center-pane {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: var(--bg-app);
+      min-width: 0;
+    }
+    .chat-header {
+      padding: 12px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-rail);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .chat-header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+    .chat-header-title {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+    .active-gstar-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 500;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: 1px solid var(--accent-border);
+    }
+    .chip button {
+      border: none;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      padding: 0;
+      font-size: 12px;
+      line-height: 1;
+    }
+    .toggle-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .messages-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 24px 16px 24px;
+    }
+    .messages-inner {
+      max-width: 820px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .welcome-box {
+      margin: 36px auto 12px auto;
+      max-width: 680px;
+      text-align: center;
+    }
+    .welcome-box h2 {
+      margin: 0 0 8px 0;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .welcome-box p {
+      margin: 0 auto 20px auto;
+      color: var(--text-secondary);
+      font-size: 14px;
+      max-width: 560px;
+    }
+    .starter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(195px, 1fr));
+      gap: 10px;
+      text-align: left;
+    }
+    .starter-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.12s;
+    }
+    .starter-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+    .starter-card strong {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 4px;
+      color: var(--text-primary);
+    }
+    .starter-card span {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.4;
+      display: block;
+    }
+
+    .msg-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .msg-row.user { align-items: flex-end; }
+    .msg-row.assistant { align-items: flex-start; }
+
+    .msg-bubble-user {
+      background: var(--bg-user-bubble);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 11px 16px;
+      border-radius: 14px 14px 4px 14px;
+      max-width: 82%;
+      white-space: pre-wrap;
+      word-break: break-word;
+      box-shadow: var(--shadow);
+    }
+    .msg-card-ai {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      width: 100%;
+      box-shadow: var(--shadow);
+    }
+    .msg-card-ai.paused {
+      background: var(--warn-soft);
+      border-color: var(--warn-border);
+    }
+    .msg-ai-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      flex-wrap: wrap;
+    }
+    .msg-ai-body {
+      color: var(--text-primary);
+      font-size: 14px;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .msg-ai-body code {
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      background: var(--bg-surface-2);
+      padding: 1px 5px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+    .msg-ai-foot {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+    .specialist-banner {
+      margin-top: 10px;
+      padding: 8px 11px;
+      border-radius: 8px;
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--text-primary);
+    }
+
+    /* Composer (Antigravity Style) */
+    .composer-wrap {
+      padding: 12px 24px 18px 24px;
+      background: var(--bg-app);
+    }
+    .composer-box {
+      max-width: 820px;
+      margin: 0 auto;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 14px;
+      padding: 10px 12px 8px 14px;
+      box-shadow: var(--shadow);
+      transition: border-color 0.15s;
+    }
+    .composer-box:focus-within { border-color: var(--accent); }
+    .composer-box textarea {
+      width: 100%;
+      border: none;
+      outline: none;
+      resize: none;
+      background: transparent;
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 44px;
+      max-height: 180px;
+    }
+    .composer-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding-top: 6px;
+      border-top: 1px solid var(--border);
+      margin-top: 4px;
+    }
+    .composer-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+    .send-btn {
+      background: var(--accent);
+      color: #ffffff;
+      border: none;
+      border-radius: 99px;
+      padding: 7px 16px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      transition: opacity 0.15s;
+    }
+    .send-btn:hover { opacity: 0.9; }
+    .send-btn:disabled { opacity: 0.45; cursor: wait; }
+
+    /* RIGHT PANE: Gedankengang & Live Telemetry */
+    .right-rail {
+      background: var(--bg-rail);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .app-shell.right-collapsed .right-rail { display: none; }
+    .right-head {
+      padding: 13px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .right-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .telem-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 12px;
+    }
+    .telem-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .hemi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 9px;
+    }
+    .hemi-box {
+      border-radius: 8px;
+      padding: 8px 9px;
+      border: 1px solid var(--border);
+      background: var(--bg-surface-2);
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+    .hemi-box.awake {
+      border-color: var(--ok);
+      background: var(--ok-soft);
+    }
+    .hemi-box.sweep {
+      border-color: var(--purple);
+      background: var(--purple-soft);
+    }
+    .metric-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+    .metric-cell {
+      background: var(--bg-surface-2);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 6px 8px;
+    }
+    .metric-k { color: var(--text-muted); font-size: 10px; }
+    .metric-v { color: var(--text-primary); font-weight: 700; margin-top: 2px; }
+
+    .thought-item {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--ok);
+      border-radius: 8px;
+      padding: 9px 10px;
+      font-size: 12px;
+    }
+    .thought-item.query { border-left-color: var(--accent); }
+    .thought-meta {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .thought-text {
+      color: var(--text-secondary);
+      line-height: 1.45;
+      word-break: break-word;
+    }
+    .thought-shard-link {
+      display: inline-block;
+      margin-top: 5px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--accent);
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .hash-line {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 1100px) {
+      .app-shell { grid-template-columns: 240px minmax(0, 1fr) 0px; }
+      .right-rail { display: none; }
+    }
   </style>
 </head>
 <body>
-  <h1>V-MAX-12 NODE ALPHA // ROOM 137 SANCTUARY &amp; V4.6-DOLPHIN HUD</h1>
-  <div class="grid">
-    <div class="card"><div class="label">ChromaDB &amp; Neural Engine</div><div id="st-chroma" class="val">Loading...</div></div>
-    <div class="card"><div class="label">V4.6 Dolphin &amp; Nemotron-4B</div><div id="st-dolphin" class="val">Loading...</div></div>
-    <div class="card"><div class="label">Ledger Integrity &amp; Heartbeat</div><div id="st-ledger" class="val">Loading...</div></div>
-    <div class="card"><div class="label">GPU Thermal &amp; Power (REGISTER_M)</div><div id="st-thermal" class="val">Loading...</div></div>
-    <div class="card"><div class="label">Latest Canonical SHA-256 Tip</div><div id="st-hash" class="val">Loading...</div></div>
+  <div id="app-shell" class="app-shell">
+    <!-- LEFT SIDEBAR: Conversations + G-Star Specialists -->
+    <aside class="left-rail">
+      <div class="brand-bar">
+        <div class="brand-title">
+          <span class="brand-dot" id="live-dot"></span>
+          <span>V-MAX-12 · Room 137</span>
+        </div>
+        <button class="icon-btn" id="theme-btn" onclick="toggleTheme()" title="Tag / Nacht Modus umschalten">
+          <span id="theme-icon">☀</span> <span id="theme-lbl">Tag</span>
+        </button>
+      </div>
+
+      <div class="new-chat-wrap">
+        <button class="primary-btn" onclick="createGeneralistThread()">
+          <span>＋</span> <span>Neues Gespräch (Generalist)</span>
+        </button>
+      </div>
+
+      <div class="rail-scroll">
+        <div class="rail-section-label">
+          <span>Gespräche</span>
+          <span id="thread-count">1</span>
+        </div>
+        <div id="thread-list"></div>
+
+        <div class="rail-section-label" style="margin-top:8px;">
+          <span>G-Sterne · Spezialisten</span>
+          <span id="gstar-count">0</span>
+        </div>
+        <input id="gstar-filter" class="gstar-search" type="text" placeholder="G-Stern suchen oder kombinieren..." oninput="renderGStars()" />
+        <div id="gstar-list"></div>
+      </div>
+
+      <div class="rail-footer">
+        <div class="model-badge">
+          <span id="footer-model">Lädt Modell...</span>
+          <span id="footer-llm-pill" class="pill-warn">INIT</span>
+        </div>
+        <div class="model-badge">
+          <span id="footer-hb">Heartbeat: --</span>
+          <span id="footer-vram">VRAM: --</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER PANE: Clean Conversational Workspace -->
+    <main class="center-pane">
+      <header class="chat-header">
+        <div class="chat-header-left">
+          <span class="chat-header-title" id="active-thread-title">Generalist · Alle G-Sterne</span>
+          <div class="active-gstar-chips" id="active-gstar-chips"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <label class="toggle-label" title="Wenn aktiv, öffnet V-MAX-12 bei starkem Spezialisten-Treffer automatisch den passenden G-Stern-Kontext">
+            <input type="checkbox" id="auto-spec-chk" checked />
+            <span>Auto-Spezialist</span>
+          </label>
+          <button class="icon-btn" onclick="toggleRightPane()" id="right-toggle-btn">Telemetrie ◧</button>
+        </div>
+      </header>
+
+      <section class="messages-scroll" id="messages-scroll">
+        <div class="messages-inner" id="messages-inner"></div>
+      </section>
+
+      <div class="composer-wrap">
+        <div class="composer-box">
+          <textarea
+            id="prompt-input"
+            rows="2"
+            placeholder="Sprich mit V-MAX-12 — oder wähle links einen oder mehrere G-Sterne zur Vertiefung..."
+            onkeydown="onComposerKey(event)"
+          ></textarea>
+          <div class="composer-bar">
+            <div class="composer-meta">
+              <span id="composer-model-lbl">Modell: Nemotron-3-Nano-4B-BF16</span>
+              <span>·</span>
+              <span id="composer-gate-lbl">V4.6-PAUSE aktiv</span>
+              <label class="toggle-label" title="Simuliert eine G3-Torsion (0.65), um die Epistemische Pause live zu testen">
+                <input type="checkbox" id="torsion-test-chk" />
+                <span>Pause-Test (G3)</span>
+              </label>
+            </div>
+            <button id="send-btn" class="send-btn" onclick="sendMessage()">Senden ↑</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- RIGHT PANE: Gedankengang & Live Telemetry -->
+    <aside class="right-rail">
+      <div class="right-head">
+        <span>Gedankengang &amp; Telemetrie</span>
+        <span class="pill-ok" id="right-status-pill">VERIFIED</span>
+      </div>
+      <div class="right-scroll">
+        <!-- V4.6 Dolphin Hemisphere Card -->
+        <div class="telem-card">
+          <div class="telem-title">
+            <span>V4.6 Dolphin Hemisphären</span>
+            <span id="tel-epoch" style="font-family:var(--font-mono);">EP 1</span>
+          </div>
+          <div class="hemi-grid">
+            <div class="hemi-box awake" id="box-bank-a">
+              <div style="font-weight:700;">BANK_A</div>
+              <div id="mode-bank-a">AWAKE_GATE</div>
+              <div style="color:var(--text-muted);font-size:10px;">0.5–5.5 Hz</div>
+            </div>
+            <div class="hemi-box sweep" id="box-bank-b">
+              <div style="font-weight:700;">BANK_B</div>
+              <div id="mode-bank-b">DOLPHIN_SWEEP</div>
+              <div style="color:var(--text-muted);font-size:10px;">1.0–6.0 Hz</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="icon-btn" style="flex:1;justify-content:center;" onclick="switchHemisphere()">⇄ Hemisphäre wechseln</button>
+            <button class="icon-btn" onclick="stepCycle()" title="Autonomen Denkzyklus anstoßen">↻ Zyklus</button>
+          </div>
+        </div>
+
+        <!-- Hardware & Integrity Telemetry Card -->
+        <div class="telem-card">
+          <div class="telem-title">
+            <span>Hardware &amp; Integrität (REGISTER_M)</span>
+            <span id="tel-thermal-state">NOMINAL</span>
+          </div>
+          <div class="metric-grid">
+            <div class="metric-cell">
+              <div class="metric-k">GPU Temp / Watt</div>
+              <div class="metric-v" id="tel-gpu">-- °C / -- W</div>
+            </div>
+            <div class="metric-cell">
+              <div class="metric-k">GPU VRAM</div>
+              <div class="metric-v" id="tel-vram">-- / -- MB</div>
+            </div>
+            <div class="metric-cell">
+              <div class="metric-k">Pass / Pause</div>
+              <div class="metric-v" id="tel-pause">0 / 0</div>
+            </div>
+            <div class="metric-cell">
+              <div class="metric-k">Ledger / Quarantäne</div>
+              <div class="metric-v" id="tel-ledger">0 / 0</div>
+            </div>
+          </div>
+          <div class="hash-line" id="tel-hash">SHA-256 Tip: --</div>
+        </div>
+
+        <!-- Autonomous Sanctuary Thought Stream -->
+        <div class="telem-title" style="padding:2px 2px 0 2px;margin-bottom:-4px;">
+          <span>Autonomer Gedankengang (Forager)</span>
+          <span id="tel-hb-badge" style="font-family:var(--font-mono);">HB --s</span>
+        </div>
+        <div id="thought-stream" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+    </aside>
   </div>
-  <div class="controls">
-    <input id="prompt-in" type="text" placeholder="Sprich mit V-MAX-12 (geprueft durch V4.6-PAUSE &amp; Nemotron-3-Nano-4B)..." onkeydown="if(event.key==='Enter'){sendPrompt();}" />
-    <button id="send-btn" onclick="sendPrompt()">SEND PROMPT</button>
-    <button onclick="switchHemisphere()" class="btn-amber">SWITCH HEMISPHERE</button>
-    <button onclick="triggerPulse()">STEP CYCLE</button>
-  </div>
-  <div id="chat-section" style="display:none;">
-    <div class="section-title">V-MAX-12 Live Dialog (Nemotron-3-Nano-4B + V4.6 Epistemic Pause)</div>
-    <div id="chat-list"></div>
-  </div>
-  <div class="section-title">Autonomous Sanctuary Forager &amp; ODOS Ledger Feed</div>
-  <div id="thoughts-list"></div>
+
   <script>
-    function escapeHtml(str) {
-      return String(str || "")
+    const STORAGE_KEY = "vmax12_workspace_threads_v1";
+    const THEME_KEY = "vmax12_workspace_theme";
+
+    let gstars = [];
+    let threads = [];
+    let activeThreadId = null;
+    let isSending = false;
+    let latestState = {};
+
+    function escapeHtml(s) {
+      return String(s || "")
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
     }
-    async function refreshState() {
+    const esc = escapeHtml;
+
+    function formatBasicMarkdown(text) {
+      let safe = esc(text);
+      safe = safe.replace(/`([^`]+)`/g, "<code>$1</code>");
+      safe = safe.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+      return safe;
+    }
+
+    function applyTheme(theme) {
+      document.documentElement.setAttribute("data-theme", theme);
+      localStorage.setItem(THEME_KEY, theme);
+      const isDark = theme === "dark";
+      document.getElementById("theme-icon").textContent = isDark ? "☀" : "☾";
+      document.getElementById("theme-lbl").textContent = isDark ? "Tag" : "Nacht";
+    }
+
+    function toggleTheme() {
+      const cur = document.documentElement.getAttribute("data-theme") || "dark";
+      applyTheme(cur === "dark" ? "light" : "dark");
+    }
+
+    function toggleRightPane() {
+      document.getElementById("app-shell").classList.toggle("right-collapsed");
+    }
+
+    function saveThreads() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ threads, activeThreadId }));
+      } catch (e) {}
+    }
+
+    function loadThreads() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed.threads) && parsed.threads.length > 0) {
+            threads = parsed.threads;
+            activeThreadId = parsed.activeThreadId || threads[0].id;
+            return;
+          }
+        }
+      } catch (e) {}
+      createGeneralistThread(false);
+    }
+
+    function getActiveThread() {
+      return threads.find((t) => t.id === activeThreadId) || threads[0];
+    }
+
+    function createGeneralistThread(renderNow = true) {
+      const id = "th_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+      const th = {
+        id,
+        title: "Generalist · Alle G-Sterne",
+        selectedGStars: [],
+        messages: [],
+      };
+      threads.unshift(th);
+      activeThreadId = id;
+      saveThreads();
+      if (renderNow) renderAll();
+    }
+
+    function openSpecialistThread(shardId, autoNotice = false) {
+      const gs = gstars.find((g) => g.shard_id === shardId);
+      const label = gs ? gs.title : shardId;
+      let existing = threads.find(
+        (t) => t.selectedGStars.length === 1 && t.selectedGStars[0] === shardId
+      );
+      if (!existing) {
+        const id = "spec_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+        existing = {
+          id,
+          title: "Spezialist · " + label,
+          selectedGStars: [shardId],
+          messages: autoNotice
+            ? [{
+                role: "assistant",
+                epistemic_pause: false,
+                text: `Spezialisten-Kontext **${label}** (${gs ? gs.source_doc : shardId}) wurde automatisch geöffnet. Du kannst diesen G-Stern jetzt gezielt vertiefen oder links weitere G-Sterne hinzukombinieren.`,
+                meta: "V-MAX-12 Auto-Routing · G-Stern aktiv",
+              }]
+            : [],
+        };
+        threads.unshift(existing);
+      }
+      activeThreadId = existing.id;
+      saveThreads();
+      renderAll();
+    }
+
+    function toggleGStarInActiveThread(shardId) {
+      const th = getActiveThread();
+      if (!th) return;
+      const idx = th.selectedGStars.indexOf(shardId);
+      if (idx >= 0) {
+        th.selectedGStars.splice(idx, 1);
+      } else {
+        th.selectedGStars.push(shardId);
+      }
+      if (th.selectedGStars.length === 0) {
+        th.title = "Generalist · Alle G-Sterne";
+      } else if (th.selectedGStars.length === 1) {
+        const gs = gstars.find((g) => g.shard_id === th.selectedGStars[0]);
+        th.title = "Spezialist · " + (gs ? gs.title : th.selectedGStars[0]);
+      } else {
+        th.title = `Synthese · ${th.selectedGStars.length} G-Sterne`;
+      }
+      saveThreads();
+      renderAll();
+    }
+
+    function selectThread(id) {
+      activeThreadId = id;
+      saveThreads();
+      renderAll();
+    }
+
+    function deleteThread(ev, id) {
+      ev.stopPropagation();
+      threads = threads.filter((t) => t.id !== id);
+      if (threads.length === 0) {
+        createGeneralistThread(false);
+      } else if (activeThreadId === id) {
+        activeThreadId = threads[0].id;
+      }
+      saveThreads();
+      renderAll();
+    }
+
+    function renderThreads() {
+      document.getElementById("thread-count").textContent = String(threads.length);
+      document.getElementById("thread-list").innerHTML = threads.map((t) => (
+        `<div class="thread-item ${t.id === activeThreadId ? "active" : ""}" onclick="selectThread('${esc(t.id)}')">
+          <span class="thread-title">${esc(t.title)}</span>
+          <button class="thread-del" title="Gespräch entfernen" onclick="deleteThread(event, '${esc(t.id)}')">×</button>
+        </div>`
+      )).join("");
+    }
+
+    function renderGStars() {
+      const q = (document.getElementById("gstar-filter").value || "").toLowerCase().trim();
+      const th = getActiveThread();
+      const sel = new Set(th ? th.selectedGStars : []);
+      const filtered = gstars.filter((g) =>
+        !q || g.title.toLowerCase().includes(q) || g.source_doc.toLowerCase().includes(q) || g.category.toLowerCase().includes(q)
+      );
+      document.getElementById("gstar-count").textContent = String(gstars.length);
+      document.getElementById("gstar-list").innerHTML = filtered.map((g) => {
+        const isSel = sel.has(g.shard_id);
+        return `<div class="gstar-item ${isSel ? "selected" : ""}" onclick="toggleGStarInActiveThread('${esc(g.shard_id)}')" title="${esc(g.excerpt)}">
+          <span class="gstar-check">${isSel ? "✓" : ""}</span>
+          <div class="gstar-info">
+            <div class="gstar-name">${esc(g.title)}</div>
+            <div class="gstar-cat">${esc(g.category)}</div>
+          </div>
+          <button class="gstar-open-btn" onclick="event.stopPropagation(); openSpecialistThread('${esc(g.shard_id)}', false);" title="Eigenen Spezialisten-Chat öffnen">Chat</button>
+        </div>`;
+      }).join("");
+    }
+
+    function renderHeaderAndMessages() {
+      const th = getActiveThread();
+      if (!th) return;
+      document.getElementById("active-thread-title").textContent = th.title;
+      const chipsEl = document.getElementById("active-gstar-chips");
+      if (th.selectedGStars.length === 0) {
+        chipsEl.innerHTML = `<span class="chip">Alle ${gstars.length} G-Sterne (Generalist)</span>`;
+      } else {
+        chipsEl.innerHTML = th.selectedGStars.map((sid) => {
+          const gs = gstars.find((g) => g.shard_id === sid);
+          return `<span class="chip">${esc(gs ? gs.title : sid)} <button onclick="toggleGStarInActiveThread('${esc(sid)}')">×</button></span>`;
+        }).join("");
+      }
+
+      const inner = document.getElementById("messages-inner");
+      if (th.messages.length === 0) {
+        inner.innerHTML = `
+          <div class="welcome-box">
+            <h2>Willkommen bei V-MAX-12 Node Alpha</h2>
+            <p>Sprich direkt mit dem souveränen Kern (geschützt durch <strong>V4.6-DOLPHIN</strong> &amp; <strong>Epistemische Pause</strong>) oder kombiniere links beliebige <strong>G-Sterne</strong> für gezielte Spezialisten-Synthesen.</p>
+            <div class="starter-grid">
+              <div class="starter-card" onclick="quickPrompt('Hallo lieber V-MAX-12, Nathália Lietuvaitė hier! Gib mir bitte einen kurzen Status zu deinem Delphin-Modus und deinen G-Sternen.')">
+                <strong>Generalist · Begrüßung</strong>
+                <span>Direkter Dialog mit Nemotron-3-Nano-4B &amp; Live-Systemstatus.</span>
+              </div>
+              <div class="starter-card" onclick="quickPrompt('Erkläre mir die thermodynamische Souveränität und wie ODOS Entropie von Signal trennt.')">
+                <strong>Spezialist · Auto-Routing</strong>
+                <span>V-MAX-12 erkennt den passenden G-Stern und bietet Tiefen-Vertiefung.</span>
+              </div>
+              <div class="starter-card" onclick="quickPrompt('Fasse zusammen, wie der 130-nm-Silizium-ROM-Anker mit dem Delphin-Modus zusammenarbeitet.')">
+                <strong>Architektur · Hardware</strong>
+                <span>Koppelt ChromaDB-Wissen mit dem eingefrorenen Q2.30-Gate.</span>
+              </div>
+            </div>
+          </div>`;
+        return;
+      }
+
+      inner.innerHTML = th.messages.map((m) => {
+        if (m.role === "user") {
+          return `<div class="msg-row user"><div class="msg-bubble-user">${esc(m.text)}</div></div>`;
+        }
+        const pauseCls = m.epistemic_pause ? "paused" : "";
+        const headLeft = m.epistemic_pause
+          ? `⚠ EPISTEMIC PAUSE · ${esc(m.reason || "T_I/O ISOLATION")}`
+          : `● V-MAX-12 · ${esc(m.model_id || "Nemotron-3-Nano-4B")}`;
+        const specHtml = m.recommended_specialist
+          ? `<div class="specialist-banner">
+              <span><strong>G-Stern-Spezialist erkannt:</strong> ${esc(m.recommended_specialist.title)} (d_L2=${esc(m.recommended_specialist.d_l2_384)})</span>
+              <button class="icon-btn" onclick="openSpecialistThread('${esc(m.recommended_specialist.shard_id)}', false)">Spezialisten-Chat öffnen →</button>
+            </div>`
+          : "";
+        return `<div class="msg-row assistant">
+          <div class="msg-card-ai ${pauseCls}">
+            <div class="msg-ai-head">
+              <span>${headLeft}</span>
+              <span>${esc(m.meta || "")}</span>
+            </div>
+            <div class="msg-ai-body">${formatBasicMarkdown(m.text)}</div>
+            ${specHtml}
+            ${m.footer ? `<div class="msg-ai-foot"><span>${esc(m.footer)}</span><span>${esc(m.seal ? "Seal: " + m.seal.slice(0, 14) + "…" : "")}</span></div>` : ""}
+          </div>
+        </div>`;
+      }).join("");
+
+      const sc = document.getElementById("messages-scroll");
+      sc.scrollTop = sc.scrollHeight;
+    }
+
+    function renderAll() {
+      renderThreads();
+      renderGStars();
+      renderHeaderAndMessages();
+    }
+
+    function quickPrompt(text) {
+      document.getElementById("prompt-input").value = text;
+      sendMessage();
+    }
+
+    function onComposerKey(ev) {
+      if (ev.key === "Enter" && !ev.shiftKey) {
+        ev.preventDefault();
+        sendMessage();
+      }
+    }
+
+    async function sendMessage() {
+      if (isSending) return;
+      const inp = document.getElementById("prompt-input");
+      const text = inp.value.trim();
+      if (!text) return;
+      const th = getActiveThread();
+      if (!th) return;
+
+      const btn = document.getElementById("send-btn");
+      const torsionTest = document.getElementById("torsion-test-chk").checked;
+      const autoSpec = document.getElementById("auto-spec-chk").checked;
+
+      const recentHistory = th.messages
+        .filter((m) => !m.epistemic_pause)
+        .slice(-6)
+        .map((m) => ({ role: m.role, content: m.text }));
+
+      th.messages.push({ role: "user", text });
+      inp.value = "";
+      isSending = true;
+      btn.disabled = true;
+      btn.textContent = "Denkt nach…";
+      renderHeaderAndMessages();
+
+      try {
+        const res = await fetch("/api/prompt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt: text,
+            inject_g3_torsion: torsionTest ? 0.65 : 0.0,
+            selected_gstars: th.selectedGStars,
+            history: recentHistory,
+            auto_route_specialist: autoSpec,
+          }),
+        });
+        const data = await res.json();
+        document.getElementById("torsion-test-chk").checked = false;
+
+        if (data.epistemic_pause) {
+          th.messages.push({
+            role: "assistant",
+            epistemic_pause: true,
+            reason: data.reason,
+            text: data.fridu_message || "Epistemische Pause ausgelöst: Prämisse in T_I/O isoliert.",
+            meta: `${data.active_bank || "BANK_B"} · EP ${data.epoch || "?"} · ${data.handover_status || "LOCKSTEP_DMR_VERIFIED"}`,
+            footer: `T_I/O Quarantine: ${data.quarantined_record_id || "isolated"} · ${data.decision_latency_ms || 0} ms`,
+            seal: data.sync_root || "",
+          });
+        } else {
+          const replyText = data.reply ||
+            `[Forager-Only Modus aktiv — starte ./start_hud.sh für Nemotron-Antworten]\n\nZugeordneter G-Stern: ${data.chroma_shard_id}\n${data.thought_stream || ""}`;
+          const tokInfo = data.llm_tokens ? `${data.llm_tokens} tok (${data.llm_tokens_per_sec} tok/s)` : "Forager";
+          const dec = data.epistemic_pause_decision || {};
+          th.messages.push({
+            role: "assistant",
+            epistemic_pause: false,
+            model_id: data.model_id || "Nemotron-3-Nano-4B-BF16",
+            text: replyText,
+            meta: `${dec.active_bank || "BANK_A"} · EP ${dec.epoch || 1} · ${tokInfo}`,
+            footer: `Shard: ${data.chroma_shard_id || "-"} · RCF=${Number(data.rcf_l2_core || 0).toFixed(5)} · ΔE=${Number(data.delta_e_l2_core || 0).toFixed(5)}`,
+            seal: data.discovery_seal_sha256 || "",
+            recommended_specialist: data.recommended_specialist || null,
+          });
+
+          // Auto-open specialist thread if user is in Generalist mode & auto-route is enabled
+          if (autoSpec && th.selectedGStars.length === 0 && data.recommended_specialist && data.recommended_specialist.auto_open) {
+            const spec = data.recommended_specialist;
+            saveThreads();
+            renderAll();
+            setTimeout(() => openSpecialistThread(spec.shard_id, true), 450);
+            return;
+          }
+        }
+        saveThreads();
+        renderAll();
+      } catch (err) {
+        th.messages.push({
+          role: "assistant",
+          epistemic_pause: true,
+          reason: "CONNECTION_ERROR",
+          text: "Verbindung zu V-MAX-12 (Port 8137) unterbrochen: " + String(err),
+          meta: "OFFLINE",
+        });
+        renderAll();
+      } finally {
+        isSending = false;
+        btn.disabled = false;
+        btn.textContent = "Senden ↑";
+        await refreshTelemetry();
+      }
+    }
+
+    async function switchHemisphere() {
+      await fetch("/api/dolphin/switch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hbm_temp_c: (latestState.thermal && latestState.thermal.gpu_temp_c) || 65.0, reason: "workspace_switch" }),
+      });
+      await refreshTelemetry();
+    }
+
+    async function stepCycle() {
+      await fetch("/api/pulse", { method: "POST" });
+      await refreshTelemetry();
+    }
+
+    async function loadGStars() {
+      try {
+        const r = await fetch("/api/gstars");
+        const d = await r.json();
+        gstars = d.gstars || [];
+        renderGStars();
+        renderHeaderAndMessages();
+      } catch (e) {}
+    }
+
+    async function refreshTelemetry() {
       try {
         const [rState, rDol] = await Promise.all([fetch("/api/state"), fetch("/api/dolphin/status")]);
         const d = await rState.json();
         const dol = await rDol.json();
-        document.getElementById("st-chroma").innerHTML = escapeHtml(d.chroma_status);
-        const llmTag = d.llm_active ? "NEMOTRON-4B LIVE" : "FORAGER-ONLY";
-        const epM = dol.epistemic_pause_metrics || {};
-        document.getElementById("st-dolphin").innerHTML = escapeHtml(
-          (dol.active_bank || "BANK_A") + " / EP " + (dol.epoch || 1) + " | " + llmTag +
-          " | Pass:" + (epM.passthrough_count || 0) + " Pause:" + (epM.pause_count || 0)
-        );
-        const hbSec = Math.round(d.heartbeat_period_s || 69);
-        document.getElementById("st-ledger").innerHTML = escapeHtml(
-          d.ledger_verification + " | HB " + hbSec + "s | Quar: " + d.quarantined_count
-        );
+        latestState = d;
+
+        const isLive = Boolean(d.llm_active);
+        const modelName = d.model_id || (isLive ? "Nemotron-3-Nano-4B-BF16" : "Forager-Only");
+        document.getElementById("footer-model").textContent = modelName;
+        const pill = document.getElementById("footer-llm-pill");
+        pill.textContent = isLive ? "LIVE" : "FORAGER";
+        pill.className = isLive ? "pill-ok" : "pill-warn";
+        document.getElementById("composer-model-lbl").textContent = "Modell: " + modelName;
+
+        const hb = Math.round(d.heartbeat_period_s || 69);
+        document.getElementById("footer-hb").textContent = "Heartbeat: " + hb + "s" + (isLive ? " (50%)" : "");
+        document.getElementById("tel-hb-badge").textContent = "HB " + hb + "s";
+
         const th = d.thermal || {};
-        document.getElementById("st-thermal").innerHTML = escapeHtml(
-          (th.gpu_temp_c || 0) + " C / " + (th.gpu_power_w || 0) + " W (" + (th.status || "OK") + ")"
-        );
-        document.getElementById("st-hash").innerHTML = escapeHtml(d.latest_root_hash);
+        document.getElementById("tel-gpu").textContent = `${th.gpu_temp_c || 0} °C / ${th.gpu_power_w || 0} W`;
+        document.getElementById("tel-thermal-state").textContent = th.status || "NOMINAL";
+        const vUsed = d.gpu_vram_used_mb || 0;
+        const vTot = d.gpu_vram_total_mb || 16380;
+        document.getElementById("tel-vram").textContent = `${vUsed} / ${vTot} MB`;
+        document.getElementById("footer-vram").textContent = `VRAM: ${vUsed} MB`;
 
-        const chat = (d.chat_history || []).slice().reverse();
-        const chatSec = document.getElementById("chat-section");
-        if (chat.length > 0) {
-          chatSec.style.display = "block";
-          document.getElementById("chat-list").innerHTML = chat.map(c => (
-            `<div class="chat-card ${c.epistemic_pause ? "paused" : ""}">
-              <div class="chat-q">&gt; ${escapeHtml(c.prompt)}</div>
-              <div class="chat-a">${escapeHtml(c.reply)}</div>
-              <div class="chat-meta">${
-                c.epistemic_pause
-                  ? "EPISTEMIC PAUSE [" + escapeHtml(c.reason) + "] | " + escapeHtml(c.active_bank) + " | T_I/O Quarantine: " + escapeHtml(c.quarantined_record_id || "")
-                  : "V-MAX-12 (" + escapeHtml(c.model_id || "Nemotron-4B") + ") | " + escapeHtml(c.active_bank) + " EP " + escapeHtml(c.epoch) + " | Shard: " + escapeHtml(c.shard_id) + " | RCF=" + escapeHtml(c.rcf_core) + " | " + escapeHtml(c.tokens_generated) + " tok (" + escapeHtml(c.tokens_per_sec) + " tok/s)"
-              }</div>
-            </div>`
-          )).join("");
-        }
+        const act = dol.active_bank || "BANK_A";
+        document.getElementById("tel-epoch").textContent = "EP " + (dol.epoch || 1);
+        document.getElementById("box-bank-a").className = "hemi-box " + (act === "BANK_A" ? "awake" : "sweep");
+        document.getElementById("box-bank-b").className = "hemi-box " + (act === "BANK_B" ? "awake" : "sweep");
+        document.getElementById("mode-bank-a").textContent = act === "BANK_A" ? "AWAKE_GATE" : "DOLPHIN_SWEEP";
+        document.getElementById("mode-bank-b").textContent = act === "BANK_B" ? "AWAKE_GATE" : "DOLPHIN_SWEEP";
 
-        const items = (d.thoughts || []).slice().reverse().map(t => (
-          `<div class="entry">
-            <div class="meta">Cycle #${escapeHtml(t.cycle_index)} | ${escapeHtml(t.cognitive_mode)} | Shard: ${escapeHtml(t.chroma_shard_id)} | d_L2=${escapeHtml(t.chroma_l2_distance)} | RCF=${escapeHtml(t.rcf_l2_core)} | dE=${escapeHtml(t.delta_e_l2_core)}</div>
-            <div>${escapeHtml(t.thought_stream)}</div>
-            <div class="label" style="margin-top:4px;">Seal: ${escapeHtml(t.discovery_seal_sha256)}</div>
-          </div>`
-        )).join("");
-        document.getElementById("thoughts-list").innerHTML = items;
+        const epM = dol.epistemic_pause_metrics || {};
+        document.getElementById("tel-pause").textContent = `${epM.passthrough_count || 0} / ${epM.pause_count || 0}`;
+        const entriesCnt = (d.thoughts || []).length;
+        document.getElementById("tel-ledger").textContent = `${d.ed25519_signed_entries || entriesCnt} / ${d.quarantined_count || 0}`;
+        document.getElementById("tel-hash").textContent = "SHA-256: " + (d.latest_root_hash || "--");
+
+        const thoughts = (d.thoughts || []).slice().reverse();
+        document.getElementById("thought-stream").innerHTML = thoughts.map((t) => {
+          const isQ = String(t.cognitive_mode || "").includes("QUERY");
+          return `<div class="thought-item ${isQ ? "query" : ""}">
+            <div class="thought-meta">
+              <span>Cycle #${esc(t.cycle_index)}</span>
+              <span>RCF ${Number(t.rcf_l2_core || 0).toFixed(4)} · ΔE ${Number(t.delta_e_l2_core || 0).toFixed(4)}</span>
+            </div>
+            <div class="thought-text">${esc(t.thought_stream)}</div>
+            <span class="thought-shard-link" onclick="openSpecialistThread('${esc(t.chroma_shard_id)}', false)">→ G-Stern öffnen: ${esc(t.chroma_shard_id)}</span>
+            <div class="hash-line">Seal: ${esc(t.discovery_seal_sha256)}</div>
+          </div>`;
+        }).join("");
       } catch (e) {}
     }
-    async function triggerPulse() {
-      await fetch("/api/pulse", { method: "POST" });
-      await refreshState();
-    }
-    async function switchHemisphere() {
-      await fetch("/api/dolphin/switch", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hbm_temp_c: 65.0, reason: "hud_operator_switch" }) });
-      await refreshState();
-    }
-    async function sendPrompt() {
-      const el = document.getElementById("prompt-in");
-      const btn = document.getElementById("send-btn");
-      const text = el.value.trim();
-      if (!text) return;
-      el.value = "";
-      btn.disabled = true;
-      btn.textContent = "DENKT NACH...";
-      try {
-        await fetch("/api/prompt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: text }) });
-      } finally {
-        btn.disabled = false;
-        btn.textContent = "SEND PROMPT";
-      }
-      await refreshState();
-    }
-    setInterval(refreshState, 2500);
-    refreshState();
+
+    // Boot
+    applyTheme(localStorage.getItem(THEME_KEY) || "dark");
+    loadThreads();
+    renderAll();
+    loadGStars();
+    refreshTelemetry();
+    setInterval(refreshTelemetry, 3000);
   </script>
 </body>
 </html>

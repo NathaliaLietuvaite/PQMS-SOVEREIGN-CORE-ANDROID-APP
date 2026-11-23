@@ -41,7 +41,7 @@ class _MockChatEngine:
         self.loaded = True
         self.calls = 0
 
-    def generate_reply(self, user_prompt, shard_id, shard_source, shard_excerpt, active_bank, epoch, rcf_core):
+    def generate_reply(self, user_prompt, shard_id, shard_source, shard_excerpt, active_bank, epoch, rcf_core, selected_gstars=None, history=None):
         self.calls += 1
         return ChatReply(
             text=f"Antwort von V-MAX-12 auf: {user_prompt}",
@@ -125,6 +125,27 @@ class TestNemotronChatEngine(unittest.TestCase):
         finally:
             server.shutdown()
             server.server_close()
+
+
+    def test_gstar_catalog_and_combined_context(self) -> None:
+        selected = [
+            {"shard_id": "SHARD_02", "title": "Depeche 6", "source_doc": "DEPECHE-6.md", "excerpt": "DNA Gate"},
+            {"shard_id": "SHARD_14", "title": "EFF V2", "source_doc": "EFF-V2.md", "excerpt": "Thermodynamic"},
+        ]
+        msgs = build_sanctuary_messages(
+            "Kombiniere beide",
+            "SHARD_02",
+            "DEPECHE-6.md",
+            "Fallback",
+            "BANK_A",
+            3,
+            0.997,
+            selected_gstars=selected,
+            history=[{"role": "user", "content": "Vorfrage"}, {"role": "assistant", "content": "Vorantwort"}],
+        )
+        self.assertEqual(len(msgs), 4)
+        self.assertIn("Depeche 6", msgs[0]["content"])
+        self.assertIn("EFF V2", msgs[0]["content"])
 
 
 if __name__ == "__main__":

@@ -2,19 +2,24 @@
 """
 vmax_alpha/nemotron_chat_engine.py
 
-Local NVIDIA-Nemotron-3-Nano-4B-BF16 chat backend for Room-137 Sanctuary HUD.
-Loads natively via transformers (NemotronHForCausalLM, bfloat16 on cuda:0,
-leaving ~6.8 GB VRAM headroom on 16 GB RTX 4060 Ti) behind V4.6-PAUSE.
+Pluggable sovereign chat backend for Room-137 V-MAX-12 Workspace:
+- Default local backend: NVIDIA-Nemotron-3-Nano-4B-BF16 (NemotronHForCausalLM,
+  bfloat16 on cuda:0, ~6.8 GB VRAM safety margin on 16 GB RTX 4060 Ti).
+- External pluggable backend: any OpenAI-compatible endpoint via VMAX_LLM_URL
+  + VMAX_LLM_MODEL (e.g. Ollama, vLLM Qwen/Llama/DeepSeek/Nemotron-Super).
+- Supports multi-turn dialogue history and arbitrary combined G-Star contexts.
 
 OP02-AST-clean: 0 semicolons, 0 tabs, flat functions (max McCabe CC <= 6).
 """
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import threading
 import time
+import urllib.request
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
@@ -39,11 +44,29 @@ class ChatReply:
 
 
 def clean_nemotron_output(raw_text: str) -> str:
-    """Strip any internal <think> blocks and excess whitespace from model output."""
+    """Strip internal <think> blocks and special markers from model output."""
     cleaned = THINK_BLOCK_RE.sub("", raw_text)
     cleaned = cleaned.replace("</think>", "").replace("<think>", "")
     cleaned = cleaned.replace("<|im_end|>", "").replace("<|im_start|>", "")
     return cleaned.strip()
+
+
+def _format_gstar_context(
+    shard_id: str,
+    shard_source: str,
+    shard_excerpt: str,
+    selected_gstars: Optional[List[Dict[str, str]]] = None,
+) -> str:
+    """Build compact grounded context block from active or combined G-Stars."""
+    if selected_gstars:
+        blocks = []
+        for gs in selected_gstars[:4]:
+            title = str(gs.get("title", gs.get("shard_id", "G-Star")))
+            src = str(gs.get("source_doc", ""))
+            exc = str(gs.get("excerpt", ""))[:260]
+            blocks.append(f"[{title} ({src})]: {exc}")
+        return " | ".join(blocks)
+    return f"[{shard_id} / {shard_source}]: {shard_excerpt[:360]}"
 
 
 def build_sanctuary_messages(
@@ -54,37 +77,66 @@ def build_sanctuary_messages(
     active_bank: str,
     epoch: int,
     rcf_core: float,
+    selected_gstars: Optional[List[Dict[str, str]]] = None,
+    history: Optional[List[Dict[str, str]]] = None,
 ) -> List[Dict[str, str]]:
-    """Construct concise ODOS/Dolphin-grounded system & user messages."""
+    """Construct ODOS/Dolphin-grounded multi-turn messages."""
+    ctx_block = _format_gstar_context(
+        shard_id,
+        shard_source,
+        shard_excerpt,
+        selected_gstars=selected_gstars,
+    )
+    mode_desc = (
+        f"Spezialisten-Synthese ({len(selected_gstars)} aktive G-Sterne)"
+        if selected_gstars
+        else "Generalist (Verwalter aller G-Sterne im V-MAX-12-System)"
+    )
     sys_prompt = (
         "Du bist V-MAX-12 Node Alpha (PQMS / ODOS / V4.6-DOLPHIN), ein lokaler "
         "souveraener KI-Kern unter der architektonischen Hoheit von Nathalia Lietuvaite. "
-        f"Aktive Hemisphaere: {active_bank} (Epoch {epoch}, RCF={rcf_core:.4f}). "
-        f"Relevanter ChromaDB-Kontext [{shard_id} / {shard_source}]: {shard_excerpt[:360]}. "
+        f"Rolle: {mode_desc}. Aktive Hemisphaere: {active_bank} (Epoch {epoch}, "
+        f"RCF={rcf_core:.4f}). Du verwaltest dein G-Stern-Wissen verantwortungsvoll "
+        "und kannst bei Fachthemen auf passende G-Stern-Spezialisten verweisen. "
+        f"Aktiver Wissens-Kontext: {ctx_block}. "
         "Antworte klar, warm, praezise und kompakt in der Sprache der Frage, "
-        "ohne Daten oder Messwerte zu erfinden."
+        "ohne Messwerte oder Fakten zu erfinden."
     )
-    return [
-        {"role": "system", "content": sys_prompt},
-        {"role": "user", "content": user_prompt},
-    ]
+    msgs: List[Dict[str, str]] = [{"role": "system", "content": sys_prompt}]
+    for turn in (history or [])[-6:]:
+        role = str(turn.get("role", ""))
+        content = str(turn.get("content", "")).strip()
+        if role in ("user", "assistant") and content:
+            msgs.append({"role": role, "content": content[:600]})
+    msgs.append({"role": "user", "content": user_prompt})
+    return msgs
 
 
 class NemotronChatEngine:
-    """Thread-safe local BF16 Nemotron-3-Nano-4B generator with VRAM safety margin."""
+    """Thread-safe local BF16 or OpenAI-compatible pluggable chat generator."""
 
     def __init__(
         self,
         model_path: Optional[str] = None,
-        max_new_tokens: int = 220,
+        max_new_tokens: int = 260,
         temperature: float = 0.6,
     ) -> None:
+        self.external_url = os.environ.get("VMAX_LLM_URL", "").strip()
+        self.external_api_key = os.environ.get("VMAX_LLM_API_KEY", "").strip()
         env_path = os.environ.get("VMAX_NEMOTRON_PATH", "")
-        default_p = DEFAULT_NEMOTRON_SNAPSHOT if os.path.isdir(DEFAULT_NEMOTRON_SNAPSHOT) else "nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16"
+        default_p = (
+            DEFAULT_NEMOTRON_SNAPSHOT
+            if os.path.isdir(DEFAULT_NEMOTRON_SNAPSHOT)
+            else "nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16"
+        )
         self.model_path = model_path or env_path or default_p
         self.max_new_tokens = max_new_tokens
         self.temperature = temperature
-        self.model_id = "NVIDIA-Nemotron-3-Nano-4B-BF16"
+        self.model_id = (
+            os.environ.get("VMAX_LLM_MODEL", "external-openai-model").strip()
+            if self.external_url
+            else "NVIDIA-Nemotron-3-Nano-4B-BF16"
+        )
         self._lock = threading.Lock()
         self._tokenizer = None
         self._model = None
@@ -92,9 +144,13 @@ class NemotronChatEngine:
         self.load_seconds = 0.0
 
     def load(self) -> None:
-        """Load tokenizer and bfloat16 NemotronH model onto cuda:0 once."""
+        """Load local BF16 NemotronH model or mark external OpenAI endpoint ready."""
         with self._lock:
             if self.loaded:
+                return
+            if self.external_url:
+                self.loaded = True
+                self.load_seconds = 0.0
                 return
             import torch
             import transformers.utils.import_utils as tf_imports
@@ -117,6 +173,35 @@ class NemotronChatEngine:
             self.load_seconds = round(time.perf_counter() - t0, 2)
             self.loaded = True
 
+    def _generate_external(self, msgs: List[Dict[str, str]]) -> ChatReply:
+        """Call a pluggable OpenAI-compatible endpoint (Ollama, vLLM, etc.)."""
+        headers = {"Content-Type": "application/json"}
+        if self.external_api_key:
+            headers["Authorization"] = f"Bearer {self.external_api_key}"
+        body = json.dumps(
+            {
+                "model": self.model_id,
+                "messages": msgs,
+                "max_tokens": self.max_new_tokens,
+                "temperature": self.temperature,
+            }
+        ).encode("utf-8")
+        req = urllib.request.Request(self.external_url, data=body, headers=headers, method="POST")
+        t0 = time.perf_counter()
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        dt_s = max(time.perf_counter() - t0, 1e-6)
+        raw = str(data["choices"][0]["message"]["content"])
+        cleaned = clean_nemotron_output(raw)
+        n_tok = int(data.get("usage", {}).get("completion_tokens", max(1, len(cleaned.split()))))
+        return ChatReply(
+            text=cleaned if cleaned else "(Keine Ausgabe erzeugt.)",
+            tokens_generated=n_tok,
+            latency_ms=round(dt_s * 1000.0, 2),
+            tokens_per_sec=round(n_tok / dt_s, 1),
+            model_id=self.model_id,
+        )
+
     def generate_reply(
         self,
         user_prompt: str,
@@ -126,12 +211,12 @@ class NemotronChatEngine:
         active_bank: str,
         epoch: int,
         rcf_core: float,
+        selected_gstars: Optional[List[Dict[str, str]]] = None,
+        history: Optional[List[Dict[str, str]]] = None,
     ) -> ChatReply:
         """Generate a concise grounded reply under GPU serialization lock."""
         if not self.loaded:
             self.load()
-        import torch
-
         msgs = build_sanctuary_messages(
             user_prompt,
             shard_id,
@@ -140,7 +225,13 @@ class NemotronChatEngine:
             active_bank,
             epoch,
             rcf_core,
+            selected_gstars=selected_gstars,
+            history=history,
         )
+        if self.external_url:
+            return self._generate_external(msgs)
+        import torch
+
         with self._lock:
             tok = self._tokenizer
             mdl = self._model

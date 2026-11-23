@@ -241,7 +241,63 @@ class SanctuaryNodeAlphaService:
         payload = {k: v for k, v in snap.items() if k != "_snapshot_ts"}
         payload["seconds_since_last"] = round(time.time() - float(snap["_snapshot_ts"]), 2)
         payload["thermal"] = query_gpu_thermal_and_power()
+        v_used, v_tot = _query_vram_mb()
+        payload["gpu_vram_used_mb"] = v_used
+        payload["gpu_vram_total_mb"] = v_tot
         return payload
+
+
+def _classify_gstar_category(source_doc: str) -> str:
+    upper = source_doc.upper()
+    if "DEPECHE" in upper:
+        return "BRIDGE / DEPECHE"
+    if "RTL" in upper or "ANDROID" in upper or "INFRA" in upper:
+        return "HARDWARE / SILICON"
+    if "EFF" in upper or "LIS" in upper or "DYN" in upper or "LHS" in upper:
+        return "THERMODYNAMICS / ODOS"
+    return "PQMS / COGNITION"
+
+
+def _clean_gstar_title(source_doc: str, shard_id: str) -> str:
+    stem = source_doc.rsplit(".", 1)[0] if "." in source_doc else shard_id
+    for prefix in ("PQMS-ODOS-MTSC-", "PQMS-BRIDGE-", "PQMS-"):
+        if stem.startswith(prefix):
+            stem = stem[len(prefix) :]
+    return stem.replace("-", " ").replace("_", " ").strip() or shard_id
+
+
+def _build_gstar_catalog(svc: Any) -> List[Dict[str, str]]:
+    forager = getattr(svc, "forager", None)
+    shards = getattr(forager, "shards", []) if forager is not None else []
+    catalog: List[Dict[str, str]] = []
+    for shard_id, source_doc, excerpt in shards:
+        catalog.append(
+            {
+                "shard_id": str(shard_id),
+                "title": _clean_gstar_title(str(source_doc), str(shard_id)),
+                "source_doc": str(source_doc),
+                "category": _classify_gstar_category(str(source_doc)),
+                "excerpt": str(excerpt)[:260],
+            }
+        )
+    return catalog
+
+
+def _query_vram_mb() -> Tuple[int, int]:
+    try:
+        import subprocess as _sp
+
+        res = _sp.run(
+            ["nvidia-smi", "--query-gpu=memory.used,memory.total", "--format=csv,noheader,nounits"],
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=True,
+        )
+        parts = [x.strip() for x in res.stdout.strip().splitlines()[0].split(",")]
+        return int(float(parts[0])), int(float(parts[1]))
+    except Exception:
+        return 0, 16380
 
 
 def _init_chat_engine(enable_llm: bool) -> Any:
@@ -254,16 +310,58 @@ def _init_chat_engine(enable_llm: bool) -> Any:
     return engine
 
 
+def _resolve_selected_gstars(svc: Any, selected_ids: Any) -> List[Dict[str, str]]:
+    if not isinstance(selected_ids, list) or not selected_ids:
+        return []
+    wanted = {str(x) for x in selected_ids}
+    return [g for g in _build_gstar_catalog(svc) if g["shard_id"] in wanted]
+
+
+def _maybe_recommend_specialist(
+    svc: Any,
+    entry: Any,
+    selected_ids: Any,
+    auto_route: bool,
+) -> Optional[Dict[str, Any]]:
+    if selected_ids:
+        return None
+    shard_id = str(getattr(entry, "chroma_shard_id", ""))
+    src_doc = str(getattr(entry, "chroma_source_doc", ""))
+    dist = round(float(getattr(entry, "chroma_l2_distance", 9.9)), 4)
+    if not shard_id:
+        return None
+    return {
+        "shard_id": shard_id,
+        "title": _clean_gstar_title(src_doc, shard_id),
+        "source_doc": src_doc,
+        "d_l2_384": dist,
+        "auto_open": bool(auto_route and dist < 1.05),
+    }
+
+
 def _maybe_generate_chat_reply(
     svc: Any,
     prompt_text: str,
     entry: Any,
     decision: Any,
     payload: Dict[str, Any],
+    body: Optional[Dict[str, Any]] = None,
 ) -> None:
+    req_body = body if isinstance(body, dict) else {}
+    sel_ids = req_body.get("selected_gstars")
+    rec_spec = _maybe_recommend_specialist(
+        svc,
+        entry,
+        sel_ids,
+        bool(req_body.get("auto_route_specialist", False)),
+    )
+    if rec_spec is not None:
+        payload["recommended_specialist"] = rec_spec
     engine = getattr(svc, "chat_engine", None)
     if engine is None or not getattr(engine, "loaded", False):
         return
+    selected_objs = _resolve_selected_gstars(svc, sel_ids)
+    history = req_body.get("history") if isinstance(req_body.get("history"), list) else []
     reply = engine.generate_reply(
         user_prompt=prompt_text,
         shard_id=str(getattr(entry, "chroma_shard_id", "")),
@@ -272,8 +370,11 @@ def _maybe_generate_chat_reply(
         active_bank=decision.active_bank,
         epoch=decision.epoch,
         rcf_core=float(getattr(entry, "rcf_l2_core", decision.rcf_float)),
+        selected_gstars=selected_objs,
+        history=history,
     )
     payload["reply"] = reply.text
+    payload["model_id"] = reply.model_id
     payload["llm_latency_ms"] = reply.latency_ms
     payload["llm_tokens"] = reply.tokens_generated
     payload["llm_tokens_per_sec"] = reply.tokens_per_sec
@@ -396,7 +497,7 @@ def _handle_prompt_request(handler: Any, svc: Any, content_len: int) -> None:
     payload = asdict(entry)
     payload["epistemic_pause"] = False
     payload["epistemic_pause_decision"] = decision.to_dict()
-    _maybe_generate_chat_reply(svc, prompt_text, entry, decision, payload)
+    _maybe_generate_chat_reply(svc, prompt_text, entry, decision, payload, body=body)
     handler._send_json(200, payload)
 
 
@@ -450,6 +551,8 @@ def make_hud_handler(svc: SanctuaryNodeAlphaService) -> type:
                 self._send_json(200, gw.get_metrics())
             elif self.path == "/api/dolphin/status":
                 _handle_dolphin_status(self, svc)
+            elif self.path == "/api/gstars":
+                self._send_json(200, {"gstars": _build_gstar_catalog(svc)})
             else:
                 self._send_json(404, {"error": "NOT_FOUND"})
 
@@ -521,4 +624,4 @@ if __name__ == "__main__":
             f.write("\n")
         print(json.dumps(rep, indent=2, ensure_ascii=False))
     else:
-        print(json.dumps(run_server(batch_only=args.batch, port=args.port, reset=args.reset), indent=2, ensure_ascii=False))
+        print(json.dumps(run_server(batch_only=args.batch, port=args.port, reset=args.reset, enable_llm=args.enable_llm), indent=2, ensure_ascii=False))

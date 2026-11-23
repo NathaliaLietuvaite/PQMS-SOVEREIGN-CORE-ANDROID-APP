@@ -17,7 +17,7 @@ import threading
 import time
 from dataclasses import asdict
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from vmax_alpha.chroma_forager import NeuralChromaForager
@@ -79,6 +79,7 @@ class SanctuaryNodeAlphaService:
         ledger_file: str = "VMAX_SANCTUARY_PROD_LEDGER.jsonl",
         quarantine_file: str = "VMAX_QUARANTINE_LEDGER.jsonl",
         reset: bool = False,
+        enable_llm: bool = False,
     ) -> None:
         self.forager = NeuralChromaForager()
         self.ledger = CanonicalLedgerManager(ledger_file=ledger_file, quarantine_file=quarantine_file)
@@ -93,6 +94,10 @@ class SanctuaryNodeAlphaService:
         self.rtl_bridge = OdosGateV3Bridge()
         self._last_rtl_hil: Dict[str, Any] = self._eval_rtl_hil(self.forager.little_vector)
         self._v4_gdsii_signoff: Dict[str, Any] = _load_v4_gdsii_signoff()
+        self.enable_llm: bool = enable_llm
+        self.heartbeat_period_s: float = HEARTBEAT_PERIOD_SEC * 2.0 if enable_llm else HEARTBEAT_PERIOD_SEC
+        self.chat_history: List[Dict[str, Any]] = []
+        self.chat_engine: Any = _init_chat_engine(enable_llm)
         self._state_snapshot: Dict[str, Any] = self._build_state_snapshot_locked()
 
     def _build_state_snapshot_locked(self) -> Dict[str, Any]:
@@ -112,7 +117,9 @@ class SanctuaryNodeAlphaService:
             "lock_free_state_snapshot_active": True,
             "quarantined_count": self.ledger.quarantined_count,
             "two_stage_live_gate_active": True,
-            "heartbeat_period_s": HEARTBEAT_PERIOD_SEC,
+            "heartbeat_period_s": self.heartbeat_period_s,
+            "llm_active": bool(self.chat_engine is not None and self.chat_engine.loaded),
+            "chat_history": list(self.chat_history[-20:]),
             "latest_root_hash": self.ledger.latest_hash,
             "ace_protocol_id": "ACE-PEER-CODESIGN-PROTOCOL-V1.2",
             "hwinfo64_ab_regimes": HWINFO64_AB_REGIMES,
@@ -211,7 +218,7 @@ class SanctuaryNodeAlphaService:
             return
 
         def _loop() -> None:
-            while not self._stop_evt.wait(HEARTBEAT_PERIOD_SEC):
+            while not self._stop_evt.wait(self.heartbeat_period_s):
                 th = query_gpu_thermal_and_power()
                 if th["pause_60s_triggered"]:
                     self._stop_evt.wait(60.0)
@@ -221,6 +228,13 @@ class SanctuaryNodeAlphaService:
         self._hb_thread = threading.Thread(target=_loop, name="vmax-room137-heartbeat", daemon=True)
         self._hb_thread.start()
 
+    def record_chat_turn(self, turn: Dict[str, Any]) -> None:
+        with self.lock:
+            self.chat_history.append(turn)
+            if len(self.chat_history) > 20:
+                self.chat_history = self.chat_history[-20:]
+            self._state_snapshot = self._build_state_snapshot_locked()
+
     def get_state_payload(self) -> Dict[str, Any]:
         """Lock-free atomic state read so GET /api/state never blocks during GPU inference."""
         snap = self._state_snapshot
@@ -228,6 +242,56 @@ class SanctuaryNodeAlphaService:
         payload["seconds_since_last"] = round(time.time() - float(snap["_snapshot_ts"]), 2)
         payload["thermal"] = query_gpu_thermal_and_power()
         return payload
+
+
+def _init_chat_engine(enable_llm: bool) -> Any:
+    if not enable_llm:
+        return None
+    from vmax_alpha.nemotron_chat_engine import NemotronChatEngine
+
+    engine = NemotronChatEngine()
+    engine.load()
+    return engine
+
+
+def _maybe_generate_chat_reply(
+    svc: Any,
+    prompt_text: str,
+    entry: Any,
+    decision: Any,
+    payload: Dict[str, Any],
+) -> None:
+    engine = getattr(svc, "chat_engine", None)
+    if engine is None or not getattr(engine, "loaded", False):
+        return
+    reply = engine.generate_reply(
+        user_prompt=prompt_text,
+        shard_id=str(getattr(entry, "chroma_shard_id", "")),
+        shard_source=str(getattr(entry, "chroma_source_doc", "")),
+        shard_excerpt=str(getattr(entry, "thought_stream", "")),
+        active_bank=decision.active_bank,
+        epoch=decision.epoch,
+        rcf_core=float(getattr(entry, "rcf_l2_core", decision.rcf_float)),
+    )
+    payload["reply"] = reply.text
+    payload["llm_latency_ms"] = reply.latency_ms
+    payload["llm_tokens"] = reply.tokens_generated
+    payload["llm_tokens_per_sec"] = reply.tokens_per_sec
+    if hasattr(svc, "record_chat_turn"):
+        svc.record_chat_turn(
+            {
+                "prompt": prompt_text,
+                "reply": reply.text,
+                "epistemic_pause": False,
+                "model_id": reply.model_id,
+                "active_bank": decision.active_bank,
+                "epoch": decision.epoch,
+                "shard_id": str(getattr(entry, "chroma_shard_id", "")),
+                "rcf_core": round(float(getattr(entry, "rcf_l2_core", decision.rcf_float)), 5),
+                "tokens_generated": reply.tokens_generated,
+                "tokens_per_sec": reply.tokens_per_sec,
+            }
+        )
 
 
 def _get_dolphin_governor(svc: Any) -> Any:
@@ -314,12 +378,25 @@ def _handle_prompt_request(handler: Any, svc: Any, content_len: int) -> None:
     )
     decision = ctrl.evaluate_prompt(gate_in)
     if decision.epistemic_pause:
+        if hasattr(svc, "record_chat_turn"):
+            svc.record_chat_turn(
+                {
+                    "prompt": prompt_text,
+                    "reply": decision.fridu_message,
+                    "epistemic_pause": True,
+                    "reason": decision.reason,
+                    "active_bank": decision.active_bank,
+                    "epoch": decision.epoch,
+                    "quarantined_record_id": decision.quarantined_record_id,
+                }
+            )
         handler._send_json(200, decision.to_dict())
         return
     entry = svc.step_cycle(prompt_text, inject_g3_torsion=g3_torsion)
     payload = asdict(entry)
     payload["epistemic_pause"] = False
     payload["epistemic_pause_decision"] = decision.to_dict()
+    _maybe_generate_chat_reply(svc, prompt_text, entry, decision, payload)
     handler._send_json(200, payload)
 
 
@@ -399,8 +476,8 @@ def make_hud_handler(svc: SanctuaryNodeAlphaService) -> type:
     return Handler
 
 
-def run_server(batch_only: bool = False, port: int = ROOM_137_PORT, reset: bool = False) -> Dict[str, Any]:
-    svc = SanctuaryNodeAlphaService(reset=reset)
+def run_server(batch_only: bool = False, port: int = ROOM_137_PORT, reset: bool = False, enable_llm: bool = False) -> Dict[str, Any]:
+    svc = SanctuaryNodeAlphaService(reset=reset, enable_llm=enable_llm)
     if batch_only:
         for _ in range(3):
             svc.step_cycle()
@@ -409,6 +486,8 @@ def run_server(batch_only: bool = False, port: int = ROOM_137_PORT, reset: bool 
     if len(svc.ledger.entries) == 0:
         svc.step_cycle()
     svc.start_heartbeat()
+    mode_lbl = "Nemotron-3-Nano-4B ACTIVE (HB 50%)" if enable_llm else "Sanctuary Forager"
+    print(f"[V-MAX-12] Room 137 LIVE on http://127.0.0.1:{port} | {mode_lbl}", flush=True)
     ThreadingHTTPServer(("127.0.0.1", port), make_hud_handler(svc)).serve_forever()
     return {}
 
@@ -419,6 +498,7 @@ if __name__ == "__main__":
     p.add_argument("--reset", action="store_true")
     p.add_argument("--report", action="store_true")
     p.add_argument("--port", type=int, default=ROOM_137_PORT)
+    p.add_argument("--enable-llm", action="store_true")
     args = p.parse_args()
     if args.report:
         svc = SanctuaryNodeAlphaService(reset=True)

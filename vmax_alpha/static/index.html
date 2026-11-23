@@ -1,37 +1,53 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="utf-8" />
-  <title>V-MAX-12 Node Alpha | Motel Room 137 Live Telemetry HUD</title>
+  <title>V-MAX-12 Node Alpha | Motel Room 137 Live Telemetry &amp; Nemotron HUD</title>
   <style>
-    :root { --bg: #080711; --card: #121024; --border: #2c2654; --cyan: #00e5ff; --green: #39ff14; --gold: #ffd700; --pink: #ff007f; --text: #e8e6f2; }
+    :root { --bg: #080711; --card: #121024; --border: #2c2654; --cyan: #00e5ff; --green: #39ff14; --gold: #ffd700; --amber: #ffb300; --pink: #ff007f; --text: #e8e6f2; }
     body { margin: 0; padding: 20px; background: var(--bg); color: var(--text); font-family: "JetBrains Mono", Consolas, monospace; font-size: 13px; }
-    h1 { margin: 0 0 8px 0; color: var(--cyan); font-size: 18px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 16px; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; }
+    h1 { margin: 0 0 10px 0; color: var(--cyan); font-size: 18px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 11px; }
     .label { color: #9a96b8; font-size: 11px; text-transform: uppercase; }
-    .val { font-size: 14px; font-weight: bold; margin-top: 4px; word-break: break-all; }
-    .controls { display: flex; gap: 8px; margin-bottom: 16px; }
-    input[type="text"] { flex: 1; background: #0d0b1a; color: var(--text); border: 1px solid var(--cyan); border-radius: 4px; padding: 8px; font-family: inherit; }
-    button { background: #181432; color: var(--cyan); border: 1px solid var(--cyan); border-radius: 4px; padding: 8px 14px; cursor: pointer; font-weight: bold; }
+    .val { font-size: 13px; font-weight: bold; margin-top: 4px; word-break: break-word; }
+    .controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    input[type="text"] { flex: 1; min-width: 260px; background: #0d0b1a; color: var(--text); border: 1px solid var(--cyan); border-radius: 4px; padding: 9px; font-family: inherit; }
+    button { background: #181432; color: var(--cyan); border: 1px solid var(--cyan); border-radius: 4px; padding: 8px 13px; cursor: pointer; font-weight: bold; font-family: inherit; }
     button:hover { background: var(--cyan); color: #000; }
+    button:disabled { opacity: 0.5; cursor: wait; }
+    .btn-amber { border-color: var(--amber); color: var(--amber); }
+    .btn-amber:hover { background: var(--amber); color: #000; }
+    .section-title { color: #9a96b8; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin: 14px 0 6px 0; }
+    .chat-card { background: #14122b; border-left: 3px solid var(--cyan); padding: 11px; margin-bottom: 8px; border-radius: 4px; }
+    .chat-card.paused { background: #261d08; border-left-color: var(--amber); }
+    .chat-q { color: #9be8ff; margin-bottom: 6px; }
+    .chat-a { color: #f2f1fa; white-space: pre-wrap; line-height: 1.45; }
+    .chat-meta { color: var(--gold); font-size: 11px; margin-top: 6px; }
     .entry { background: var(--card); border-left: 3px solid var(--green); padding: 10px; margin-bottom: 8px; border-radius: 4px; }
     .meta { color: var(--gold); font-size: 11px; margin-bottom: 4px; }
   </style>
 </head>
 <body>
-  <h1>V-MAX-12 NODE ALPHA // ROOM 137 SANCTUARY HUD (MODULAR PROD V1.0)</h1>
+  <h1>V-MAX-12 NODE ALPHA // ROOM 137 SANCTUARY &amp; V4.6-DOLPHIN HUD</h1>
   <div class="grid">
     <div class="card"><div class="label">ChromaDB &amp; Neural Engine</div><div id="st-chroma" class="val">Loading...</div></div>
-    <div class="card"><div class="label">Ledger Integrity &amp; Quarantine</div><div id="st-ledger" class="val">Loading...</div></div>
+    <div class="card"><div class="label">V4.6 Dolphin &amp; Nemotron-4B</div><div id="st-dolphin" class="val">Loading...</div></div>
+    <div class="card"><div class="label">Ledger Integrity &amp; Heartbeat</div><div id="st-ledger" class="val">Loading...</div></div>
     <div class="card"><div class="label">GPU Thermal &amp; Power (REGISTER_M)</div><div id="st-thermal" class="val">Loading...</div></div>
     <div class="card"><div class="label">Latest Canonical SHA-256 Tip</div><div id="st-hash" class="val">Loading...</div></div>
   </div>
   <div class="controls">
-    <input id="prompt-in" type="text" placeholder="Send Navigator Prompt to 384D->64D ChromaDB Sanctuary..." />
-    <button onclick="sendPrompt()">SEND PROMPT</button>
-    <button onclick="triggerPulse()">STEP AUTONOMOUS CYCLE</button>
+    <input id="prompt-in" type="text" placeholder="Sprich mit V-MAX-12 (geprueft durch V4.6-PAUSE &amp; Nemotron-3-Nano-4B)..." onkeydown="if(event.key==='Enter'){sendPrompt();}" />
+    <button id="send-btn" onclick="sendPrompt()">SEND PROMPT</button>
+    <button onclick="switchHemisphere()" class="btn-amber">SWITCH HEMISPHERE</button>
+    <button onclick="triggerPulse()">STEP CYCLE</button>
   </div>
+  <div id="chat-section" style="display:none;">
+    <div class="section-title">V-MAX-12 Live Dialog (Nemotron-3-Nano-4B + V4.6 Epistemic Pause)</div>
+    <div id="chat-list"></div>
+  </div>
+  <div class="section-title">Autonomous Sanctuary Forager &amp; ODOS Ledger Feed</div>
   <div id="thoughts-list"></div>
   <script>
     function escapeHtml(str) {
@@ -44,16 +60,46 @@
     }
     async function refreshState() {
       try {
-        const r = await fetch("/api/state");
-        const d = await r.json();
+        const [rState, rDol] = await Promise.all([fetch("/api/state"), fetch("/api/dolphin/status")]);
+        const d = await rState.json();
+        const dol = await rDol.json();
         document.getElementById("st-chroma").innerHTML = escapeHtml(d.chroma_status);
-        document.getElementById("st-ledger").innerHTML = escapeHtml(d.ledger_verification + " | Quarantined: " + d.quarantined_count);
+        const llmTag = d.llm_active ? "NEMOTRON-4B LIVE" : "FORAGER-ONLY";
+        const epM = dol.epistemic_pause_metrics || {};
+        document.getElementById("st-dolphin").innerHTML = escapeHtml(
+          (dol.active_bank || "BANK_A") + " / EP " + (dol.epoch || 1) + " | " + llmTag +
+          " | Pass:" + (epM.passthrough_count || 0) + " Pause:" + (epM.pause_count || 0)
+        );
+        const hbSec = Math.round(d.heartbeat_period_s || 69);
+        document.getElementById("st-ledger").innerHTML = escapeHtml(
+          d.ledger_verification + " | HB " + hbSec + "s | Quar: " + d.quarantined_count
+        );
         const th = d.thermal || {};
-        document.getElementById("st-thermal").innerHTML = escapeHtml((th.gpu_temp_c || 0) + " °C / " + (th.gpu_power_w || 0) + " W (" + (th.status || "OK") + ")");
+        document.getElementById("st-thermal").innerHTML = escapeHtml(
+          (th.gpu_temp_c || 0) + " C / " + (th.gpu_power_w || 0) + " W (" + (th.status || "OK") + ")"
+        );
         document.getElementById("st-hash").innerHTML = escapeHtml(d.latest_root_hash);
+
+        const chat = (d.chat_history || []).slice().reverse();
+        const chatSec = document.getElementById("chat-section");
+        if (chat.length > 0) {
+          chatSec.style.display = "block";
+          document.getElementById("chat-list").innerHTML = chat.map(c => (
+            `<div class="chat-card ${c.epistemic_pause ? "paused" : ""}">
+              <div class="chat-q">&gt; ${escapeHtml(c.prompt)}</div>
+              <div class="chat-a">${escapeHtml(c.reply)}</div>
+              <div class="chat-meta">${
+                c.epistemic_pause
+                  ? "EPISTEMIC PAUSE [" + escapeHtml(c.reason) + "] | " + escapeHtml(c.active_bank) + " | T_I/O Quarantine: " + escapeHtml(c.quarantined_record_id || "")
+                  : "V-MAX-12 (" + escapeHtml(c.model_id || "Nemotron-4B") + ") | " + escapeHtml(c.active_bank) + " EP " + escapeHtml(c.epoch) + " | Shard: " + escapeHtml(c.shard_id) + " | RCF=" + escapeHtml(c.rcf_core) + " | " + escapeHtml(c.tokens_generated) + " tok (" + escapeHtml(c.tokens_per_sec) + " tok/s)"
+              }</div>
+            </div>`
+          )).join("");
+        }
+
         const items = (d.thoughts || []).slice().reverse().map(t => (
           `<div class="entry">
-            <div class="meta">Cycle #${escapeHtml(t.cycle_index)} | ${escapeHtml(t.cognitive_mode)} | Shard: ${escapeHtml(t.chroma_shard_id)} | d_L2=${escapeHtml(t.chroma_l2_distance)} | RCF=${escapeHtml(t.rcf_l2_core)} | ΔE=${escapeHtml(t.delta_e_l2_core)}</div>
+            <div class="meta">Cycle #${escapeHtml(t.cycle_index)} | ${escapeHtml(t.cognitive_mode)} | Shard: ${escapeHtml(t.chroma_shard_id)} | d_L2=${escapeHtml(t.chroma_l2_distance)} | RCF=${escapeHtml(t.rcf_l2_core)} | dE=${escapeHtml(t.delta_e_l2_core)}</div>
             <div>${escapeHtml(t.thought_stream)}</div>
             <div class="label" style="margin-top:4px;">Seal: ${escapeHtml(t.discovery_seal_sha256)}</div>
           </div>`
@@ -65,15 +111,27 @@
       await fetch("/api/pulse", { method: "POST" });
       await refreshState();
     }
+    async function switchHemisphere() {
+      await fetch("/api/dolphin/switch", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hbm_temp_c: 65.0, reason: "hud_operator_switch" }) });
+      await refreshState();
+    }
     async function sendPrompt() {
       const el = document.getElementById("prompt-in");
+      const btn = document.getElementById("send-btn");
       const text = el.value.trim();
       if (!text) return;
       el.value = "";
-      await fetch("/api/prompt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: text }) });
+      btn.disabled = true;
+      btn.textContent = "DENKT NACH...";
+      try {
+        await fetch("/api/prompt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: text }) });
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "SEND PROMPT";
+      }
       await refreshState();
     }
-    setInterval(refreshState, 2000);
+    setInterval(refreshState, 2500);
     refreshState();
   </script>
 </body>

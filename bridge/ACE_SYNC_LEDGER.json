@@ -400,6 +400,23 @@
       ],
       "anchor_audit_summary": "9/9 MATCH",
       "entry_hash": "282fe06ca38c049ea61e4c317d75309913006a2e9a8488bdb3d3e8d11e8b7cbd"
+    },
+    {
+      "sync_id": "SYNC-26c",
+      "spec_id": "PQMS-V4.5-DOLPHIN-Unihemispheric-Memory-Governor",
+      "release_version": "V4.5.1-NATURE-CORE",
+      "tag": "v4.5.1-dolphin",
+      "timestamp_utc": "2026-11-23T10:04:20Z",
+      "agent": "AntiG (V-MAX-12 Node Alpha)",
+      "summary": "V4.5.1-NATURE-CORE release: published PQMS-V4.5-DOLPHIN paper (GFM-MathJax PASS), patched chromadb 1.5.9 NumPy ndarray bridge, sealed live Node Alpha dry-run report (18/18 S^63 @ RCF 0.998293, 424/424 384D ablation, 0 MB VRAM delta, 0.764 ms LOCKSTEP handover)",
+      "paper_sha256": "58ee4fbc213eee0ae7a91e07162dc6a760b96ad38c81bedbed69d15752fd6611",
+      "paper_source_drive_sha256": "1b6d4275a272be1579b11f6c4af3221647f31e624248d89c37182acc29b7c3bf",
+      "dolphin_chroma_bridge_sha256": "aeb5d6d959f7a19445e797af3a8916326fac38f9d798b81c319f0940c034f827",
+      "live_dryrun_report_sha256": "c11a962bc94fb61469c1718ac16c3925be5cd50ae02e1843ce04628bd3b69861",
+      "python_rtl_tests": "Ran 124 tests in 22.756s | OK",
+      "fridu_operators": "10/10 PASS (semi=0)",
+      "immutable_silicon_guard": "EMPTY_DIFF",
+      "entry_hash": "ca8a52dbc0a1ed625d36ccae8c5efabbdca9544a67a4ccb3b117cca04b10da6c"
     }
   ]
 }

@@ -561,6 +561,32 @@
         "live_pkb_sha256_unchanged": true,
         "sync31_v50_paper_verified": true
       }
+    },
+    {
+      "sync_id": "SYNC-32",
+      "work_order": "WORK-ORDER-AG-32",
+      "date": "2026-11-24",
+      "status": "COMPLETED_VERIFIED",
+      "epistemic_register": "REGISTER_M",
+      "summary": "Verified additive V5.0 Virtual Silicon wrapper exclusively in rtl_v5/ (rtl/** EMPTY_DIFF) via pausable 5-stage StageCheckpointRunner (0 GPU load): Verilator 5.055 -Wall 0 errors/warnings, Icarus Verilog -Wall 15/15 assertions PASS (V5_TB_STATUS=PASSED), 60/60 (100%) bit-exact RTL-vs-Python co-sim on fixed corpus c8c448a8, Yosys 0.71 IHP SG13G2 130 nm synthesis: 538 cells (107 FFs, 431 comb, 0 latches), 9565.479 um^2 (0.009565 mm^2 = 1.2114% vs V4.0-GDSII 0.7896 mm^2), OpenSTA @ 100 MHz MET (setup +5.0618 ns, hold +0.2688 ns, f_max 202.5 MHz).",
+      "artifacts": {
+        "rtl_v5_wrapper": "rtl_v5/vmax_v5_core_nano_wrapper.v",
+        "rtl_v5_wrapper_sha256": "4fc11621084d4094f7da0e2ec1c5330d9edd0910aeec6ec14b0414478cb4f746",
+        "rtl_v5_tb": "rtl_v5/tb_vmax_v5_core_nano_wrapper.v",
+        "rtl_v5_tb_sha256": "5b95f0efa8ec0d58ae6b50dff1fd1607c72bd4bc2a25a945ccf116a469066358",
+        "rtl_v5_cosim_tb": "rtl_v5/tb_vmax_v5_cosim_60.v",
+        "report_path": "telemetry/VMAX_V5_VIRTUAL_SILICON_REPORT.json",
+        "report_file_sha256": "745ec58fe11ba57cf970ce25f7a8c353417587aae7028213ee6ecc72e59e482a",
+        "report_payload_sha256": "1cca76306162b69aa33cc8a276d933a81b92c99c2e861f56caa76c02b8cdc2ff",
+        "drive_handoff_id": "13TKJqMwByC7Qq_ZvHkuIG2MIsSpKkqQe"
+      },
+      "verification": {
+        "unittest": "161/161 PASS",
+        "fridu_enclave_g": "10/10 PASS (OP02 semi=0, tabs=0, new_code max_cc<=6)",
+        "immutable_silicon_guard": "EMPTY_DIFF",
+        "live_pkb_sha256_unchanged": true,
+        "sync32_virtual_silicon_verified": true
+      }
     }
   ]
 }

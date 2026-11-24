@@ -2,7 +2,7 @@
   "protocol_id": "ACE-PEER-CODESIGN-PROTOCOL-V1.2",
   "spec_version": "PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1 + RTL-CORE-V3.1-OPTIMUM + RTL-CORE-V4.0-GDSII (WORK-ORDER-AG-22)",
   "protocol_version": "1.2-NODE-ALPHA",
-  "timestamp_utc": "2026-11-24T16:45:00Z",
+  "timestamp_utc": "2026-11-24T17:07:00Z",
   "peers": {
     "node_alpha": {
       "agent_id": "AntiG (Gemini 4 Neon Extra / Local Lead Software Engineer)",
@@ -650,6 +650,41 @@
         "immutable_silicon_guard": "EMPTY_DIFF (rtl/** & rtl_v5/**)",
         "live_pkb_sha256_unchanged": true,
         "sync34_lean4_hoare_verified": true
+      }
+    },
+    {
+      "sync_id": "SYNC-35",
+      "work_order": "WORK-ORDER-AG-35",
+      "date": "2026-11-24",
+      "status": "COMPLETED_VERIFIED",
+      "epistemic_register": "REGISTER_M",
+      "summary": "Authentic KLayout 0.30.14 real-silicon transistor-level GDSII Die-Shot rendered directly from rtl_v5/gds/vmax_v5_odos_top_sg13g2.gds (643503d5, 2372x1624 px, 4.52 MB, die pixel variance 8833.39) via verbatim tools/render_v5_dieshot.py (29ce27ee, OP02 max_cc=5), and surgical Revision V5.0.1-SILICON-SIGNOFF update of PQMS-ODOS-MTSC-V-MAX-12-CORE-NANO-V5.0.md integrating SYNC-32, SYNC-33 (incl. unvarnished 10 standalone-macro M2-M5 CMP density flags & +0.13 um Y-bbox disclosure), and SYNC-34 (7 Lean 4.36.0 theorems + 10/10 Triple Parity Matrix). 5-way byte-identical SHA-256 parity (ALL_5_EQUAL=True) across all 4 GitHub repos + Google Drive 02_PAPERS, tagged v5.0.1-silicon-signoff.",
+      "artifacts": {
+        "paper_filename": "PQMS-ODOS-MTSC-V-MAX-12-CORE-NANO-V5.0.md",
+        "paper_revision": "V5.0.1-SILICON-SIGNOFF",
+        "paper_sha256": "8f2babbb734bf958a604bec880d8a3215737786916acbf311e702f52301fc50c",
+        "paper_drive_02_id": "1wMe9ydVet7Zk0_C8Vxtar9DwuVu6LQCF",
+        "dieshot_path": "docs/figures/V-MAX-12-RTL-V5.0-DIESHOT.png",
+        "dieshot_sha256": "24d39198679eb31053ce1959db75ed1dfac8a752ec88570114a88f8ef2f966a3",
+        "dieshot_drive_02_id": "1F5eUpe_K-orJBrdB4o1vYw55foQzjqRb",
+        "renderer_path": "tools/render_v5_dieshot.py",
+        "renderer_sha256": "29ce27ee07517be9447f0289cf63ca78c458299f270f683637e5cf0563ed2cb2",
+        "manifest_path": "telemetry/VMAX_V5_PAPER_SYNC35_MANIFEST.json",
+        "manifest_file_sha256": "4dfaf22c9eda4301c943d23036c5e7384f0a8d4fa1b8e7abeb0cb4eb7edf850a",
+        "manifest_payload_sha256": "09c32c9586f4fc836ece3c78d5afd56f1f9ebdb194e26bb8849e72234cd3c876",
+        "drive_handoff_id": "1_OP5yHDZeXdQkUeE-22maeGMoMrA07QF",
+        "git_tag": "v5.0.1-silicon-signoff"
+      },
+      "verification": {
+        "github_math_guard": "PASS (0 errors, 0 tabs, 0 citation artifacts)",
+        "unittest_full": "173/173 PASS (0 skipped)",
+        "fridu_enclave_g": "10/10 PASS (OP02 py_files=34, semi=0, tabs=0, max_cc=13, open_items=0)",
+        "five_way_byte_parity_paper": true,
+        "five_way_byte_parity_dieshot": true,
+        "ALL_5_EQUAL": true,
+        "immutable_silicon_guard": "EMPTY_DIFF (rtl/**, rtl_v5/**, formal_lean4/**, ledger.py, app/**)",
+        "live_pkb_sha256_unchanged": true,
+        "sync35_dieshot_and_paper_verified": true
       }
     }
   ]

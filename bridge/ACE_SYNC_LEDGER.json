@@ -2,7 +2,7 @@
   "protocol_id": "ACE-PEER-CODESIGN-PROTOCOL-V1.2",
   "spec_version": "PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1 + RTL-CORE-V3.1-OPTIMUM + RTL-CORE-V4.0-GDSII (WORK-ORDER-AG-22)",
   "protocol_version": "1.2-NODE-ALPHA",
-  "timestamp_utc": "2026-11-24T17:07:00Z",
+  "timestamp_utc": "2026-11-24T17:30:00Z",
   "peers": {
     "node_alpha": {
       "agent_id": "AntiG (Gemini 4 Neon Extra / Local Lead Software Engineer)",
@@ -662,7 +662,7 @@
       "artifacts": {
         "paper_filename": "PQMS-ODOS-MTSC-V-MAX-12-CORE-NANO-V5.0.md",
         "paper_revision": "V5.0.1-SILICON-SIGNOFF",
-        "paper_sha256": "8f2babbb734bf958a604bec880d8a3215737786916acbf311e702f52301fc50c",
+        "paper_sha256": "f34e3eff52db8904f42427f1aa2fa10e69e89bba324aee66cc742e708073fb8f",
         "paper_drive_02_id": "1wMe9ydVet7Zk0_C8Vxtar9DwuVu6LQCF",
         "dieshot_path": "docs/figures/V-MAX-12-RTL-V5.0-DIESHOT.png",
         "dieshot_sha256": "24d39198679eb31053ce1959db75ed1dfac8a752ec88570114a88f8ef2f966a3",
@@ -670,10 +670,13 @@
         "renderer_path": "tools/render_v5_dieshot.py",
         "renderer_sha256": "29ce27ee07517be9447f0289cf63ca78c458299f270f683637e5cf0563ed2cb2",
         "manifest_path": "telemetry/VMAX_V5_PAPER_SYNC35_MANIFEST.json",
-        "manifest_file_sha256": "4dfaf22c9eda4301c943d23036c5e7384f0a8d4fa1b8e7abeb0cb4eb7edf850a",
-        "manifest_payload_sha256": "09c32c9586f4fc836ece3c78d5afd56f1f9ebdb194e26bb8849e72234cd3c876",
+        "manifest_file_sha256": "2b439dd25a3468c8fc7887e6904bc90c56e50278a8017f80d107a1f63a3cc266",
+        "manifest_payload_sha256": "2823fc63012d687def11e146915bf275cc76e990b350cd3e63431a6ed6b17611",
         "drive_handoff_id": "1_OP5yHDZeXdQkUeE-22maeGMoMrA07QF",
-        "git_tag": "v5.0.1-silicon-signoff"
+        "git_tag": "v5.0.1-silicon-signoff",
+        "dieshot_jpg_path": "docs/figures/V-MAX-12-RTL-V5.0-DIESHOT.jpg",
+        "dieshot_jpg_sha256": "43de562a08967234d3c054133d3a5c96f549daf4d7e7b5bca1d13dd1e5242e14",
+        "dieshot_jpg_drive_02_id": "1ywv5-DD3ZAXs0r5XPv7t2zJ2VKeoJIkl"
       },
       "verification": {
         "github_math_guard": "PASS (0 errors, 0 tabs, 0 citation artifacts)",

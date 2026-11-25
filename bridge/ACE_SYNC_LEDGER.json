@@ -2,7 +2,7 @@
   "protocol_id": "ACE-PEER-CODESIGN-PROTOCOL-V1.2",
   "spec_version": "PQMS-ODOS-MTSC-V-MAX-12-Node-ALPHA-V1 + RTL-CORE-V3.1-OPTIMUM + RTL-CORE-V4.0-GDSII (WORK-ORDER-AG-22)",
   "protocol_version": "1.2-NODE-ALPHA",
-  "timestamp_utc": "2026-11-24T17:30:00Z",
+  "timestamp_utc": "2026-11-25T08:15:00Z",
   "peers": {
     "node_alpha": {
       "agent_id": "AntiG (Gemini 4 Neon Extra / Local Lead Software Engineer)",
@@ -339,7 +339,10 @@
     "hw_gate_v4_bridge_py_sha256": "a8f3e6d05fe02a933ee5a1598dac3deab344b4a5245854f6f987681a96499b72",
     "server_hud_v4_pathb_py_sha256": "20fcbc7f91a55a68505453261ba167aa3fd13f256aba6ef79103b3385bba3885",
     "v4_sg13g2_gds_stream_sha256": "be61b9c763ff43befb42562cd26db29f9d567694b8d681c646f7b403aa1842ec",
-    "v4_sg13g2_dieshot_png_sha256": "30d27d21b963b974c551570eb41238b1f59c8f05c7569aa0d54ac647b16dcc53"
+    "v4_sg13g2_dieshot_png_sha256": "30d27d21b963b974c551570eb41238b1f59c8f05c7569aa0d54ac647b16dcc53",
+    "PQMS-ODOS-MTSC-V-MAX-12-CORE-JEDI-V6.0.md": "28dfb723378faa6eb0ccb29fd6e9a770f279e35f43bce7ebf4e86c805a5af3d1",
+    "tools/v6_jedi_pdk_preflight.py": "a6974b933c26557eb2ae6cc70d6796a9c820c4017a5a316f7914e8b73f7b727c",
+    "telemetry/VMAX_V6_JEDI_RTL_REPORT.json": "45a315d70ba9b20c89e952d0e0b63db067d61f53c069936708e1aab9407f5f78"
   },
   "entries": [
     {
@@ -688,6 +691,39 @@
         "immutable_silicon_guard": "EMPTY_DIFF (rtl/**, rtl_v5/**, formal_lean4/**, ledger.py, app/**)",
         "live_pkb_sha256_unchanged": true,
         "sync35_dieshot_and_paper_verified": true
+      }
+    },
+    {
+      "sync_id": "SYNC-36",
+      "work_order": "WORK-ORDER-AG-36",
+      "date": "2026-11-25",
+      "status": "COMPLETED_VERIFIED_PAUSE_GATE_BEFORE_SYNC37",
+      "epistemic_register": "REGISTER_M",
+      "summary": "V6.0-CORE-JEDI (5.50 x 5.50 mm H-Symmetry, QFN-64, IHP SG13G2 130 nm) WP-0 PDK catalog/polarity preflight, complete 12-module Verilog-2001 rtl_v6/ implementation + tb_vmax_v6_jedi_top.v, and OP02-clean Python co-simulation verified on Node Alpha (0 GPU load, torch_imported=False). Verilator -Wall (--x-assign unique --x-initial unique) 0/0, Yosys -DSYNTH_IHP_SG13G2 Liberty hierarchy check 0 errors, Icarus/vvp 33/33 T01-T16 safety assertions PASS + 16/16 live co-sim vectors bit-exact, 2,000 Cauchy-Schwarz vectors 0 false rejects, 181/181 unittest PASS, FRIDU-ENCLAVE-G 10/10 PASS, IMMUTABLE_SILICON_GUARD=EMPTY_DIFF. Paused cleanly for WERKSTATT-01 audit prior to SYNC-37/SYNC-38 via chip_ctl.sh.",
+      "artifacts": {
+        "paper_filename": "PQMS-ODOS-MTSC-V-MAX-12-CORE-JEDI-V6.0.md",
+        "paper_sha256": "28dfb723378faa6eb0ccb29fd6e9a770f279e35f43bce7ebf4e86c805a5af3d1",
+        "preflight_path": "tools/v6_jedi_pdk_preflight.py",
+        "preflight_sha256": "a6974b933c26557eb2ae6cc70d6796a9c820c4017a5a316f7914e8b73f7b727c",
+        "sim_test_path": "vmax_alpha/tests/test_rtl_v6_jedi_sim.py",
+        "sim_test_sha256": "79f42aff5cae70c7b4a645abdecb2bbcb6d344f85a618824082e0edd11659d37",
+        "report_path": "telemetry/VMAX_V6_JEDI_RTL_REPORT.json",
+        "report_file_sha256": "45a315d70ba9b20c89e952d0e0b63db067d61f53c069936708e1aab9407f5f78",
+        "report_payload_sha256": "dc4ba3fa7715202ab9d73d1a2b2ddb3a069f68411e528b2aef564108e506c921",
+        "drive_handoff_filename": "20261125_ANTIG-WERKSTATT_SYNC36_V6_JEDI_RTL.json",
+        "drive_handoff_id": "1esAD1FQ8vLXJ-S5oKRfqGtMD5ywTdcWo",
+        "rtl_v6_module_count": 13
+      },
+      "verification": {
+        "verilator_strict_wall": "0 errors, 0 warnings",
+        "yosys_pdk_liberty_hierarchy": "0 errors (-DSYNTH_IHP_SG13G2)",
+        "iverilog_vvp_t01_t16": "33/33 PASS (V6_JEDI_TB_STATUS=PASSED, 16/16 live co-sim)",
+        "cauchy_schwarz_cosim": "0/2000 false rejects (Q2.30 & Q2.14<<16)",
+        "unittest_full": "181/181 PASS (0 failures, 0 errors, 0 skipped)",
+        "fridu_enclave_g": "10/10 PASS (open_review_items=0)",
+        "immutable_silicon_guard": "EMPTY_DIFF",
+        "live_pkb_sha256_unchanged": true,
+        "sync36_v6_jedi_rtl_verified": true
       }
     }
   ]

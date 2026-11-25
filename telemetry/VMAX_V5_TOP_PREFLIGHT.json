@@ -7,7 +7,7 @@
     },
     "required": {
       "iverilog": "/home/nathalia/.local/oss-cad-suite/bin/iverilog",
-      "klayout": "/home/nathalia/.local/signoff_env/bin/klayout",
+      "klayout": "/home/nathalia/.local/klayout_official/bin/klayout",
       "netgen": "/home/nathalia/.local/signoff_env/bin/netgen",
       "openroad": "/home/nathalia/.local/openroad_2024/bin/openroad",
       "sta": "/home/nathalia/.local/openroad_2024/bin/sta",

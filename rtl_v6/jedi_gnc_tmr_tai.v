@@ -473,12 +473,12 @@ module jedi_gnc_tmr_tai #(
     wire [1:0]  raw_egress_w = global_fault_w ? 2'b11 : (raw_npu_w ? 2'b00 : 2'b11);
     wire [3:0]  raw_bundle_w = {raw_tai_w, raw_npu_w, raw_egress_w};
 
-    (* keep = 1, dont_touch = "true" *) wire [3:0] rep0_w = raw_bundle_w ^ {4{tmr_fault_inj_i[0]}};
-    (* keep = 1, dont_touch = "true" *) wire [3:0] rep1_w = raw_bundle_w ^ {4{tmr_fault_inj_i[1]}};
-    (* keep = 1, dont_touch = "true" *) wire [3:0] rep2_w = raw_bundle_w ^ {4{tmr_fault_inj_i[2]}};
+    (* keep = 1, dont_touch = "true" *) wire [3:0] tmr_rep0_w = raw_bundle_w ^ {4{tmr_fault_inj_i[0]}};
+    (* keep = 1, dont_touch = "true" *) wire [3:0] tmr_rep1_w = raw_bundle_w ^ {4{tmr_fault_inj_i[1]}};
+    (* keep = 1, dont_touch = "true" *) wire [3:0] tmr_rep2_w = raw_bundle_w ^ {4{tmr_fault_inj_i[2]}};
 
     (* keep = 1, dont_touch = "true" *)
-    wire [3:0] voted_bundle_w = (rep0_w & rep1_w) | (rep1_w & rep2_w) | (rep0_w & rep2_w);
+    wire [3:0] voted_bundle_w = (tmr_rep0_w & tmr_rep1_w) | (tmr_rep1_w & tmr_rep2_w) | (tmr_rep0_w & tmr_rep2_w);
 
     assign voted_tai_en_w   = voted_bundle_w[3];
     assign npu_egress_en_o  = voted_bundle_w[2];

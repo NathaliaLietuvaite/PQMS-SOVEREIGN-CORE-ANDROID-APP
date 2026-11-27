@@ -73,7 +73,7 @@
     "operator_count": 10,
     "passed_count": 10,
     "all_operators_passed": true,
-    "execution_latency_ms": 365.805,
+    "execution_latency_ms": 409.996,
     "operators": [
       {
         "id": "OP01_First_Principles_Norm_Null",
